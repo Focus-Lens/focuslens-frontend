@@ -24,14 +24,18 @@ export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSignIn() {
+    if (isSubmitting) return;
+
     if (!email.trim() || !password.trim()) {
       setError("Please enter your email and password.");
       return;
     }
 
     setError("");
+    setIsSubmitting(true);
 
     try {
       await login({ email: email.trim(), password });
@@ -42,6 +46,8 @@ export default function SignIn() {
           ? err.message
           : "Something went wrong. Please try again."
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -56,6 +62,7 @@ export default function SignIn() {
           label="Email address or phone number"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
+          disabled={isSubmitting}
         />
 
         <Field
@@ -63,6 +70,7 @@ export default function SignIn() {
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
+          disabled={isSubmitting}
         />
 
         {error && <p className="password-error">{error}</p>}
@@ -77,7 +85,13 @@ export default function SignIn() {
         </div>
 
         <div className="actions signin-actions">
-          <Button onClick={handleSignIn}>Sign in</Button>
+          <Button
+            onClick={handleSignIn}
+            isLoading={isSubmitting}
+            loadingLabel="Signing in…"
+          >
+            Sign in
+          </Button>
         </div>
 
         <p className="already-account">

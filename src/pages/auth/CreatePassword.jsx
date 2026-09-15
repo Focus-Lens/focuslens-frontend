@@ -22,6 +22,7 @@ export default function CreatePassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const checks = [
     {
@@ -60,6 +61,8 @@ export default function CreatePassword() {
   const canContinue = score === 4 && passwordsMatch;
 
   async function handleConfirm() {
+    if (isSubmitting) return;
+
     setSubmitError("");
 
     const draftRaw = sessionStorage.getItem("pendingRegistration");
@@ -69,6 +72,8 @@ export default function CreatePassword() {
       setSubmitError("Registration details were lost. Please start again.");
       return;
     }
+
+    setIsSubmitting(true);
 
     try {
       await registerParent({
@@ -84,11 +89,26 @@ export default function CreatePassword() {
 
       navigate("/verify-email");
     } catch (err) {
+      const errorCode = err?.data?.errors?.[0]?.code;
+
+      if (
+        err instanceof ApiError &&
+        err.status === 409 &&
+        errorCode === "Identity_Email_Already_Registered"
+      ) {
+        sessionStorage.setItem("pendingParentEmail", draft.email);
+        sessionStorage.removeItem("pendingRegistration");
+        navigate("/verify-email");
+        return;
+      }
+
       setSubmitError(
         err instanceof ApiError
           ? err.message
           : "Something went wrong. Please try again."
       );
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -115,6 +135,7 @@ export default function CreatePassword() {
             <input
               type={showPassword ? "text" : "password"}
               value={password}
+              disabled={isSubmitting}
               onChange={(event) =>
                 setPassword(event.target.value)
               }
@@ -124,6 +145,7 @@ export default function CreatePassword() {
             <button
               type="button"
               className="eye-button"
+              disabled={isSubmitting}
               onClick={() =>
                 setShowPassword(!showPassword)
               }
@@ -169,6 +191,7 @@ export default function CreatePassword() {
                   : "password"
               }
               value={confirmPassword}
+              disabled={isSubmitting}
               onChange={(event) =>
                 setConfirmPassword(
                   event.target.value
@@ -180,6 +203,7 @@ export default function CreatePassword() {
             <button
               type="button"
               className="eye-button"
+              disabled={isSubmitting}
               onClick={() =>
                 setShowConfirmPassword(
                   !showConfirmPassword
@@ -307,8 +331,12 @@ export default function CreatePassword() {
 
           {/* Confirm */}
 
-          {canContinue ? (
-            <Button onClick={handleConfirm}>
+          {canContinue || isSubmitting ? (
+            <Button
+              onClick={handleConfirm}
+              isLoading={isSubmitting}
+              loadingLabel="Creating account…"
+            >
               Confirm
             </Button>
           ) : (

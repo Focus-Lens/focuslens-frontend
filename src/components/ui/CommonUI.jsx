@@ -6,7 +6,15 @@ import "../../css/common/CommonUI.css";
 import logo from "../../assets/logo.png";
 import React from "react";
 
-export function Button({ children, to, secondary = false, ...props }) {
+export function Button({
+  children,
+  to,
+  secondary = false,
+  isLoading = false,
+  loadingLabel = "Loading…",
+  disabled = false,
+  ...props
+}) {
   const className = secondary ? "button button-secondary" : "button";
 
   if (to) {
@@ -18,8 +26,14 @@ export function Button({ children, to, secondary = false, ...props }) {
   }
 
   return (
-    <button className={className} {...props}>
-      {children}
+    <button
+      className={className}
+      disabled={disabled || isLoading}
+      aria-busy={isLoading}
+      {...props}
+    >
+      {isLoading && <span className="button-spinner" aria-hidden="true" />}
+      <span>{isLoading ? loadingLabel : children}</span>
     </button>
   );
 }

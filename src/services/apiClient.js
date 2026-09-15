@@ -75,8 +75,8 @@ function extractErrorMessage(data, status) {
 
     if (typeof data === "object") {
       if (data.message) return data.message;
-      if (data.title) return data.title;
       if (data.detail) return data.detail;
+      if (data.title) return data.title;
 
       if (data.errors && typeof data.errors === "object") {
         const firstKey = Object.keys(data.errors)[0];

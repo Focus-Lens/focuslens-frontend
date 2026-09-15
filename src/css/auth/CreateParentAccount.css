@@ -227,6 +227,18 @@
   font-weight: 500;
 }
 
+.create-parent-account .google-loading-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+}
+
+.create-parent-account .google-loading-state .button-spinner {
+  border-color: rgba(124, 53, 233, 0.25);
+  border-top-color: #7c35e9;
+}
+
 .create-parent-account .google-icon {
   width: 18px;
   height: 18px;

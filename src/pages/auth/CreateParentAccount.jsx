@@ -17,6 +17,7 @@ export default function CreateParentAccount() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [googleError, setGoogleError] = useState("");
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
@@ -32,6 +33,8 @@ export default function CreateParentAccount() {
     acceptedTerms;
 
   async function handleGoogleSuccess(response) {
+    if (isGoogleLoading) return;
+
     if (!acceptedTerms) {
       setGoogleError("Accept the Terms and Privacy Policy before continuing with Google.");
       return;
@@ -39,11 +42,14 @@ export default function CreateParentAccount() {
 
     try {
       setGoogleError("");
+      setIsGoogleLoading(true);
       await loginWithGoogleParent(response.credential, true);
       navigate("/overview");
     } catch (error) {
       console.error("Google parent sign-in failed:", error);
       setGoogleError("Google sign-in failed. Please try again.");
+    } finally {
+      setIsGoogleLoading(false);
     }
   }
 
@@ -138,14 +144,21 @@ export default function CreateParentAccount() {
             )}
           </div>
 
-          <div className="google-button">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setGoogleError("Google sign-in failed. Please try again.")}
-              text="continue_with"
-              shape="rectangular"
-              width="360"
-            />
+          <div className="google-button" aria-busy={isGoogleLoading}>
+            {isGoogleLoading ? (
+              <span className="google-loading-state">
+                <span className="button-spinner" aria-hidden="true" />
+                Signing in with Google…
+              </span>
+            ) : (
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setGoogleError("Google sign-in failed. Please try again.")}
+                text="continue_with"
+                shape="rectangular"
+                width="360"
+              />
+            )}
           </div>
 
           {googleError && <p className="email-error">{googleError}</p>}
