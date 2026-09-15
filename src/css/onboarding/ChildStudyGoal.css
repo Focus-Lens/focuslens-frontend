@@ -1,0 +1,369 @@
+.child-goal-wrapper {
+  width: 620px;
+  max-width: calc(100% - 32px);
+  margin: 42px auto 0;
+  font-family: "Nunito", sans-serif;
+}
+
+.child-goal-wrapper .page-card {
+  width: 100%;
+  min-height: 470px;
+  padding: 48px 48px 44px;
+  box-sizing: border-box;
+
+  border: 1px solid #e3def0;
+  border-radius: 36px;
+  background: #ffffff;
+
+  box-shadow: 0 18px 45px rgba(91, 51, 145, 0.06);
+}
+
+.child-goal-page {
+  width: 100%;
+}
+
+/* Steps */
+
+.child-goal-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+
+  margin-bottom: 30px;
+  white-space: nowrap;
+}
+
+.child-goal-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  color: #666673;
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.child-goal-step-circle {
+  width: 25px;
+  height: 25px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+  border-radius: 50%;
+
+  background: #f3f3f6;
+  color: #666673;
+
+  font-size: 11px;
+}
+
+.child-goal-step.completed .child-goal-step-circle {
+  background: #f5f2fa;
+  color: #7d39eb;
+}
+
+.child-goal-step.active {
+  color: #7d39eb;
+}
+
+.child-goal-step.active .child-goal-step-circle {
+  background: #7d39eb;
+  color: #ffffff;
+}
+
+/* Title */
+
+.child-goal-title {
+  margin: 0;
+
+  color: #252525;
+  font-family: "Nunito", sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.child-goal-subtitle {
+  margin: 11px 0 22px;
+
+  color: #62626d;
+  font-family: "Nunito", sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+/* Weekly goal label */
+
+.weekly-goal-label {
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 22px;
+
+  border: 1px solid rgba(108, 47, 208, 1);
+  border-radius: 999px;
+
+  color: rgba(108, 47, 208, 1);
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* Target */
+
+.child-goal-section-title {
+  margin: 0 0 14px;
+
+  color: #24242a;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.child-goal-input-wrap {
+  position: relative;
+  width: 100%;
+  height: 46px;
+}
+
+.child-goal-input-wrap label {
+  position: absolute;
+  top: -8px;
+  left: 14px;
+  z-index: 2;
+
+  padding: 0 5px;
+
+  background: #ffffff;
+  color: #686875;
+
+  font-size: 11px;
+  line-height: 1;
+}
+
+.child-goal-input-wrap input {
+  width: 100%;
+  height: 46px;
+
+  padding: 0 14px;
+  box-sizing: border-box;
+
+  border: 1px solid #a9a9b4;
+  border-radius: 999px;
+  outline: none;
+
+  background: #ffffff;
+  color: #303038;
+
+  font-family: "Nunito", sans-serif;
+  font-size: 15px;
+}
+
+.child-goal-input-wrap input:focus {
+  border-color: rgba(108, 47, 208, 1);
+  box-shadow: 0 0 0 2px rgba(125, 57, 235, 0.08);
+}
+
+.child-goal-current-week {
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+
+  margin-top: 12px;
+  padding: 0 14px;
+  box-sizing: border-box;
+
+  border: 1px solid #a9a9b4;
+  border-radius: 999px;
+
+  color: #686875;
+  font-size: 15px;
+}
+
+/* Actions */
+
+.child-goal-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+
+  margin-top: 24px;
+}
+
+.child-goal-back {
+  width: 170px;
+  height: 46px;
+
+  border: 0;
+  background: transparent;
+
+  color: #7130dc;
+  font-family: "Nunito", sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+
+  cursor: pointer;
+}
+
+.child-goal-back:hover {
+  color: #5f22c4;
+}
+
+.child-goal-actions .button {
+  flex: 1;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px ;
+border: rgba(108, 47, 208, 1);
+  background: rgba(108, 47, 208, 1);
+  color: #ffffff;
+
+  font-family: "Nunito", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.child-goal-actions .button:hover {
+  background: #7130dc;
+}
+
+/* Tablet */
+
+@media (max-width: 760px) {
+  .child-goal-wrapper {
+    width: 100%;
+    max-width: calc(100% - 32px);
+    margin-top: 28px;
+  }
+
+  .child-goal-wrapper .page-card {
+    min-height: 0;
+    padding: 40px 32px 36px;
+    border-radius: 30px;
+  }
+
+  .child-goal-stepper {
+    gap: 8px;
+  }
+
+  .child-goal-step {
+    gap: 4px;
+    font-size: 10px;
+  }
+
+  .child-goal-step-circle {
+    width: 23px;
+    height: 23px;
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 560px) {
+  .child-goal-wrapper {
+    max-width: calc(100% - 24px);
+    margin-top: 20px;
+  }
+
+  .child-goal-wrapper .page-card {
+    padding: 32px 20px;
+    border-radius: 26px;
+  }
+
+  .child-goal-stepper {
+    justify-content: space-between;
+    gap: 0;
+  }
+
+  .child-goal-step-label {
+    display: none;
+  }
+
+  .child-goal-step-circle {
+    width: 25px;
+    height: 25px;
+  }
+
+  .child-goal-title {
+    font-size: 23px;
+  }
+
+  .child-goal-subtitle {
+    font-size: 12px;
+  }
+
+  .weekly-goal-label {
+    height: 42px;
+    font-size: 14px;
+  }
+
+  .child-goal-section-title {
+    font-size: 14px;
+  }
+
+  .child-goal-input-wrap,
+  .child-goal-input-wrap input,
+  .child-goal-current-week {
+    height: 44px;
+  }
+
+  .child-goal-input-wrap input,
+  .child-goal-current-week {
+    font-size: 14px;
+  }
+
+  .child-goal-actions {
+    gap: 10px;
+  }
+
+  .child-goal-back {
+    width: 100px;
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .child-goal-actions .button {
+    height: 44px;
+    font-size: 14px;
+  }
+}
+
+/* يجعل الكارد في منتصف الشاشة بالطول */
+.auth-main:has(.child-goal-wrapper) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: calc(100dvh - 86px);
+  padding: 32px 16px;
+}
+
+.child-goal-wrapper {
+  margin: auto;
+}
+
+@media (max-width: 600px) {
+  .auth-main:has(.child-goal-wrapper) {
+    min-height: calc(100dvh - 62px);
+    padding: 24px 12px;
+    overflow-y: auto;
+  }
+
+  .child-goal-wrapper {
+    margin: auto;
+  }
+}

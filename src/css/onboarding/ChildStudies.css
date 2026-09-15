@@ -1,0 +1,423 @@
+/* =========================================
+   CHILD STUDIES
+========================================= */
+
+.child-studies-wrapper {
+  width: 700px;
+  max-width: 100%;
+  margin: 0 auto;
+  font-family: "Nunito", sans-serif;
+}
+
+.child-studies-wrapper .page-card {
+  width: 100%;
+  max-width: none;
+  min-height: auto;
+  box-sizing: border-box;
+  padding: 48px 48px 47px;
+}
+
+/* =========================
+   Main
+========================= */
+
+.child-studies-page {
+  width: 100%;
+  text-align: center;
+}
+
+/* =========================
+   Stepper
+========================= */
+
+.child-studies-stepper {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+
+.child-study-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.child-study-step-circle {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f3f3f6;
+  color: #62636d;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.child-study-step.active .child-study-step-circle {
+  background: #7d39eb;
+  color: #ffffff;
+}
+
+.child-study-step.completed .child-study-step-circle {
+  background: #f3f3f6;
+  color: #7d39eb;
+}
+
+.child-study-step-label {
+  color: #62636d;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.child-study-step.active .child-study-step-label {
+  color: #7d39eb;
+}
+
+/* =========================
+   Title
+========================= */
+
+.child-studies-title {
+  margin: 0;
+  color: #202020;
+  font-family: "Nunito";
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.7px;
+}
+
+/* =========================
+   Subtitle
+========================= */
+
+.child-studies-subtitle {
+  margin: 10px 0 26px;
+  color: #646470;
+  font-family: "Nunito";
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+/* =========================
+   Section title
+========================= */
+
+.child-studies-section-title {
+  margin: 0 0 17px;
+  color: #242428;
+  font-family: "Nunito";
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.3;
+  text-align: left;
+}
+
+/* =========================
+   Grade options
+========================= */
+
+.grade-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+
+.grade-chip {
+  height: 49px;
+  padding: 0 21px;
+  border: 1px solid #e0e0e5;
+  border-radius: 26px;
+  background: #f5f5f7;
+  color: #242428;
+  font-family: "Nunito";
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.grade-chip:hover {
+  border-color: #c7e900;
+}
+
+.grade-chip.selected {
+  border: 2px solid #c6f500;
+  background: #d5ff25;
+  box-shadow: inset 0 0 0 3px #f5ffd0;
+}
+
+/* =========================
+   Subjects title
+========================= */
+
+.subjects-title {
+  margin-bottom: 17px;
+}
+
+/* =========================
+   Subject options
+========================= */
+
+.subject-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 11px 15px;
+  margin-bottom: 24px;
+}
+
+.subject-chip {
+  height: 49px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px 0 8px;
+  border: 1px solid #dedee5;
+  border-radius: 26px;
+  background: #ffffff;
+  color: #29292e;
+  font-family: "Nunito";
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.subject-chip:hover {
+  border-color: #bfa5f8;
+}
+
+.subject-chip.selected {
+  border-color: #b8ec00;
+  background: #f4ffd7;
+}
+
+/* =========================
+   Subject icon
+========================= */
+
+.subject-chip-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #f2f2f5;
+  color: #7d39eb;
+}
+
+.subject-chip.selected .subject-chip-icon {
+  background: #7d39eb;
+  color: #ffffff;
+}
+
+.subject-chip-icon svg {
+  display: block;
+}
+
+/* =========================
+   Bottom actions
+========================= */
+
+.child-studies-actions {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 23px;
+}
+
+/* =========================
+   Back
+========================= */
+
+.child-studies-back {
+  width: 80px;
+  height: 53px;
+  flex: 0 0 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid #7d39eb;
+  border-radius: 28px;
+  background: #ffffff;
+  color: #7d39eb;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.child-studies-back:hover {
+  background: #faf7ff;
+}
+
+.child-studies-back svg {
+  display: block;
+}
+
+/* =========================
+   Continue
+========================= */
+
+.child-studies-actions > button:not(.child-studies-back),
+.child-studies-actions > a {
+  flex: 1;
+  width: auto;
+  height: 53px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 28px;
+  background: #7d39eb;
+  color: #ffffff;
+  font-family: "Nunito";
+  font-size: 16px;
+  font-weight: 400;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.child-studies-actions > button:not(.child-studies-back):hover,
+.child-studies-actions > a:hover {
+  background: #7130d8;
+}
+
+@media (max-width: 600px) {
+  .auth-main:has(.child-studies-wrapper) {
+    display: block;
+    padding: 24px 12px 40px;
+    overflow-y: auto;
+  }
+
+  .child-studies-wrapper {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .child-studies-wrapper .page-card {
+    width: 100%;
+    padding: 30px 18px;
+    border-radius: 26px;
+  }
+
+  .child-studies-stepper {
+    justify-content: space-between;
+    gap: 0;
+    margin-bottom: 22px;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .child-study-step {
+    gap: 0;
+  }
+
+  .child-study-step-label {
+    display: none;
+  }
+
+  .child-study-step-circle {
+    width: 26px;
+    height: 26px;
+    flex-basis: 26px;
+    font-size: 11px;
+  }
+
+  .child-studies-title {
+    font-size: 25px;
+  }
+
+  .child-studies-subtitle {
+    margin: 10px 0 22px;
+    font-size: 13px;
+  }
+
+  .child-studies-section-title {
+    margin-bottom: 13px;
+    font-size: 21px;
+  }
+
+  .grade-options {
+    gap: 8px;
+    margin-bottom: 22px;
+  }
+
+  .grade-chip {
+    height: 42px;
+    padding: 0 13px;
+    font-size: 12px;
+  }
+
+  .subject-options {
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .subject-chip {
+    height: 42px;
+    gap: 7px;
+    padding: 0 10px 0 6px;
+    font-size: 12px;
+  }
+
+  .subject-chip-icon {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+  }
+
+  .child-studies-actions {
+    margin-top: 18px;
+    gap: 10px;
+  }
+
+  .child-studies-back {
+    width: 58px;
+    height: 48px;
+    flex-basis: 58px;
+  }
+
+  .child-studies-actions > button:not(.child-studies-back),
+  .child-studies-actions > a {
+    height: 48px;
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 380px) {
+  .child-studies-wrapper .page-card {
+    padding: 26px 14px;
+  }
+
+  .child-studies-title {
+    font-size: 22px;
+  }
+
+  .grade-chip {
+    padding: 0 11px;
+  }
+
+  .subject-chip {
+    font-size: 11px;
+  }
+}

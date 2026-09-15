@@ -1,0 +1,680 @@
+.study-goals-page-shell {
+  min-height: 100vh;
+  background: #ffffff;
+  color: #292630;
+  font-family: "Nunito", sans-serif;
+}
+
+.study-goals-page-shell * {
+  font-family: inherit;
+}
+
+.study-goals-page {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 32px 46px 52px;
+  box-sizing: border-box;
+}
+
+/* Heading */
+
+.study-goals-heading {
+  margin-bottom: 34px;
+}
+
+.study-goals-heading h1 {
+  margin: 0;
+  color: #24212a;
+  font-size: 27px;
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.7px;
+}
+
+.study-goals-heading p {
+  margin: 7px 0 0;
+  color: #77717d;
+  font-size: 13px;
+}
+
+/* Shared */
+
+.state-label {
+  display: block;
+  color: #716a77;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.goal-empty-state,
+.goal-pending-state,
+.active-goal-card,
+.study-goals-card {
+  box-sizing: border-box;
+  border: 1px solid #c1f441;
+  border-radius: 22px;
+  background: #ffffff;
+}
+
+/* Empty state */
+
+.goal-empty-state {
+  width: 520px;
+  max-width: 100%;
+  min-height: 330px;
+  margin: 65px auto 0;
+  padding: 24px;
+}
+
+.goal-empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 270px;
+  text-align: center;
+}
+
+.goal-empty-content img {
+  width: 105px;
+  height: 105px;
+  margin-bottom: 14px;
+  object-fit: contain;
+}
+
+.goal-empty-content h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.goal-empty-content p {
+  max-width: 360px;
+  margin: 9px 0 17px;
+  color: #77717d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.goal-empty-content button,
+.goal-form-actions button:last-child {
+  min-width: 168px;
+  height: 38px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 21px;
+  background: rgba(125, 57, 235, 1);
+  color: #ffffff;
+  font: 700 12px "Nunito", sans-serif;
+  cursor: pointer;
+}
+
+.goal-empty-content button:hover,
+.goal-form-actions button:last-child:hover {
+  background: rgba(113, 48, 220, 1);
+}
+
+/* Create goal form */
+
+.goal-form-card {
+  width: 500px;
+  max-width: 100%;
+  margin: 70px auto 0;
+  padding: 30px;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 14px 30px rgba(72, 40, 120, 0.05);
+}
+
+.goal-form-card form {
+  display: flex;
+  flex-direction: column;
+}
+
+.goal-form-card h2 {
+  margin: 0;
+  text-align: center;
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.goal-form-card > form > p {
+  margin: 8px 0 18px;
+  color: #817b87;
+  font-size: 11px;
+  text-align: center;
+}
+
+.goal-type {
+  display: grid;
+  height: 34px;
+  margin-bottom: 22px;
+  place-items: center;
+  border: 1px solid rgba(125, 57, 235, 1);
+  border-radius: 18px;
+  color: rgba(125, 57, 235, 1);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.goal-form-card label {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+  color: #45404a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.goal-form-card input {
+  width: 100%;
+  height: 42px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 1px solid #aaa3b0;
+  border-radius: 22px;
+  outline: none;
+  background: #ffffff;
+  color: #49434f;
+  font: 13px "Nunito", sans-serif;
+}
+
+.goal-form-card input:focus {
+  border-color: rgba(125, 57, 235, 1);
+}
+
+.goal-form-card input:disabled {
+  background: #faf9fb;
+  color: #85808a;
+}
+
+.goal-form-card label small {
+  position: absolute;
+  top: 31px;
+  left: 14px;
+  color: #89838e;
+  font-size: 9px;
+  pointer-events: none;
+}
+
+.goal-form-card label:first-of-type input {
+  padding-top: 12px;
+}
+
+.goal-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 4px;
+}
+
+.goal-form-actions button:first-child {
+  min-width: 90px;
+  height: 38px;
+  border: 0;
+  background: transparent;
+  color: rgba(125, 57, 235, 1);
+  font: 700 12px "Nunito", sans-serif;
+  cursor: pointer;
+}
+
+/* Pending state */
+
+.goal-pending-state {
+  width: 500px;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.goal-pending-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 20px 0 24px;
+}
+
+.goal-pending-header > img {
+  width: 82px;
+  height: 82px;
+  padding: 5px;
+  box-sizing: border-box;
+  border: 1px solid rgba(125, 57, 235, 1);
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.goal-pending-header h2 {
+  margin: 8px 0 5px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.goal-pending-header p {
+  margin: 0;
+  color: #77717d;
+  font-size: 12px;
+}
+
+.pending-badge,
+.on-track-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 9px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pending-badge {
+  background: #fff1e5;
+  color: #d77a24;
+}
+
+.on-track-badge {
+  background: #e9f8ee;
+  color: #277c46;
+}
+
+.study-goal-details {
+  padding-top: 18px;
+  border-top: 1px solid #eeeaf0;
+}
+
+.study-goal-details h3 {
+  margin: 0 0 13px;
+  color: #302b34;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.study-goal-details p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 10px;
+  color: #706a76;
+  font-size: 11px;
+}
+
+.study-goal-details p span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.study-goal-details p svg {
+  color: #77717d;
+}
+
+.study-goal-details b {
+  color: #413c46;
+  font-weight: 700;
+  text-align: right;
+}
+
+.demo-accept-button {
+  width: 100%;
+  height: 36px;
+  margin-top: 18px;
+  border: 1px solid rgba(125, 57, 235, 1);
+  border-radius: 18px;
+  background: #ffffff;
+  color: rgba(125, 57, 235, 1);
+  font: 700 11px "Nunito", sans-serif;
+  cursor: pointer;
+}
+
+.demo-accept-button:hover {
+  background: rgba(125, 57, 235, 1);
+  color: #ffffff;
+}
+
+/* Active goal */
+
+.active-goal-card {
+  padding: 24px 27px;
+}
+
+.active-goal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.active-goal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.active-goal-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgba(125, 57, 235, 1);
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.active-goal-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.active-goal-title h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.days-remaining {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #67616d;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.active-goal-body {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 180px minmax(250px, 1fr);
+  align-items: center;
+  gap: 28px;
+  margin-top: 28px;
+}
+
+.active-goal-progress strong {
+  color: #24212a;
+  font-size: 31px;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.active-goal-progress > span {
+  margin-left: 6px;
+  color: #67616d;
+  font-size: 13px;
+}
+
+.active-goal-progress > b {
+  display: block;
+  margin-top: 7px;
+  font-size: 11px;
+}
+
+.active-progress-track {
+  position: relative;
+  height: 10px;
+  margin-top: 25px;
+  border-radius: 10px;
+  background: #e9e5fa;
+}
+
+.active-progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7651e8, #b89cff);
+}
+
+.active-progress-track span {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #ffc52f;
+  color: #ffffff;
+  font-size: 10px;
+}
+
+.active-goal-progress small {
+  color: #8a838e;
+  font-size: 9px;
+}
+
+.active-goal-progress small:last-child {
+  float: right;
+}
+
+.active-goal-visual {
+  width: 145px;
+  height: 145px;
+  object-fit: contain;
+}
+
+.active-goal-body > .study-goal-details {
+  padding-left: 28px;
+  border-top: 0;
+  border-left: 1px solid #eeeaf0;
+}
+
+/* Bottom cards */
+
+.study-goals-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 0.85fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.study-goals-card {
+  min-height: 245px;
+  padding: 20px;
+}
+
+.study-goals-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.study-goals-card-title img {
+  width: 35px;
+  height: 35px;
+  padding: 4px;
+  box-sizing: border-box;
+  border: 1px solid rgba(125, 57, 235, 1);
+  border-radius: 9px;
+  object-fit: contain;
+}
+
+.study-goals-card-title h2 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.study-goals-card-title p {
+  margin: 3px 0 0;
+  color: #77717d;
+  font-size: 10px;
+}
+
+.weekly-bars {
+  display: flex;
+  height: 155px;
+  align-items: flex-end;
+  justify-content: space-evenly;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.weekly-day {
+  display: flex;
+  width: 72px;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.weekly-day small,
+.weekly-day b {
+  margin-bottom: 6px;
+  color: #756e79;
+  font-size: 9px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.weekly-day i {
+  display: block;
+  width: 38px;
+  border-radius: 8px 8px 3px 3px;
+  background: linear-gradient(180deg, #8c5cf4, #b79aff);
+}
+
+.weekly-day i.empty {
+  border: 1.5px dashed #c9c3cf;
+  background: transparent;
+}
+
+/* Insight card */
+
+.goal-insight-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 28px 32px;
+  text-align: left;
+}
+
+.goal-insight-card > img {
+  width: 95px;
+  height: 95px;
+  align-self: center;
+  margin-bottom: 20px;
+  object-fit: contain;
+}
+
+.goal-insight-card h2 {
+  margin: 8px 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.goal-insight-card p {
+  margin: 0;
+  color: #77717d;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.goal-insight-card a {
+  margin-top: 12px;
+  color: rgba(125, 57, 235, 1);
+  font-size: 10px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* Responsive */
+
+@media (max-width: 1000px) {
+  .study-goals-page {
+    padding: 48px 28px 42px;
+  }
+
+  .active-goal-body {
+    grid-template-columns: minmax(230px, 1fr) 160px;
+  }
+
+  .active-goal-body > .study-goal-details {
+    grid-column: 1 / -1;
+    padding: 20px 0 0;
+    border-top: 1px solid #eeeaf0;
+    border-left: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .study-goals-page {
+    padding: 42px 16px 35px;
+  }
+
+  .study-goals-heading h1 {
+    font-size: 25px;
+  }
+
+  .study-goals-heading p {
+    font-size: 12px;
+  }
+
+  .goal-empty-state,
+  .goal-pending-state,
+  .goal-form-card {
+    width: 100%;
+    margin-top: 30px;
+  }
+
+  .active-goal-body,
+  .study-goals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .active-goal-visual {
+    margin: 0 auto;
+  }
+
+  .active-goal-body > .study-goal-details {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 460px) {
+  .study-goals-page {
+    padding: 34px 12px 28px;
+  }
+
+  .goal-empty-state,
+  .goal-pending-state,
+  .goal-form-card,
+  .active-goal-card,
+  .study-goals-card {
+    border-radius: 18px;
+  }
+
+  .goal-pending-header,
+  .active-goal-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .goal-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .goal-form-actions button {
+    width: 100%;
+  }
+
+  .weekly-bars {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .weekly-day {
+    flex: 0 0 62px;
+  }
+}

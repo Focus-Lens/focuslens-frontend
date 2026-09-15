@@ -1,0 +1,336 @@
+
+
+.terms-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 9999;
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+
+  background: rgba(0, 0, 0, 0.48);
+}
+
+
+
+.terms-modal {
+  position: relative;
+
+  width: 608px;
+  max-width: 100%;
+  height: 100vh;
+
+  box-sizing: border-box;
+
+  padding: 51px 44px 35px;
+
+  background: #ffffff;
+
+  overflow-y: auto;
+}
+
+
+
+
+.terms-close {
+  position: absolute;
+
+  top: 56px;
+  right: 32px;
+
+  width: 28px;
+  height: 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: none;
+  background: transparent;
+
+  color: #8b8b96;
+
+  font-size: 25px;
+
+  cursor: pointer;
+}
+
+.terms-close svg {
+  width: 22px;
+  height: 22px;
+
+  stroke-width: 1.5;
+}
+
+.terms-close:hover {
+  color: #202026;
+}
+
+
+
+
+.terms-modal h2 {
+  margin: 0 0 25px;
+
+  color: #202026;
+
+  font-family: "Nunito";
+  font-size: 30px;
+  font-weight: 600;
+
+  line-height: 1.2;
+
+  letter-spacing: -0.5px;
+}
+
+
+/* =========================================
+   INTRO
+========================================= */
+
+.terms-intro {
+  margin: 0 0 24px;
+
+  color: #666473;
+
+  font-family: "Nunito";
+  font-size: 14px;
+  font-weight: 400;
+
+  line-height: 1.5;
+}
+
+
+/* =========================================
+   HIGHLIGHT
+========================================= */
+
+.privacy-highlight {
+  min-height: 64px;
+
+  display: flex;
+  align-items: center;
+
+  box-sizing: border-box;
+
+  margin-bottom: 24px;
+  padding: 14px 16px;
+
+  border-radius: 16px;
+
+  background: #dbeaff;
+
+  color: #202026;
+
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.highlight-icon {
+  flex: 0 0 auto;
+
+  width: 23px;
+  height: 23px;
+
+  margin-right: 14px;
+
+  color: #202026;
+
+  stroke-width: 1.7;
+
+}
+
+
+/* =========================================
+   PRIVACY ITEMS
+========================================= */
+
+.privacy-item {
+  min-height: 88px;
+
+  display: flex;
+  align-items: center;
+
+  box-sizing: border-box;
+
+  margin-bottom: 24px;
+  padding: 15px 14px;
+
+  border: 1px solid #dedee5;
+  border-radius: 15px;
+  
+  background: #ffffff;
+}
+
+
+/* Icon box */
+
+.privacy-icon {
+  width: 40px;
+  height: 40px;
+
+  flex: 0 0 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-right: 13px;
+
+  border-radius: 12px;
+
+  background: #d6ff72;
+
+  color: #5b7f00;
+}
+
+.privacy-icon svg {
+  width: 21px;
+  height: 21px;
+
+  stroke-width: 1.6;
+}
+
+
+/* Text */
+
+.privacy-content {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.privacy-content b {
+  margin-bottom: 5px;
+
+  color: #29282f;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  line-height: 1.3;
+}
+
+.privacy-content small {
+  color: #666473;
+
+  font-size: 12px;
+  font-weight: 400;
+
+  line-height: 1.35;
+}
+
+
+/* =========================================
+   AGREE BUTTON
+========================================= */
+
+.terms-agree {
+  width: 100%;
+  height: 52px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-top: 0;
+
+  border: none;
+  border-radius: 28px;
+
+  background: #7d39eb;
+  color: #ffffff;
+
+  font-family: "Nunito";
+  font-size: 16px;
+  font-weight: 400;
+
+  cursor: pointer;
+
+  transition: background 0.2s ease;
+}
+
+.terms-agree:hover {
+  background: #7131db;
+}
+
+
+/* =========================================
+   DECLINE
+========================================= */
+
+.terms-decline {
+  display: block;
+
+  margin: 15px auto 0;
+
+  padding: 0;
+
+  border: none;
+
+  background: transparent;
+  color: #ef2d24;
+
+  font-family: "Nunito";
+  font-size: 16px;
+  font-weight: 400;
+
+  cursor: pointer;
+}
+
+.terms-decline:hover {
+  color: #c9211b;
+}
+
+
+/* =========================================
+   NOTE
+========================================= */
+
+.terms-note {
+  margin: 39px auto 0;
+
+  max-width: 480px;
+
+  color: #777783;
+
+  font-family: "Nunito";
+  font-size: 11px;
+  font-weight: 400;
+
+  line-height: 1.5;
+
+  text-align: center;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 700px) {
+  .terms-modal {
+    width: 100%;
+
+    padding: 42px 24px 30px;
+  }
+
+  .terms-close {
+    top: 42px;
+    right: 20px;
+  }
+
+  .terms-modal h2 {
+    font-size: 27px;
+    padding-right: 35px;
+  }
+
+  .privacy-item {
+    margin-bottom: 16px;
+  }
+}

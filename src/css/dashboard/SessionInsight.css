@@ -1,0 +1,1054 @@
+/* =========================================================
+   SESSION INSIGHT PAGE
+========================================================= */
+
+.session-insight-shell {
+  width: 100%;
+  min-height: 100vh;
+  background: #ffffff;
+}
+
+.session-insight-page {
+  width: min(1180px, calc(100% - 64px));
+  margin: 0 auto;
+  padding: 30px 0 45px;
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   TOP ROW
+========================================================= */
+
+.session-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.session-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #302c34;
+  font-family: "Nunito", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.session-back-link:hover {
+  color: #8138f4;
+}
+
+.session-user-mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ded5ef;
+  border-radius: 50%;
+  background: #eee7ff;
+  color: #8138f4;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* =========================================================
+   TITLE CARD
+========================================================= */
+
+.session-title-card {
+  display: flex;
+  align-items: center;
+  min-height: 108px;
+  padding: 16px 18px;
+  border: 1px solid #baf02c;
+  border-radius: 22px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+/* Arabic + History have their own wrapper border */
+.session-subject-icon {
+  width: 74px;
+  height: 74px;
+  flex: 0 0 74px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-right: 18px;
+
+  border: 1.5px solid #9859f6;
+  border-radius: 12px;
+  background: #f0e7ff;
+  box-shadow: 0 5px 14px rgba(129, 56, 244, 0.13);
+
+  overflow: hidden;
+}
+
+.session-subject-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+/* Math + English + Science */
+.session-subject-icon.full-image {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.session-subject-icon.full-image img {
+  object-fit: cover;
+}
+
+.session-title-content {
+  min-width: 0;
+}
+
+.session-title-content > small {
+  display: block;
+  margin-bottom: 3px;
+  color: #8138f4;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.session-title-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.session-title-line h1 {
+  margin: 0;
+  color: #28242d;
+  font-family: "Nunito", sans-serif;
+  font-size: 27px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.session-title-content p {
+  margin: 5px 0 0;
+  color: #6f6975;
+  font-size: 11px;
+}
+
+.session-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.session-status.completed {
+  background: #e2faed;
+  color: #14864e;
+}
+
+.session-status.paused {
+  background: #f0f1f5;
+  color: #696d78;
+}
+
+/* =========================================================
+   METRICS
+========================================================= */
+
+.session-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 18px 0;
+}
+
+.session-metric-card {
+  min-height: 158px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 18px;
+
+  border: 1px solid #baf02c;
+  border-radius: 20px;
+  background: #fff;
+
+  box-sizing: border-box;
+}
+
+/* Brain / Clock / Heart */
+.metric-icon {
+  width: 74px;
+  height: 74px;
+  flex: 0 0 74px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-right: 18px;
+
+  border: 1.5px solid #9859f6;
+  border-radius: 12px;
+  background: #f1e9ff;
+
+  box-shadow: 0 4px 10px rgba(129, 56, 244, 0.08);
+
+  overflow: hidden;
+}
+
+.metric-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+/* Heart */
+.completion-icon {
+  background: #f1f7eb;
+  border-color: #8b52f4;
+}
+
+.metric-content {
+  min-width: 0;
+}
+
+.metric-content small {
+  display: block;
+  margin-bottom: 4px;
+  color: #706b77;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.metric-number {
+  display: flex;
+  align-items: baseline;
+  color: #28242d;
+  font-size: 31px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.metric-number span {
+  margin-left: 4px;
+  color: #65606b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.metric-content p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 8px 0 0;
+  color: #77717e;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.metric-content p.positive {
+  color: #16864b;
+  font-weight: 600;
+}
+
+.metric-subtext {
+  margin-top: 7px;
+  color: #77717e;
+  font-size: 9px;
+}
+
+.metric-progress {
+  width: 145px;
+  max-width: 100%;
+  height: 7px;
+  overflow: hidden;
+  margin-top: 11px;
+  border-radius: 999px;
+  background: #eee7f9;
+}
+
+.metric-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #8b52f4;
+}
+
+.duration-bars {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.duration-bars span {
+  width: 18px;
+  height: 7px;
+  border-radius: 999px;
+  background: #8b52f4;
+}
+
+.duration-bars span.muted {
+  background: #dfe2e9;
+}
+
+/* =========================================================
+   CHART GRID
+========================================================= */
+
+.session-insight-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.95fr) minmax(300px, 0.95fr);
+  gap: 18px;
+  align-items: start;
+}
+
+/* =========================================================
+   GENERAL CARDS
+========================================================= */
+
+.session-chart-card,
+.session-context-card,
+.session-learning-card {
+  border: 1px solid #baf02c;
+  border-radius: 20px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+/* =========================================================
+   CARD TOP
+========================================================= */
+
+.session-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.session-card-top > div {
+  min-width: 0;
+}
+
+.session-card-top small {
+  display: block;
+  margin-bottom: 5px;
+  color: #8138f4;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.session-card-top h2 {
+  margin: 0 0 4px;
+  color: #302b34;
+  font-family: "Nunito", sans-serif;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.session-card-top p {
+  margin: 0;
+  color: #77717d;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   CHART CARD
+========================================================= */
+
+.session-chart-card {
+  padding: 22px;
+}
+
+.focus-quality-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border: 1px solid #e5dcf6;
+  border-radius: 999px;
+  background: #f7f3ff;
+  color: #8138f4;
+  font-size: 9px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.focus-quality-pill span {
+  font-weight: 700;
+}
+
+/* =========================================================
+   CHART
+========================================================= */
+
+.chart-wrapper {
+  position: relative;
+  margin-top: 18px;
+  padding-left: 30px;
+  padding-bottom: 26px;
+}
+
+.chart-y-labels {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 26px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.chart-y-labels span {
+  color: #85808b;
+  font-size: 8px;
+}
+
+.session-chart {
+  display: block;
+  width: 100%;
+  height: 180px;
+  overflow: visible;
+}
+
+.session-chart line {
+  stroke: #e9e5ef;
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.chart-area {
+  fill: url(#chartGradient);
+  opacity: 0.12;
+}
+
+.session-chart polyline {
+  fill: none;
+  stroke: #8138f4;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.chart-point-ring {
+  fill: #fff;
+  stroke: #8138f4;
+  stroke-width: 3;
+}
+
+.chart-point {
+  fill: #8138f4;
+}
+
+.chart-score-bg {
+  fill: #8138f4;
+}
+
+.chart-score {
+  fill: #fff;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.chart-x-labels {
+  position: absolute;
+  left: 30px;
+  right: 0;
+  bottom: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chart-x-labels span {
+  color: #85808b;
+  font-size: 8px;
+}
+
+/* =========================================================
+   CONSISTENT NOTE
+========================================================= */
+
+.session-consistent-note {
+  display: flex;
+  align-items: center;
+  min-height: 47px;
+  margin-top: 9px;
+  padding: 8px 12px;
+
+  border: 1px solid #e8defa;
+  border-radius: 11px;
+  background: #f5f1fc;
+
+  box-sizing: border-box;
+
+  color: #77717d;
+  font-size: 8px;
+}
+
+.consistent-icon {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-right: 9px;
+
+  border-radius: 50%;
+  background: #8138f4;
+  color: #fff;
+}
+
+.session-consistent-note strong {
+  margin-right: 4px;
+  color: #45404b;
+  font-size: 8px;
+}
+
+/* =========================================================
+   SUPPORTIVE CONTEXT
+========================================================= */
+
+.session-context-card {
+  min-height: 284px;
+  padding: 20px;
+}
+
+/* Heart image with its own card border */
+.context-icon {
+  width: 66px;
+  height: 66px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 18px;
+
+  border: 1.5px solid #9859f6;
+  border-radius: 11px;
+  background: #f0e7ff;
+
+  overflow: hidden;
+}
+
+.context-icon img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.session-context-card > small {
+  display: block;
+  margin-bottom: 7px;
+  color: #8138f4;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.session-context-card h2 {
+  margin: 0 0 8px;
+  color: #302b34;
+  font-family: "Nunito", sans-serif;
+  font-size: 19px;
+  line-height: 1.2;
+}
+
+.session-context-card p {
+  margin: 0;
+  color: #77717d;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.session-context-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+
+  margin-top: 18px;
+  padding: 11px 20px;
+
+  border: 0;
+  border-radius: 999px;
+
+  background: #8138f4;
+  color: #fff;
+
+  font-size: 9px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.session-context-card button:hover {
+  background: #702ce0;
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   LEARNING RESULTS
+========================================================= */
+
+.session-learning-card {
+  margin-top: 18px;
+  padding: 22px;
+}
+
+.learning-available {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: #e3f9ec;
+  color: #168650;
+  font-size: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   LEARNING CONTENT
+========================================================= */
+
+.session-learning-content {
+  display: grid;
+  grid-template-columns:
+    135px
+    108px
+    108px
+    108px
+    220px;
+
+  align-items: center;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.mcq-score {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.mcq-circle {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  background: #8138f4;
+  color: #fff;
+
+  box-shadow: 0 8px 16px rgba(129, 56, 244, 0.2);
+}
+
+.mcq-circle b {
+  margin: 0;
+  font-size: 19px;
+  line-height: 18px;
+}
+
+.mcq-circle span {
+  margin: 1px 0 0;
+  color: #e9dcff;
+  font-size: 8px;
+}
+
+.mcq-score > span {
+  color: #4e4855;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.learning-stat {
+  height: 54px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px;
+
+  border: 1px solid #e8e3ec;
+  border-radius: 9px;
+
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.learning-stat b {
+  color: #302b34;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.learning-stat span {
+  margin-top: 5px;
+  color: #77717d;
+  font-size: 7px;
+  line-height: 1.1;
+}
+
+.learning-result {
+  width: 220px;
+  min-width: 0;
+
+  padding-left: 15px;
+
+  border-left: 1px solid #e5e0e9;
+
+  box-sizing: border-box;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.result-header span {
+  margin: 0;
+  color: #77717d;
+  font-size: 8px;
+}
+
+.result-header b {
+  margin: 0;
+  color: #8138f4;
+  font-size: 8px;
+}
+
+.result-progress {
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eee8f7;
+}
+
+.result-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #8b52f4;
+}
+
+.learning-result p {
+  margin: 7px 0 0;
+  color: #77717d;
+  font-size: 7px;
+  line-height: 1.45;
+}
+
+/* =========================================================
+   PRIVACY
+========================================================= */
+
+.session-privacy-footer {
+  display: flex;
+  align-items: center;
+  min-height: 54px;
+
+  margin-top: 16px;
+  padding: 10px 13px;
+
+  border: 1px solid #e4daf8;
+  border-radius: 11px;
+  background: #f2edfc;
+
+  box-sizing: border-box;
+
+  color: #716b79;
+  font-size: 8px;
+  line-height: 1.5;
+}
+
+.privacy-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-right: 10px;
+
+  border-radius: 50%;
+  background: #e5d9fb;
+  color: #8138f4;
+}
+
+.session-privacy-footer strong {
+  margin-right: 4px;
+  color: #45404b;
+  font-size: 8px;
+}
+
+/* =========================================================
+   NO CHART
+========================================================= */
+
+.session-no-chart {
+  padding: 35px;
+
+  border: 1px dashed #d9d2e1;
+  border-radius: 18px;
+
+  color: #77717d;
+  text-align: center;
+  font-size: 11px;
+}
+
+/* =========================================================
+   NOT FOUND
+========================================================= */
+
+.session-not-found {
+  width: min(700px, calc(100% - 40px));
+  margin: 60px auto;
+  padding: 50px;
+
+  border: 1px solid #ded8e6;
+  border-radius: 20px;
+
+  background: #fff;
+
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.session-not-found h1 {
+  margin: 0 0 20px;
+  color: #302b34;
+  font-family: "Nunito", sans-serif;
+}
+
+.session-not-found button {
+  padding: 11px 18px;
+
+  border: 0;
+  border-radius: 999px;
+
+  background: #8138f4;
+  color: #fff;
+
+  font-size: 10px;
+  cursor: pointer;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1150px) {
+  .session-insight-page {
+    width: min(1100px, calc(100% - 40px));
+  }
+
+  .session-learning-content {
+    grid-template-columns:
+      125px
+      100px
+      100px
+      100px
+      minmax(200px, 1fr);
+  }
+
+  .learning-result {
+    width: 100%;
+  }
+}
+
+@media (max-width: 950px) {
+  .session-insight-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .session-context-card {
+    min-height: auto;
+  }
+
+  .session-learning-content {
+    grid-template-columns:
+      1.2fr
+      1fr
+      1fr
+      1fr;
+  }
+
+  .learning-result {
+    grid-column: 1 / -1;
+    width: 100%;
+
+    padding-left: 0;
+    padding-top: 14px;
+
+    border-left: 0;
+    border-top: 1px solid #e5e0e9;
+  }
+}
+
+@media (max-width: 760px) {
+  .session-insight-page {
+    width: calc(100% - 30px);
+    padding: 22px 0 35px;
+  }
+
+  .session-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .session-metric-card {
+    min-height: 135px;
+  }
+
+  .session-title-card {
+    min-height: 90px;
+  }
+
+  .session-subject-icon {
+    width: 60px;
+    height: 60px;
+    flex-basis: 60px;
+    margin-right: 13px;
+  }
+
+  .session-title-line h1 {
+    font-size: 22px;
+  }
+
+  .session-learning-content {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .mcq-score {
+    grid-column: 1 / -1;
+  }
+
+  .learning-result {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .session-insight-page {
+    width: calc(100% - 22px);
+  }
+
+  .session-title-card {
+    align-items: flex-start;
+    padding: 13px;
+  }
+
+  .session-subject-icon {
+    width: 52px;
+    height: 52px;
+    flex-basis: 52px;
+  }
+
+  .session-title-line {
+    flex-wrap: wrap;
+  }
+
+  .session-title-line h1 {
+    font-size: 20px;
+  }
+
+  .session-title-content p {
+    font-size: 9px;
+  }
+
+  .session-chart-card,
+  .session-context-card,
+  .session-learning-card {
+    padding: 15px;
+  }
+
+  .metric-icon {
+    width: 60px;
+    height: 60px;
+    flex-basis: 60px;
+    margin-right: 13px;
+  }
+
+  .metric-number {
+    font-size: 27px;
+  }
+
+  .session-learning-content {
+    grid-template-columns: 1fr;
+  }
+
+  .mcq-score {
+    grid-column: auto;
+  }
+
+  .learning-result {
+    grid-column: auto;
+  }
+
+  .session-privacy-footer {
+    align-items: flex-start;
+  }
+}
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .session-context-card button,
+  .session-back-link {
+    transition: none;
+  }
+}

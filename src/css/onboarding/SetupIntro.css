@@ -1,0 +1,254 @@
+/* =========================================
+   SETUP INTRO
+========================================= */
+
+.setup-intro-wrapper {
+  width: 700px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.setup-intro-wrapper .page-card {
+  width: 100%;
+  max-width: none;
+  min-height: auto;
+  box-sizing: border-box;
+  padding: 50px 48px 60px;
+}
+
+/* =========================================
+   Main
+========================================= */
+
+.setup-intro-page {
+  width: 100%;
+  text-align: center;
+}
+
+/* =========================================
+   Logo
+========================================= */
+
+.setup-intro-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.setup-intro-logo img {
+  width: 105px;
+  height: 105px;
+  display: block;
+  object-fit: contain;
+}
+
+/* =========================================
+   Badge
+========================================= */
+
+.setup-intro-badge {
+  width: fit-content;
+  min-height: 40px;
+  margin: 0 auto 34px;
+  padding: 0 16px;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+
+  border-radius: 22px;
+  background: #dbeafe;
+  color: #2563eb;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.setup-intro-badge svg {
+  flex: 0 0 auto;
+  display: block;
+}
+
+/* =========================================
+   Title
+========================================= */
+
+.setup-intro-title {
+  margin: 0;
+
+  color: #202020;
+  font-family: inherit;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.7px;
+}
+
+/* =========================================
+   Subtitle
+========================================= */
+
+.setup-intro-subtitle {
+  max-width: 520px;
+  margin: 13px auto 32px;
+
+  color: #646470;
+  font-family: "Nunito";
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+/* =========================================
+   Steps
+========================================= */
+
+.setup-intro-steps {
+  margin: 0 auto 32px;
+
+  color: #60616d;
+  font-family: "Nunito";
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+/* =========================================
+   Actions
+========================================= */
+
+.setup-intro-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* =========================================
+   Start setup button
+========================================= */
+
+.setup-intro-actions > a,
+.setup-intro-actions > button:first-child {
+  width: 100%;
+  height: 53px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+  border: none;
+  border-radius: 28px;
+
+  background: #7d39eb;
+  color: #ffffff;
+
+  font-family: "Nunito";
+  font-size: 16px;
+  font-weight: 400;
+  text-decoration: none;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
+}
+
+.setup-intro-actions > a:hover,
+.setup-intro-actions > button:first-child:hover {
+  background: #7130d8;
+}
+
+.setup-intro-actions > a:active,
+.setup-intro-actions > button:first-child:active {
+  transform: scale(0.99);
+}
+
+/* =========================================
+   Do this later
+========================================= */
+
+.setup-intro-actions > a:last-child,
+.setup-intro-actions > button:last-child {
+  width: auto;
+  height: auto;
+
+  margin-top: 17px;
+  padding: 0;
+
+  border: none;
+  border-radius: 0;
+
+  background: transparent;
+  color: #7d39eb;
+
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 400;
+
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.setup-intro-actions > a:last-child:hover,
+.setup-intro-actions > button:last-child:hover {
+  background: transparent;
+  color: #7130d8;
+}
+
+/* =========================================
+   Mobile
+========================================= */
+
+@media (max-width: 600px) {
+  .setup-intro-wrapper {
+    width: calc(100% - 24px);
+  }
+
+  .setup-intro-wrapper .page-card {
+    padding: 38px 24px 42px;
+  }
+
+  .setup-intro-logo {
+    margin-bottom: 24px;
+  }
+
+  .setup-intro-logo img {
+    width: 90px;
+    height: 90px;
+  }
+
+  .setup-intro-badge {
+    margin-bottom: 28px;
+    padding: 0 13px;
+    font-size: 13px;
+  }
+
+  .setup-intro-title {
+    font-size: 26px;
+  }
+
+  .setup-intro-subtitle {
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  .setup-intro-steps {
+    font-size: 10px;
+    white-space: normal;
+  }
+}
+
+@media (min-width: 601px) {
+  .auth-main:has(.setup-intro-wrapper) {
+    padding: 0;
+    overflow: hidden;
+  }
+}

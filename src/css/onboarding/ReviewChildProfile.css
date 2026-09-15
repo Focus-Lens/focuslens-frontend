@@ -1,0 +1,449 @@
+.review-child-wrapper {
+  width: 700px;
+  max-width: calc(100% - 32px);
+  margin: 34px auto 0;
+  font-family: "Nunito", sans-serif;
+}
+
+.review-child-wrapper .page-card {
+  width: 100%;
+  padding: 42px 42px 42px;
+  box-sizing: border-box;
+
+  border-radius: 40px;
+  border: 1px solid #e3def0;
+
+  background: #ffffff;
+
+  box-shadow: 0 18px 45px rgba(91, 51, 145, 0.06);
+}
+
+.review-child-page {
+  width: 100%;
+}
+
+
+/* =========================
+   STEPPER
+========================= */
+
+.review-child-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 14px;
+
+  margin-bottom: 24px;
+
+  white-space: nowrap;
+}
+
+.review-child-step {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  color: #5f5f69;
+font-family: "Nunito";
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.review-child-step-circle {
+  width: 29px;
+  height: 29px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  background: #f3f3f6;
+
+  color: #666673;
+
+  font-size: 12px;
+}
+
+.review-child-step.completed
+  .review-child-step-circle {
+  background: #f5f2fa;
+  color: #7d39eb;
+}
+
+.review-child-step.active {
+  color: #7d39eb;
+}
+
+.review-child-step.active
+  .review-child-step-circle {
+  background: #7d39eb;
+  color: #ffffff;
+}
+
+.review-child-step-label {
+  line-height: 1;
+}
+
+
+/* =========================
+   TITLE
+========================= */
+
+.review-child-title {
+  margin: 0;
+
+  text-align: center;
+
+  color: #252525;
+
+  font-size: 29px;
+  line-height: 1.25;
+
+  font-weight: 600;
+
+  letter-spacing: -0.5px;
+}
+
+.review-child-subtitle {
+  margin: 12px 0 18px;
+
+  text-align: center;
+
+  color: #62626d;
+
+  font-size: 14px;
+  line-height: 1.5;
+font-family: "Nunito";
+  font-weight: 400;
+}
+
+
+/* =========================
+   REVIEW LIST
+========================= */
+
+.review-child-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.review-child-item {
+  display: grid;
+  grid-template-columns: 1fr 60px;
+  align-items: center;
+
+  gap: 16px;
+
+  width: 100%;
+  min-height: 84px;
+
+  box-sizing: border-box;
+}
+
+.review-child-item-content {
+  min-width: 0;
+
+  padding: 17px 24px;
+
+  border: 1px solid #e3e2e8;
+  border-radius: 16px;
+
+  background: #ffffff;
+}
+
+.review-child-item-content h3 {
+  margin: 0 0 5px;
+
+  color: #25252b;
+
+  font-size: 15px;
+  line-height: 1.3;
+
+  font-weight: 500;
+  text-align: left;
+}
+
+.review-child-item-content p {
+  margin: 0;
+
+  color: #666673;
+font-family: "Nunito";
+  font-size: 13px;
+  line-height: 1.4;
+
+  font-weight: 400;
+  text-align: left;
+}
+
+.review-child-edit {
+  width: 60px;
+
+  padding: 6px 0;
+
+  border: none;
+
+  background: transparent;
+
+  color: #7d39eb;
+
+ font-family: "Nunito";
+
+  font-size: 13px;
+  font-weight: 400;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.review-child-edit:hover {
+  color: #7130dc;
+}
+/* =========================
+   NOTE
+========================= */
+
+.review-child-note {
+  margin: 17px 0 18px;
+
+  text-align: center;
+
+  color: #62626d;
+
+  font-size: 14px;
+font-family: "Nunito";
+  line-height: 1.5;
+
+  font-weight: 400;
+}
+
+
+/* =========================
+   ACTIONS
+========================= */
+
+.review-child-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 16px;
+
+  width: 100%;
+}
+
+.review-child-back {
+  width: 80px;
+  height: 52px;
+
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #7d39eb;
+
+  border-radius: 26px;
+
+  background: #ffffff;
+
+  color: #7d39eb;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.review-child-back:hover {
+  background: #f4edff;
+}
+
+.review-child-confirm {
+  flex: 1;
+
+  height: 52px;
+
+  border: 1px solid #7d39eb;
+
+  border-radius: 26px;
+
+  background: #7d39eb;
+
+  color: #ffffff;
+
+  font-family: "Nunito";
+
+  font-size: 17px;
+
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.review-child-confirm:hover {
+  background: #7130dc;
+  border-color: #7130dc;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (min-width: 901px) {
+  .auth-main:has(.review-child-wrapper) {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .review-child-wrapper .page-card {
+    padding: 28px 42px 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .auth-main:has(.review-child-wrapper) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: calc(100dvh - 62px);
+    padding: 24px 12px;
+    box-sizing: border-box;
+
+    overflow-y: auto;
+  }
+
+  .review-child-wrapper {
+    width: 100%;
+    max-width: none;
+    margin: auto;
+  }
+
+  .review-child-wrapper .page-card {
+    width: 100%;
+    padding: 30px 18px;
+    border-radius: 26px;
+  }
+
+  .review-child-stepper {
+    justify-content: space-between;
+    gap: 0;
+    margin-bottom: 22px;
+  }
+
+  .review-child-step {
+    gap: 0;
+  }
+
+  .review-child-step-label {
+    display: none;
+  }
+
+  .review-child-step-circle {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+}
+
+  .review-child-title {
+    font-size: 24px;
+    line-height: 1.25;
+  }
+
+  .review-child-subtitle {
+    margin: 10px 0 20px;
+    font-size: 13px;
+  }
+
+  .review-child-list {
+    gap: 12px;
+  }
+
+  .review-child-item {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  .review-child-item-content {
+    padding: 14px 12px;
+    border-radius: 14px;
+  }
+
+  .review-child-item-content h3 {
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+
+  .review-child-item-content p {
+    font-size: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .review-child-edit {
+    width: 44px;
+    padding: 6px 0;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  .review-child-note {
+    margin: 18px 0;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .review-child-actions {
+    gap: 10px;
+  }
+
+  .review-child-back {
+    width: 58px;
+    height: 48px;
+  }
+
+  .review-child-confirm {
+    height: 48px;
+    font-size: 15px;
+  }
+
+
+@media (max-width: 380px) {
+  .review-child-wrapper .page-card {
+    padding: 26px 14px;
+  }
+
+  .review-child-title {
+    font-size: 22px;
+  }
+
+  .review-child-item {
+    grid-template-columns: minmax(0, 1fr) 38px;
+  }
+
+  .review-child-edit {
+    width: 38px;
+    font-size: 12px;
+  }
+
+  .review-child-item-content {
+    padding: 12px 10px;
+  }
+}

@@ -1,0 +1,148 @@
+/* =========================
+   LINK COPIED MODAL
+========================= */
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+
+  z-index: 2000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: rgba(25, 25, 30, 0.52);
+}
+
+.confirm-modal {
+  width: 700px;
+  max-width: 100%;
+
+  min-height: 355px;
+
+  box-sizing: border-box;
+
+  padding: 72px 82px 76px;
+
+  border-radius: 28px;
+
+  background: #ffffff;
+
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.18);
+
+  text-align: center;
+}
+
+.confirm-modal h2 {
+  margin: 0;
+
+  color: #252525;
+
+  font-size: 30px;
+
+  line-height: 1.25;
+
+  font-weight: 600;
+
+  letter-spacing: -0.5px;
+}
+
+.confirm-modal p {
+  margin: 32px 0 34px;
+
+  color: #62626d;
+
+  font-size: 16px;
+
+  line-height: 1.55;
+
+  font-weight: 400;
+}
+
+.confirm-cancel-button {
+  width: 100%;
+
+  height: 52px;
+
+  border: 1px solid #7d39eb;
+
+  border-radius: 27px;
+
+  background: #7d39eb;
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 17px;
+
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.confirm-cancel-button:hover {
+  background: #7130dc;
+
+  border-color: #7130dc;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 760px) {
+  .confirm-modal {
+    padding: 52px 32px;
+
+    border-radius: 24px;
+  }
+
+  .confirm-modal h2 {
+    font-size: 26px;
+  }
+
+  .confirm-modal p {
+    margin: 24px 0 28px;
+
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 560px) {
+  .confirm-overlay {
+    padding: 16px;
+  }
+
+  .confirm-modal {
+    min-height: auto;
+
+    padding: 40px 24px;
+
+    border-radius: 22px;
+  }
+
+  .confirm-modal h2 {
+    font-size: 23px;
+  }
+
+  .confirm-modal p {
+    font-size: 14px;
+
+    line-height: 1.6;
+  }
+
+  .confirm-cancel-button {
+    height: 48px;
+
+    font-size: 16px;
+  }
+}

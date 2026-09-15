@@ -1,0 +1,369 @@
+.invitation-sent-page {
+  width: 680px;
+  max-width: calc(100% - 32px);
+  margin: 90px auto 0;
+  font-family: "Nunito", sans-serif;
+}
+
+.invitation-sent-page .page-card {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 58px 48px 48px;
+  box-sizing: border-box;
+
+  border: 1px solid #e3def0;
+  border-radius: 40px;
+  background: #ffffff;
+
+  box-shadow: 0 18px 45px rgba(91, 51, 145, 0.06);
+}
+
+.invitation-sent-card {
+  width: 100%;
+  text-align: center;
+}
+
+.invitation-sent-icon {
+  position: relative;
+
+  width: 100px;
+  height: 100px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto 26px;
+  color: #7d39eb;
+  font-size: 58px;
+}
+
+.invitation-sent-icon::before {
+  position: absolute;
+
+  width: 66px;
+  height: 66px;
+
+  border-radius: 24px;
+  background: linear-gradient(135deg, #a96cff, #7d39eb);
+
+  box-shadow: 0 8px 20px rgba(125, 57, 235, 0.18);
+  content: "";
+  transform: rotate(10deg);
+}
+
+.invitation-sent-icon::after {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+
+  color: #a8e000;
+  font-size: 21px;
+  content: "✦";
+}
+
+.invitation-sent-icon span {
+  position: relative;
+  z-index: 2;
+
+  color: #ffffff;
+  font-size: 42px;
+}
+
+.invitation-sent-logo {
+  width: 110px;
+  height: 110px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto 28px;
+}
+
+.invitation-sent-logo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.invitation-sent-card h1,
+.sent-link-modal h2 {
+  margin: 0;
+
+  color: #252525;
+  font-family: inherit;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+}
+
+.invitation-sent-card h1 {
+  font-size: 29px;
+}
+
+.sent-link-modal h2 {
+  font-size: 30px;
+}
+
+.invitation-sent-email,
+.invitation-sent-description,
+.sent-link-modal p {
+  color: #62626d;
+}
+
+.invitation-sent-email {
+  margin: 14px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.invitation-sent-description {
+  margin: 18px 0;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.invitation-sent-primary,
+.invitation-sent-secondary,
+.sent-link-modal button {
+  width: 100%;
+  height: 52px;
+
+  border: 1px solid #7d39eb;
+  border-radius: 27px;
+
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.invitation-sent-primary,
+.sent-link-modal button {
+  background: #7d39eb;
+  color: #ffffff;
+}
+
+.invitation-sent-primary:hover,
+.sent-link-modal button:hover {
+  border-color: #7130dc;
+  background: #7130dc;
+}
+
+.invitation-sent-secondary {
+  margin-top: 9px;
+  background: #ffffff;
+  color: #7130dc;
+}
+
+.invitation-sent-secondary:hover {
+  background: #f7f1ff;
+  color: #5f22c4;
+}
+
+.invitation-sent-card small {
+  display: block;
+  margin-top: 16px;
+
+  color: #8a8a98;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sent-link-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+  background: rgba(25, 25, 30, 0.52);
+}
+
+.sent-link-modal {
+  width: 700px;
+  max-width: 100%;
+  min-height: 355px;
+
+  padding: 64px 82px 70px;
+  box-sizing: border-box;
+
+  border-radius: 28px;
+  background: #ffffff;
+
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.sent-link-modal-icon {
+  width: 52px;
+  height: 52px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin: 0 auto 20px;
+
+  border-radius: 50%;
+  background: #eee2ff;
+  color: #7d39eb;
+}
+
+.sent-link-modal p {
+  margin: 28px 0 32px;
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+/* Desktop */
+@media (min-width: 601px) {
+  .auth-main:has(.invitation-sent-page) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: calc(100dvh - 101px);
+    padding: 24px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .invitation-sent-page {
+    margin: 0 auto;
+  }
+
+  .invitation-sent-page .page-card {
+    height: auto;
+    min-height: 0;
+    padding: 42px 48px 34px;
+  }
+
+  .invitation-sent-logo {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 18px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .auth-main:has(.invitation-sent-page) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: calc(100dvh - 62px);
+    padding: 24px 12px;
+    box-sizing: border-box;
+
+    overflow-y: auto;
+  }
+
+  .invitation-sent-page {
+    width: 100%;
+    max-width: none;
+    margin: auto;
+  }
+
+  .invitation-sent-page .page-card {
+    height: auto;
+    min-height: 0;
+    padding: 28px 18px 24px;
+    border-radius: 24px;
+  }
+
+  .invitation-sent-icon {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 14px;
+    font-size: 40px;
+  }
+
+  .invitation-sent-icon::before {
+    width: 48px;
+    height: 48px;
+    border-radius: 18px;
+  }
+
+  .invitation-sent-icon::after {
+    font-size: 16px;
+  }
+
+  .invitation-sent-icon span {
+    font-size: 30px;
+  }
+
+  .invitation-sent-logo {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 14px;
+  }
+
+  .invitation-sent-card h1,
+  .sent-link-modal h2 {
+    font-size: 23px;
+  }
+
+  .invitation-sent-email {
+    margin-top: 9px;
+    font-size: 12px;
+  }
+
+  .invitation-sent-description {
+    margin: 12px 0;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .invitation-sent-description br {
+    display: none;
+  }
+
+  .invitation-sent-primary,
+  .invitation-sent-secondary {
+    height: 44px;
+    font-size: 14px;
+  }
+
+  .invitation-sent-secondary {
+    margin-top: 8px;
+  }
+
+  .invitation-sent-card small {
+    margin-top: 10px;
+    font-size: 10px;
+  }
+
+  .sent-link-modal {
+    min-height: 0;
+    padding: 36px 22px;
+    border-radius: 22px;
+  }
+
+  .sent-link-modal p {
+    margin: 18px 0 22px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 380px) {
+  .invitation-sent-page .page-card {
+    padding: 22px 14px;
+  }
+
+  .invitation-sent-card h1 {
+    font-size: 21px;
+  }
+
+  .invitation-sent-icon {
+    transform: scale(0.9);
+    margin-bottom: 8px;
+  }
+}

@@ -1,0 +1,556 @@
+/* =========================
+   AUTH SHELL
+========================= */
+
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  background: #ffffff;
+  color: #171629;
+
+  font-family: "Nunito", sans-serif;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+.auth-header {
+  height: 86px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 49px;
+
+  box-sizing: border-box;
+
+  border-bottom: 1px solid #dedde2;
+
+  background: #f8f8fa;
+}
+
+
+/* =========================
+   BRAND
+========================= */
+
+.brand {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  color: #24232a;
+  text-decoration: none;
+}
+
+.auth-logo {
+  width: 40px;
+  height: 40px;
+
+  display: block;
+
+  object-fit: contain;
+}
+
+.brand-name {
+  font-size: 24px;
+  font-weight: 700;
+
+  letter-spacing: -0.6px;
+}
+
+
+/* =========================
+   NAVIGATION
+========================= */
+
+.auth-nav {
+  display: flex;
+  align-items: center;
+
+  gap: 37px;
+}
+
+.sign-in-nav {
+  width: 147px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 999px;
+
+  background: #7c35e9;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  text-decoration: none;
+
+  transition: background 0.2s ease;
+}
+
+.sign-in-nav:hover {
+  background: #6d28d9;
+}
+
+.register-nav {
+  color: #7734e5;
+
+  font-size: 14px;
+  font-weight: 500;
+
+  text-decoration: none;
+}
+
+.register-nav:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================
+   MOBILE MENU
+========================= */
+
+.auth-menu-button {
+  display: none;
+
+  width: 38px;
+  height: 38px;
+
+  padding: 0;
+
+  border: 0;
+  border-radius: 10px;
+
+  background: transparent;
+
+  cursor: pointer;
+}
+
+.auth-menu-button span {
+  display: block;
+
+  width: 22px;
+  height: 2px;
+
+  margin: 4px auto;
+
+  border-radius: 20px;
+
+  background: #6c2fd0;
+}
+
+.auth-mobile-menu {
+  display: none;
+}
+
+
+/* =========================
+   MAIN
+========================= */
+
+.auth-main {
+  flex: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 45px 20px;
+
+  box-sizing: border-box;
+
+  background:
+    radial-gradient(
+      circle at 50% 34%,
+      rgba(219, 255, 116, 0.2) 0%,
+      rgba(219, 255, 116, 0.1) 15%,
+      transparent 31%
+    ),
+    radial-gradient(
+      circle at 50% 65%,
+      rgba(124, 53, 233, 0.1) 0%,
+      transparent 27%
+    ),
+    #ffffff;
+}
+
+
+/* =========================
+   COMMON CARD
+========================= */
+
+.page-card {
+  width: 700px;
+  max-width: 100%;
+
+  min-height: auto;
+
+  padding: 58px 48px 42px;
+
+  box-sizing: border-box;
+
+  background: #ffffff;
+
+  border: 1px solid #e1e1e9;
+
+  border-radius: 38px;
+
+  box-shadow:
+    0 25px 55px rgba(91, 42, 170, 0.08),
+    0 8px 25px rgba(91, 42, 170, 0.04);
+
+  text-align: center;
+}
+
+
+/* =========================
+   CARD TITLE
+========================= */
+
+.page-card h1 {
+  margin: 0;
+
+  color: #202026;
+
+  font-size: 32px;
+  line-height: 1.25;
+
+  font-weight: 700;
+
+  letter-spacing: -0.7px;
+}
+
+
+/* =========================
+   CARD PARAGRAPHS
+========================= */
+
+.page-card > p:not(.eyebrow) {
+  margin: 14px auto 28px;
+
+  color: #646470;
+
+  font-size: 15px;
+  line-height: 1.55;
+
+  font-weight: 400;
+}
+
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 800px) {
+  .auth-header {
+    padding: 0 25px;
+  }
+
+  .auth-main {
+    padding: 40px 20px;
+  }
+
+  .page-card {
+    width: 100%;
+
+    padding: 48px 35px 38px;
+
+    border-radius: 32px;
+  }
+
+  .page-card h1 {
+    font-size: 29px;
+  }
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+  .auth-header {
+    height: 62px;
+
+    padding: 0 18px;
+  }
+
+  .brand {
+    gap: 7px;
+  }
+
+  .auth-logo {
+    width: 30px;
+    height: 30px;
+  }
+
+  .brand-name {
+    font-size: 18px;
+  }
+
+  .auth-nav {
+    position: relative;
+
+    gap: 0;
+  }
+
+  .auth-nav > .sign-in-nav,
+  .auth-nav > .register-nav {
+    display: none;
+  }
+
+  .auth-menu-button {
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    flex-direction: column;
+  }
+
+  .auth-menu-button span {
+    margin: 3px 0;
+  }
+
+  .auth-mobile-menu {
+    position: absolute;
+
+    z-index: 50;
+
+    top: 46px;
+    right: 0;
+
+    display: flex;
+
+    width: 132px;
+
+    padding: 8px;
+
+    flex-direction: column;
+
+    gap: 4px;
+
+    border: 1px solid #e2e2e9;
+
+    border-radius: 14px;
+
+    background: #ffffff;
+
+    box-shadow: 0 12px 28px rgba(91, 42, 170, 0.18);
+  }
+
+  .auth-mobile-menu a {
+    padding: 11px 12px;
+
+    border-radius: 10px;
+
+    color: #6c2fd0;
+
+    font-family: "Nunito", sans-serif;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    text-decoration: none;
+  }
+
+  .auth-mobile-menu a:hover {
+    background: #f5efff;
+  }
+
+  .auth-main {
+    padding: 35px 16px;
+  }
+
+  .page-card {
+    width: 100%;
+
+    padding: 40px 25px 32px;
+
+    border-radius: 28px;
+  }
+
+  .page-card h1 {
+    font-size: 27px;
+  }
+
+  .page-card > p:not(.eyebrow) {
+    font-size: 14px;
+  }
+}
+
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 359px) {
+  .auth-header {
+    padding: 0 12px;
+  }
+
+  .brand-name {
+    font-size: 16px;
+  }
+
+  .auth-logo {
+    width: 27px;
+    height: 27px;
+  }
+
+  .page-card {
+    padding: 32px 20px 28px;
+  }
+
+  .page-card h1 {
+    font-size: 24px;
+  }
+}
+
+
+.auth-shell {
+  padding-top: 86px;
+}
+
+.auth-header {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 100;
+}
+
+@media (max-width: 600px) {
+  .auth-shell {
+    padding-top: 62px;
+  }
+}
+
+.auth-header-onboarding {
+  height: 86px;
+  padding: 0 49px;
+  background: #f8f8fa;
+}
+
+.auth-header-onboarding .auth-logo {
+  width: 40px;
+  height: 40px;
+}
+
+.auth-header-onboarding .brand {
+  gap: 12px;
+}
+
+.auth-header-onboarding .brand-name {
+  font-size: 24px;
+  letter-spacing: -0.6px;
+}
+
+.onboarding-parent-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 13px 0 5px;
+  border: 1px solid #e3e1e8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #55515d;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.onboarding-parent-avatar {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: #efe5ff;
+  color: rgba(125, 57, 235, 1);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.auth-shell:has(.auth-header-onboarding) {
+  padding-top: 86px;
+}
+
+@media (max-width: 600px) {
+  .auth-header-onboarding {
+    height: 62px;
+    padding: 0 18px;
+  }
+
+  .auth-header-onboarding .auth-logo {
+    width: 30px;
+    height: 30px;
+  }
+
+  .auth-header-onboarding .brand {
+    gap: 7px;
+  }
+
+  .auth-header-onboarding .brand-name {
+    font-size: 18px;
+  }
+
+  .auth-shell:has(.auth-header-onboarding) {
+    padding-top: 62px;
+  }
+}
+
+.auth-header.onboarding-navbar {
+  justify-content: space-between;
+  background: #f8f8fa;
+}
+
+.onboarding-parent-profile {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 13px 0 5px;
+  border: 1px solid #e3e1e8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #55515d;
+  font-family: "Nunito", sans-serif;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.onboarding-parent-avatar {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 50%;
+  background: #efe5ff;
+  color: rgba(125, 57, 235, 1);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 600px) {
+  .onboarding-parent-profile {
+    min-height: 30px;
+    padding-right: 9px;
+    font-size: 11px;
+  }
+
+  .onboarding-parent-avatar {
+    width: 23px;
+    height: 23px;
+  }
+}

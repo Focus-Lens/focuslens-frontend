@@ -1,0 +1,419 @@
+/* =========================================
+   CHILD BASIC INFORMATION
+========================================= */
+
+.child-basic-wrapper {
+  width: 700px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.child-basic-wrapper .page-card {
+  width: 100%;
+  max-width: none;
+  min-height: auto;
+  box-sizing: border-box;
+  padding: 41px 48px 46px;
+}
+
+/* =========================
+   Main
+========================= */
+
+.child-basic-page {
+  width: 100%;
+  text-align: center;
+}
+
+/* =========================
+   Stepper
+========================= */
+
+.child-basic-stepper {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 27px;
+}
+
+.child-basic-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #686874;
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.child-basic-step-number {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  background: #f3f3f6;
+  color: #686874;
+
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.child-basic-step.active {
+  color: #7d39eb;
+}
+
+.child-basic-step.active .child-basic-step-number {
+  background: #7d39eb;
+  color: #ffffff;
+}
+
+/* =========================
+   Title
+========================= */
+
+.child-basic-title {
+  margin: 0;
+
+  color: #202020;
+  font-family: "Nunito";
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.7px;
+}
+
+/* =========================
+   Subtitle
+========================= */
+
+.child-basic-subtitle {
+  margin: 24px 0 25px;
+
+  color: #646470;
+  font-family: "Nunito";
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+/* =========================
+   Avatar Row
+========================= */
+
+.child-basic-avatar-row {
+  width: 100%;
+  min-height: 76px;
+
+  display: flex;
+  align-items: center;
+
+  box-sizing: border-box;
+
+  margin-bottom: 23px;
+  padding: 12px 17px;
+
+  border: 1px solid #dfe0e5;
+  border-radius: 40px;
+
+  background: #f5ffdd;
+
+  text-align: left;
+}
+
+.child-basic-avatar {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-right: 15px;
+
+  border-radius: 50%;
+
+  background: #b7ff16;
+  color: #202020;
+
+  font-size: 17px;
+  font-weight: 400;
+}
+
+.child-basic-avatar-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.child-basic-avatar-text b {
+  margin-bottom: 4px;
+
+  color: #242428;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.child-basic-avatar-text small {
+  color: #686874;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+/* =========================
+   Fields
+========================= */
+
+.child-basic-page .field {
+  width: 100%;
+  box-sizing: border-box;
+
+  margin: 0 0 16px;
+  padding: 0;
+
+  border: 1px solid #8c8c98;
+  border-radius: 28px;
+
+  background: #ffffff;
+}
+
+.child-basic-page .field:focus-within {
+  border: 2px solid #7d39eb;
+}
+
+.child-basic-page .field legend {
+  width: fit-content;
+
+  margin-left: 13px;
+  padding: 0 5px;
+
+  color: #686874;
+  background: #ffffff;
+
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.child-basic-page .field:focus-within legend {
+  color: #7d39eb;
+}
+
+.child-basic-page .field input {
+  width: 100%;
+  height: 51px;
+
+  box-sizing: border-box;
+
+  padding: 0 16px;
+
+  border: none;
+  outline: none;
+  border-radius: 28px;
+
+  background: transparent;
+
+  color: #242428;
+  font-family: "Nunito";
+  font-size: 15px;
+  font-weight: 400;
+}
+
+/* =========================
+   Info box
+========================= */
+
+.child-basic-info {
+  width: 100%;
+  min-height: 52px;
+
+  display: flex;
+  align-items: center;
+
+  box-sizing: border-box;
+
+  margin-top: 7px;
+  margin-bottom: 23px;
+  padding: 0 16px;
+
+  border-radius: 12px;
+
+  background: #f4f4f6;
+
+  color: #646470;
+
+  text-align: left;
+}
+
+.child-basic-info svg {
+  flex: 0 0 auto;
+  margin-right: 10px;
+  color: #646470;
+}
+
+.child-basic-info span {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+/* =========================
+   Actions
+========================= */
+
+.child-basic-actions {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+
+  gap: 16px;
+}
+
+/* =========================
+   Back
+========================= */
+
+.child-basic-back {
+  width: 80px;
+  height: 53px;
+
+  flex: 0 0 80px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid #7d39eb;
+  border-radius: 28px;
+
+  background: #ffffff;
+  color: #7d39eb;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.child-basic-back:hover {
+  background: #faf7ff;
+}
+
+.child-basic-back svg {
+  display: block;
+}
+
+/* =========================
+   Continue
+========================= */
+
+.child-basic-actions > a,
+.child-basic-actions > button:not(.child-basic-back) {
+  flex: 1;
+
+  width: auto;
+  height: 53px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+
+  border: none;
+  border-radius: 28px;
+
+  background: #7d39eb;
+  color: #ffffff;
+
+  font-family: "Nunito";
+  font-size: 16px;
+  font-weight: 400;
+
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.child-basic-actions > a:hover,
+.child-basic-actions > button:not(.child-basic-back):hover {
+  background: #7130d8;
+}
+
+/* =========================
+   Mobile
+========================= */
+
+@media (max-width: 600px) {
+  .child-basic-wrapper {
+    width: calc(100% - 24px);
+  }
+
+  .child-basic-wrapper .page-card {
+    padding: 32px 24px 34px;
+  }
+
+  .child-basic-stepper {
+    gap: 4px;
+    margin-bottom: 24px;
+  }
+
+  .child-basic-step {
+    gap: 4px;
+    font-size: 10px;
+  }
+
+  .child-basic-step-number {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+  }
+
+  .child-basic-step-label {
+    display: none;
+  }
+
+  .child-basic-title {
+    font-size: 26px;
+  }
+
+  .child-basic-subtitle {
+    margin-top: 18px;
+    margin-bottom: 22px;
+  }
+
+  .child-basic-avatar-row {
+    min-height: 70px;
+  }
+
+  .child-basic-actions {
+    gap: 12px;
+  }
+
+  .child-basic-back {
+    width: 70px;
+    flex-basis: 70px;
+  }
+}
+
+@media (min-width: 901px) {
+  .auth-main:has(.child-basic-wrapper) {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .child-basic-wrapper .page-card {
+    padding: 32px 42px 28px;
+  }
+}

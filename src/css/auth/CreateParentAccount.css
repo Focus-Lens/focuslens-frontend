@@ -1,0 +1,343 @@
+.create-parent-account {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+
+
+.create-parent-account .page-card {
+  width: 560px;
+  max-width: 100%;
+  min-height: 460px;
+  height: auto;
+  padding: 48px 36px 45px;
+  box-sizing: border-box;
+
+  background: #ffffff;
+  border: 1px solid #e1e1e9;
+  border-radius: 30px;
+  box-shadow:
+    0 25px 55px rgba(91, 42, 170, 0.1),
+    0 8px 25px rgba(91, 42, 170, 0.05);
+
+  text-align: center;
+}
+
+
+
+.create-parent-account .page-card h1 {
+  margin: 0;
+  color: #202026;
+  font-size: 27px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.8px;
+}
+
+.auth-subtitle {
+  margin: 8px 0 18px;
+  color: #666473;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.name-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.email-field-wrapper {
+  width: 100%;
+}
+
+.email-field-wrapper .field {
+  margin-bottom: 0;
+}
+
+.field.field-error {
+  border-color: #dc2626;
+}
+
+.field.field-error legend {
+  color: #dc2626;
+}
+
+.email-error {
+  margin: 6px 0 16px;
+  color: #dc2626;
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.create-parent-account .field {
+  position: relative;
+  width: 100%;
+  height: 37px;
+  margin: 0 0 15px;
+  padding: 0 14px;
+  box-sizing: border-box;
+
+  border: 1px solid #2563eb;
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.create-parent-account .field:focus-within {
+  border-color: #2563eb;
+}
+
+.create-parent-account .field legend {
+  width: auto;
+  margin-left: 4px;
+  padding: 0 5px;
+
+  color: #666473;
+  font-size: 12px;
+  line-height: 16px;
+  background: #ffffff;
+}
+
+.create-parent-account .field:focus-within legend {
+  color: #2563eb;
+}
+
+.create-parent-account .field input {
+  width: 100%;
+  height: 23px;
+  margin-top: -2px;
+  padding: 0;
+
+  border: 0;
+  outline: 0;
+  background: transparent;
+
+  color: #292929;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.create-parent-account .terms-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  text-align: left;
+}
+
+.terms-checkbox input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #7c35e9;
+  cursor: pointer;
+}
+
+.terms-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+
+  color: #29272e;
+  font-family: "Nunito", sans-serif;
+  font-size: 11px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.register-actions {
+  margin-top: 21px;
+}
+
+.register-actions .button,
+.continue-disabled {
+  width: 100%;
+  height: 39px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 999px;
+
+  font-family: "Nunito", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.register-actions .button {
+  background: #7c35e9;
+  color: #ffffff;
+}
+
+.register-actions .button:hover {
+  background: #6d28d9;
+}
+
+.continue-disabled {
+  background: #d7d7dd;
+  color: #5e5d68;
+  cursor: not-allowed;
+}
+
+.google-button-wrap {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+}
+
+.google-button-wrap > div {
+  width: 100% !important;
+}
+
+.google-button-wrap iframe {
+  margin: 0 auto;
+}
+
+.create-parent-account .google-button {
+  width: 100%;
+  height: 39px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  margin-top: 12px;
+  border: 1px solid #c9c7d0;
+  border-radius: 999px;
+  background: #ffffff;
+
+  color: #6b7280 !important;
+  font-family: "Nunito", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.create-parent-account .google-button span {
+  font-size: 13px;
+  color: #6b7280 !important;
+  font-weight: 500;
+}
+
+.create-parent-account .google-icon {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.already-account {
+  margin: 19px 0 0;
+  color: #7734e5;
+  font-size: 11px;
+  text-align: center;
+}
+
+.already-account a {
+  margin-left: 5px;
+  color: #7734e5;
+  font-weight: 500;
+  text-decoration: underline;
+}
+
+/* يمنع scroll الرأسي على الديسكتوب */
+@media (min-width: 768px) {
+  html:has(.create-parent-account),
+  body:has(.create-parent-account),
+  #root:has(.create-parent-account) {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .auth-shell:has(.create-parent-account) {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .auth-shell:has(.create-parent-account) .auth-main {
+    min-height: 0;
+    padding: clamp(24px, 5vh, 56px) 20px;
+    overflow: hidden;
+  }
+
+  .create-parent-account {
+    height: 100%;
+    align-items: center;
+  }
+}
+
+/* Tablet */
+@media (max-width: 767px) {
+  .create-parent-account .page-card {
+    width: 100%;
+    min-height: auto;
+    padding: 48px 32px 38px;
+    border-radius: 34px;
+  }
+
+  .create-parent-account .page-card h1 {
+    font-size: 27px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+  .create-parent-account {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .create-parent-account .page-card {
+    width: 100%;
+    max-width: 100%;
+    padding: 36px 20px 30px;
+    border-radius: 24px;
+  }
+
+  .create-parent-account .page-card h1 {
+    font-size: 23px;
+  }
+
+  .auth-subtitle {
+    margin-bottom: 22px;
+    font-size: 13px;
+  }
+
+  .name-fields {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .field {
+    margin-bottom: 18px;
+  }
+
+  .terms-checkbox {
+    align-items: flex-start;
+  }
+
+  .terms-link {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .google-button,
+  .register-actions .button,
+  .continue-disabled {
+    font-size: 14px;
+  }
+
+  .google-button span {
+    font-size: 14px;
+  }
+}
+
+

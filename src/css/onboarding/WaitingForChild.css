@@ -1,0 +1,460 @@
+/* =========================
+   PAGE
+========================= */
+
+.waiting-page-shell {
+  min-height: 100vh;
+  background: #ffffff;
+  font-family: "Nunito", sans-serif;
+}
+
+.waiting-content {
+  width: 100%;
+  max-width: 1765px;
+  margin: 0 auto;
+  padding: 30px 38px 60px;
+  box-sizing: border-box;
+}
+
+/* =========================
+   PAGE HEADING
+========================= */
+
+.waiting-heading {
+  margin-bottom: 28px;
+}
+
+.waiting-heading h1 {
+  margin: 0;
+  color: #25242a;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.7px;
+}
+
+.waiting-heading p {
+  margin: 9px 0 0;
+  color: #686773;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* =========================
+   CARDS
+========================= */
+
+.waiting-card {
+  width: 100%;
+  padding: 24px 22px 20px;
+  box-sizing: border-box;
+  border: 1px solid #e3e2e9;
+  border-radius: 20px;
+  background: #ffffff;
+}
+
+.setup-card {
+  margin-top: 22px;
+}
+
+/* =========================
+   INVITATION CARD
+========================= */
+
+.invitation-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.status-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #fff1bd;
+  color: #25242a;
+}
+
+.invitation-status h2 {
+  margin: 0;
+  color: #bd5900;
+  font-size: 17px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.invitation-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 14px 0 0;
+  color: #302f35;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.info-dot {
+  color: #29282e;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.invitation-expiry {
+  margin: 12px 0 0;
+  color: #777783;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* =========================
+   ACTIONS
+========================= */
+
+.waiting-actions,
+.setup-actions {
+  display: flex;
+  align-items: center;
+}
+
+.waiting-actions {
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.setup-actions {
+  gap: 20px;
+  margin-top: 14px;
+}
+
+/* Resend invitation + Edit child information */
+
+.waiting-actions > :first-child,
+.setup-actions > :first-child {
+  width: 203px;
+  height: 38px;
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #7d39eb;
+  border-radius: 22px;
+  background: #7d39eb;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.waiting-actions > :first-child:hover,
+.setup-actions > :first-child:hover {
+  border-color: #6d2ed8;
+  background: #6d2ed8;
+}
+
+/* Copy link */
+
+.waiting-actions > :nth-child(2) {
+  width: 160px !important;
+  height: 38px !important;
+  padding: 0 !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  border: 1px solid #8d50f4 !important;
+  border-radius: 22px !important;
+  background: #ffffff !important;
+  color: #7130dc !important;
+
+  font-family: inherit !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+}
+
+.waiting-actions > :nth-child(2):hover {
+  border-color: #7130dc !important;
+  background: #faf7ff !important;
+}
+
+/* Cancel invitation */
+
+.cancel-invitation {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #ed1616;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cancel-invitation:hover {
+  text-decoration: underline;
+}
+
+/* =========================
+   SETUP CARD
+========================= */
+
+.setup-card h2 {
+  margin: 0;
+  color: #29282e;
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+.setup-description {
+  margin: 8px 0 0;
+  color: #686773;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* =========================
+   FEEDBACK
+========================= */
+
+.waiting-feedback {
+  position: fixed;
+  top: 104px;
+  right: 32px;
+  z-index: 50;
+
+  width: 360px;
+  min-height: 70px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  border: 1px solid #dddde5;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 12px 35px rgba(40, 35, 60, 0.12);
+}
+
+.feedback-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  background: #eee3ff;
+  color: #7130dc;
+}
+
+.feedback-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.feedback-text b {
+  display: block;
+  color: #292731;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.feedback-text p {
+  margin: 3px 0 0;
+  color: #777582;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.feedback-close {
+  width: 25px;
+  height: 25px;
+  padding: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 0;
+  background: transparent;
+  color: #8a8993;
+
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* =========================
+   CONFIRM MODAL
+========================= */
+
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(28, 25, 36, 0.38);
+}
+
+.confirm-modal {
+  width: 440px;
+  max-width: calc(100% - 32px);
+  padding: 30px;
+  box-sizing: border-box;
+
+  border: 1px solid #e0dfe6;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 25px 70px rgba(25, 20, 40, 0.18);
+}
+
+.confirm-icon {
+  width: 46px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+  background: #fff1cc;
+  color: #8d5a00;
+}
+
+.confirm-modal h2 {
+  margin: 20px 0 0;
+  color: #27252d;
+  font-size: 23px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.confirm-modal p {
+  margin: 12px 0 25px;
+  color: #6e6d78;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.confirm-decline-link,
+.confirm-cancel-button {
+  width: 100%;
+  height: 48px;
+  border-radius: 25px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.confirm-decline-link {
+  border: 1px solid #f0d5d5;
+  background: #ffffff;
+  color: #df1616;
+}
+
+.confirm-decline-link:hover {
+  background: #fff8f8;
+}
+
+.confirm-cancel-button {
+  margin-top: 10px;
+  border: 0;
+  background: #7d39eb;
+  color: #ffffff;
+}
+
+.confirm-cancel-button:hover {
+  background: #7130dc;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 700px) {
+  .waiting-content {
+    padding: 28px 18px 50px;
+  }
+
+  .waiting-heading h1 {
+    font-size: 26px;
+  }
+
+  .invitation-info {
+    flex-wrap: wrap;
+    gap: 7px 12px;
+  }
+
+  .info-dot {
+    display: none;
+  }
+
+  .waiting-actions,
+  .setup-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .waiting-actions > :first-child,
+  .waiting-actions > :nth-child(2),
+  .setup-actions > :first-child {
+    width: 100% !important;
+  }
+
+  .cancel-invitation {
+    align-self: flex-start;
+  }
+
+  .waiting-feedback {
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .waiting-content {
+    padding: 24px 16px 40px;
+  }
+
+  .waiting-card {
+    padding: 20px 18px;
+  }
+
+  .waiting-heading h1 {
+    font-size: 23px;
+  }
+
+  .waiting-heading p {
+    font-size: 13px;
+  }
+
+  .invitation-status h2 {
+    font-size: 16px;
+  }
+
+  .invitation-info,
+  .setup-description {
+    font-size: 12px;
+  }
+}

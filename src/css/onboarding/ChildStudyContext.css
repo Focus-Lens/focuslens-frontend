@@ -1,0 +1,396 @@
+.child-context-wrapper {
+  width: 700px;
+  max-width: calc(100% - 32px);
+  margin: 34px auto 0;
+  font-family: "Nunito", sans-serif;
+}
+
+.child-context-wrapper .page-card {
+  width: 100%;
+  padding: 48px 48px 48px;
+  border-radius: 40px;
+  border: 1px solid #e3def0;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgba(91, 51, 145, 0.06);
+  box-sizing: border-box;
+}
+
+.child-context-page {
+  width: 100%;
+}
+
+/* =========================
+   STEPPER
+========================= */
+
+.child-context-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  margin-bottom: 25px;
+  white-space: nowrap;
+}
+
+.child-context-step {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #555563;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.child-context-step-circle {
+  width: 29px;
+  height: 29px;
+  border-radius: 50%;
+  background: #f3f3f6;
+  color: #5c5c68;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.child-context-step.completed
+  .child-context-step-circle {
+  color: #7d39eb;
+}
+
+.child-context-step.active {
+  color: #7d39eb;
+}
+
+.child-context-step.active
+  .child-context-step-circle {
+  background: #7d39eb;
+  color: #ffffff;
+}
+
+.child-context-step-label {
+  line-height: 1;
+}
+
+/* =========================
+   TITLE
+========================= */
+
+.child-context-title {
+  margin: 0;
+
+  text-align: center;
+
+  color: #252525;
+font-family: "Nunito";
+  font-size: 32px;
+  line-height: 1.25;
+  font-weight: 600;
+
+  letter-spacing: -0.7px;
+}
+
+.child-context-subtitle {
+  margin: 13px 0 25px;
+
+  text-align: center;
+
+  color: #62626d;
+font-family: "Nunito";
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* =========================
+   OPTIONS
+========================= */
+
+.child-context-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.child-context-option {
+  width: 100%;
+  min-height: 82px;
+
+  padding: 15px 16px;
+
+  border: 1px solid #e5e3e8;
+  border-radius: 17px;
+
+  background: #ffffff;
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  cursor: pointer;
+  text-align: left;
+
+  color: #202024;
+
+  font-family: "Nunito";
+  font-size: 15.5px;
+  font-weight: 400;
+
+  box-sizing: border-box;
+
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.child-context-option:hover {
+  border-color: #cdb7f5;
+}
+
+.child-context-option.selected {
+  border-color: #7d39eb;
+  background: #f5efff;
+}
+
+.child-context-option-icon {
+  width: 48px;
+  height: 48px;
+
+  border-radius: 12px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  background: #eee4ff;
+  color: #823cf0;
+}
+
+.child-context-option.selected
+  .child-context-option-icon {
+  background: #7d39eb;
+  color: #ffffff;
+}
+
+.child-context-option-text {
+  flex: 1;
+  line-height: 1.35;
+}
+
+.child-context-option.selected
+  .child-context-option-text {
+  color: #7130dc;
+}
+
+.child-context-check {
+  width: 24px;
+  height: 24px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border: 1px solid #b8b8c2;
+  background: #ffffff;
+  color: #ffffff;
+
+  box-sizing: border-box;
+}
+
+.child-context-option.selected
+  .child-context-check {
+  border-color: #8ac926;
+  background: #8ac926;
+}
+
+/* =========================
+   ACTIONS
+========================= */
+
+.child-context-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  margin-top: 23px;
+}
+
+.child-context-back {
+  width: 80px;
+  height: 52px;
+
+  border-radius: 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex-shrink: 0;
+
+  border: 1px solid #7d39eb;
+  background: #ffffff;
+  color: #7d39eb;
+
+  cursor: pointer;
+
+  box-sizing: border-box;
+}
+
+.child-context-back:hover {
+  background: #f5efff;
+}
+
+/* Continue button */
+
+.child-context-actions > button:last-child {
+  flex: 1;
+
+  width: auto;
+  height: 52px;
+
+  border-radius: 28px;
+
+  background: #7d39eb;
+  border: 1px solid #7d39eb;
+
+  color: #ffffff;
+
+  font-size: 16px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  box-sizing: border-box;
+}
+
+.child-context-actions > button:last-child:hover {
+  background: #7130dc;
+  border-color: #7130dc;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 600px) {
+  .auth-main:has(.child-context-wrapper) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: calc(100dvh - 62px);
+    padding: 24px 12px;
+    box-sizing: border-box;
+
+    overflow-y: auto;
+  }
+
+  .child-context-wrapper {
+    width: 100%;
+    max-width: none;
+    margin: auto;
+  }
+
+  .child-context-wrapper .page-card {
+    width: 100%;
+    padding: 30px 18px;
+    border-radius: 26px;
+  }
+
+  .child-context-stepper {
+    justify-content: space-between;
+    gap: 0;
+    margin-bottom: 22px;
+  }
+
+  .child-context-step-label {
+    display: none;
+  }
+
+  .child-context-step-circle {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+}
+
+  .child-context-title {
+    font-size: 24px;
+    line-height: 1.25;
+  }
+
+  .child-context-subtitle {
+    margin: 10px 0 20px;
+    font-size: 13px;
+  }
+
+  .child-context-option {
+    min-height: 68px;
+    padding: 10px 12px;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .child-context-option-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+  }
+
+  .child-context-option-text {
+    font-size: 13px;
+    line-height: 1.35;
+  }
+
+  .child-context-check {
+    width: 22px;
+    height: 22px;
+  }
+
+  .child-context-actions {
+    margin-top: 18px;
+    gap: 10px;
+  }
+
+  .child-context-back {
+    width: 58px;
+    height: 48px;
+  }
+
+  .child-context-actions > button:last-child {
+    height: 48px;
+    font-size: 15px;
+  }
+
+
+@media (max-width: 380px) {
+  .child-context-wrapper .page-card {
+    padding: 26px 14px;
+  }
+
+  .child-context-title {
+    font-size: 22px;
+  }
+
+  .child-context-option {
+    font-size: 12px;
+  }
+
+  .child-context-option-icon {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+
