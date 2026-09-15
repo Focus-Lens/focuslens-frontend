@@ -5,47 +5,60 @@ import { ParentLayout } from "../../components/ui/CommonUI";
 import ChildProfileModal from "../../components/ui/ChildProfileModal";
 import DashboardHeader from "../../components/ui/DashboardHeader";
 
-import { dashboardMockData } from "../../data/mockData";
-import { getStudents } from "../../services/access";
+import { getStudents, getStudent } from "../../services/access";
+import { getParentDashboard } from "../../services/dashboard";
 import {
   resendChildSetupInvite,
   cancelChildSetupInvite,
   inviteChildSetupByLink,
+  getChildSetupInvitations,
 } from "../../services/parents";
 
 import "../../css/dashboard/Children.css";
 
-// يطبّع بيانات الطفل القادمة من الـ API فوق شكل الـ mock الافتراضي حتى لا
-// تنكسر الواجهة أبدًا حتى لو اختلفت بعض أسماء الحقول أو كانت ناقصة.
-function normalizeStudent(raw) {
+const emptyChild = {
+  id: null,
+  fullName: "",
+  preferredName: "Student",
+  grade: "Not provided",
+  email: "",
+  connectionStatus: "not_connected",
+  subjects: [],
+  priorities: [],
+  availableData: [],
+  currentGoal: null,
+  invitation: null,
+};
+
+function normalizeStudent(raw, dashboard) {
   if (!raw || typeof raw !== "object") return null;
 
   return {
-    ...dashboardMockData.child,
+    ...emptyChild,
     ...raw,
+    fullName: raw.fullName ?? [raw.firstName, raw.lastName].filter(Boolean).join(" "),
     subjects: Array.isArray(raw.subjects)
-      ? raw.subjects
-      : dashboardMockData.child.subjects,
+      ? raw.subjects.map((subject) => subject.customName ?? subject.type ?? subject)
+      : [],
     priorities: Array.isArray(raw.priorities ?? raw.studyPriorities)
       ? raw.priorities ?? raw.studyPriorities
-      : dashboardMockData.child.priorities,
+      : [],
     availableData: Array.isArray(raw.availableData)
       ? raw.availableData
-      : dashboardMockData.child.availableData,
-    currentGoal: raw.currentGoal ?? dashboardMockData.child.currentGoal,
-    invitation: raw.invitation ?? dashboardMockData.child.invitation,
-    connectionStatus:
-      raw.connectionStatus ?? dashboardMockData.child.connectionStatus,
+      : ["Session summaries", "Study-time progress", "Study goals"],
+    currentGoal: dashboard?.activeGoal ?? {
+      targetMinutes: 0,
+      completedMinutes: 0,
+    },
+    invitation: raw.invitation ?? null,
+    connectionStatus: "connected",
   };
 }
 
 export default function Children() {
   const navigate = useNavigate();
 
-const [child, setChild] = useState({
-  ...dashboardMockData.child,
-  connectionStatus: "connected", // Change this to "pending" or "not_connected" to test different states
-});
+  const [child, setChild] = useState(emptyChild);
   const [showProfile, setShowProfile] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -59,9 +72,41 @@ const [child, setChild] = useState({
         const data = await getStudents();
         const list = Array.isArray(data) ? data : data?.items ?? [];
 
-        if (isCancelled || list.length === 0) return;
+        if (isCancelled) return;
 
-        const normalized = normalizeStudent(list[0]);
+        if (list.length === 0) {
+          const invitations = await getChildSetupInvitations();
+          if (isCancelled) return;
+          const pending = (invitations ?? []).find(
+            (item) => item.status?.toLowerCase() === "pending"
+          );
+
+          if (!pending) {
+            setChild(emptyChild);
+            return;
+          }
+
+          sessionStorage.setItem("childSetupDraftId", pending.draftId);
+          setChild({
+            ...emptyChild,
+            fullName: [pending.firstName, pending.lastName].filter(Boolean).join(" "),
+            preferredName: pending.firstName || "Student",
+            grade: pending.grade ?? "Not provided",
+            email: pending.targetEmail ?? "",
+            connectionStatus: "pending",
+            invitation: {
+              sentAt: "Sent",
+              expiresAt: pending.expiresAtUtc
+                ? new Date(pending.expiresAtUtc).toLocaleString()
+                : "Not available",
+            },
+          });
+          return;
+        }
+
+        const details = await getStudent(list[0].id);
+        const dashboard = await getParentDashboard(list[0].id).catch(() => null);
+        const normalized = normalizeStudent(details, dashboard);
         if (normalized) {
           setChild(normalized);
         }
@@ -111,7 +156,8 @@ const [child, setChild] = useState({
     if (draftId) {
       try {
         const data = await inviteChildSetupByLink(draftId);
-        const realLink = data?.link ?? data?.url ?? data?.inviteLink;
+        const realLink =
+          data?.invitationUrl ?? data?.link ?? data?.url ?? data?.inviteLink;
         if (realLink) link = realLink;
       } catch (err) {
         console.error("Failed to create invitation link:", err);
@@ -149,6 +195,7 @@ const [child, setChild] = useState({
   }
 
   const goalPercentage = child.currentGoal
+    && child.currentGoal.targetMinutes > 0
     ? Math.round(
         (child.currentGoal.completedMinutes /
           child.currentGoal.targetMinutes) *
@@ -171,7 +218,14 @@ const [child, setChild] = useState({
               </p>
             </div>
 
-            <span className="children-heading-avatar">JS</span>
+            <span className="children-heading-avatar">
+              {child.fullName
+                .split(" ")
+                .map((part) => part[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase() || "FL"}
+            </span>
           </header>
 
           {/* =====================================================
@@ -573,7 +627,7 @@ const [child, setChild] = useState({
                       <h2>Cancel invitation?</h2>
 
                       <p>
-                        Youssef will no longer be able to use this
+                        {child.preferredName} will no longer be able to use this
                         invitation link.
                       </p>
 

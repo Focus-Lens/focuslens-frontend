@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useGoogleLogin } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
 import { AuthLayout, Button, Card, Field } from "../../components/ui/CommonUI";
 import TermsPrivacyModal from "../../components/ui/TermsPrivacyModal";
 import "../../css/auth/CreateParentAccount.css";
+import { useAuth } from "../../context/AuthContext";
 
 export default function CreateParentAccount() {
   const navigate = useNavigate();
+  const { loginWithGoogleParent } = useAuth();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -29,25 +31,21 @@ export default function CreateParentAccount() {
     emailIsValid &&
     acceptedTerms;
 
-  const loginWithGoogle = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
+  async function handleGoogleSuccess(response) {
+    if (!acceptedTerms) {
+      setGoogleError("Accept the Terms and Privacy Policy before continuing with Google.");
+      return;
+    }
+
+    try {
       setGoogleError("");
-
-      // احتفظي بالتوكن مؤقتًا لحين ربطه بالـ backend
-      sessionStorage.setItem(
-        "googleAccessToken",
-        tokenResponse.access_token
-      );
-
-      console.log("Google login successful:", tokenResponse);
-
-      // ضعي هنا الانتقال للصفحة المناسبة بعد تسجيل الدخول بجوجل
-      // navigate("/dashboard");
-    },
-    onError: () => {
+      await loginWithGoogleParent(response.credential, true);
+      navigate("/overview");
+    } catch (error) {
+      console.error("Google parent sign-in failed:", error);
       setGoogleError("Google sign-in failed. Please try again.");
-    },
-  });
+    }
+  }
 
   function agreeToTerms() {
     setAcceptedTerms(true);
@@ -140,20 +138,15 @@ export default function CreateParentAccount() {
             )}
           </div>
 
-          <button
-            type="button"
-            className="google-button"
-            aria-label="Continue with Google"
-            onClick={() => loginWithGoogle()}
-          >
-            <svg className="google-icon" viewBox="0 0 24 24" aria-hidden="true">
-              <path fill="#4285F4" d="M21.35 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.24a4.48 4.48 0 0 1-1.94 2.94v2.52h3.14c1.84-1.69 2.91-4.18 2.91-7.29Z" />
-              <path fill="#34A853" d="M12 21.75c2.63 0 4.84-.87 6.45-2.23l-3.14-2.52c-.87.58-1.98.93-3.31.93-2.54 0-4.69-1.71-5.46-4.01H3.3v2.6A9.75 9.75 0 0 0 12 21.75Z" />
-              <path fill="#FBBC05" d="M6.54 13.92a5.87 5.87 0 0 1 0-3.83v-2.6H3.3a9.75 9.75 0 0 0 0 9.03l3.24-2.6Z" />
-              <path fill="#EA4335" d="M12 6.08c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.18 14.63 2.25 12 2.25A9.75 9.75 0 0 0 3.3 7.49l3.24 2.6C7.31 7.79 9.46 6.08 12 6.08Z" />
-            </svg>
-            <span>Continue with Google</span>
-          </button>
+          <div className="google-button">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setGoogleError("Google sign-in failed. Please try again.")}
+              text="continue_with"
+              shape="rectangular"
+              width="360"
+            />
+          </div>
 
           {googleError && <p className="email-error">{googleError}</p>}
 

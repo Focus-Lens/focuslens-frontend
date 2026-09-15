@@ -8,6 +8,14 @@ export function getMe() {
   return apiGet("/api/parents/me");
 }
 
+export function getParentAccount() {
+  return apiGet("/api/parents/me/settings");
+}
+
+export function updateParentAccount(payload) {
+  return apiPut("/api/parents/me/settings", payload);
+}
+
 export function createChildSetupDraft() {
   return apiPost("/api/parents/child-setups");
 }

@@ -13,9 +13,7 @@ import {
 } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
-import { dashboardMockData } from "../../data/mockData";
 import DashboardHeader from "../../components/ui/DashboardHeader";
-import reportsIcon from "../../assets/reportsIcon.png";
 import { useAuth } from "../../context/AuthContext";
 import { getSessions } from "../../services/reports";
 
@@ -32,13 +30,11 @@ export default function Reports() {
   const [currentPage, setCurrentPage] = useState(1);
   const sessionsPerPage = 4;
 
-  const [sessions, setSessions] = useState(dashboardMockData.reports.sessions);
+  const [sessions, setSessions] = useState([]);
+  const [loadError, setLoadError] = useState("");
 
   // ------------------------------------------------------------
-  // جلب الجلسات الحقيقية من GET /api/reports/sessions.
-  // شكل الاستجابة غير موثق في الـ OpenAPI spec، لذلك يتم التحقق
-  // دفاعيًا من كل حقل، وأي حقل غير متعرف عليه يبقى بدون قيمة
-  // بدل تخمينه؛ عند فشل الطلب تبقى بيانات الـ mock كما هي.
+  // Load only records authorized for the linked child.
   // ------------------------------------------------------------
   useEffect(() => {
     let isCancelled = false;
@@ -54,11 +50,14 @@ export default function Reports() {
           ? data.items
           : null;
 
-        if (items && items.length > 0) {
-          setSessions(items);
-        }
+        setSessions(items ?? []);
+        setLoadError("");
       } catch (err) {
         console.error("Failed to load reports sessions:", err);
+        if (!isCancelled) {
+          setSessions([]);
+          setLoadError("We couldn't load session reports. Please try again.");
+        }
       }
     }
 
@@ -108,10 +107,6 @@ export default function Reports() {
     filteredSessions.length
   );
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [subjectFilter, statusFilter]);
-
   return (
     <div className="reports-page-shell">
       <DashboardHeader activePage="reports" />
@@ -136,7 +131,7 @@ export default function Reports() {
               <h1>Reports</h1>
 
               <p>
-                Completed sessions shared by Youssef.
+                Sessions shared by {child?.preferredName ?? "your child"}.
               </p>
 
             </div>
@@ -151,7 +146,7 @@ export default function Reports() {
               />
 
               <span>
-                Sep 1 – Sep 8, 2026
+                All available dates
               </span>
             </button>
 
@@ -185,7 +180,10 @@ export default function Reports() {
 
                   <select
                     value={subjectFilter}
-                    onChange={(event) => setSubjectFilter(event.target.value)}
+                    onChange={(event) => {
+                      setSubjectFilter(event.target.value);
+                      setCurrentPage(1);
+                    }}
                   >
                     {subjects.map((subject) => (
                       <option
@@ -213,7 +211,10 @@ export default function Reports() {
 
                   <select
                     value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value)}
+                    onChange={(event) => {
+                      setStatusFilter(event.target.value);
+                      setCurrentPage(1);
+                    }}
                   >
                     <option value="all">
                       All statuses
@@ -284,7 +285,7 @@ export default function Reports() {
                             </b>
 
                             <small>
-                              {session.date}
+                              {new Date(session.date).toLocaleString()}
                             </small>
                           </div>
 
@@ -367,7 +368,12 @@ export default function Reports() {
                           }
                         >
 
-                          {session.focusTrend === "improving" ? (
+                          {!session.aiAnalysisAvailable ? (
+                            <>
+                              <span className="stable-line">—</span>
+                              Not available
+                            </>
+                          ) : session.focusTrend === "improving" ? (
                             <>
                               <ArrowUpRight
                                 size={15}
@@ -431,7 +437,7 @@ export default function Reports() {
 
             {filteredSessions.length === 0 && (
               <div className="reports-empty">
-                No sessions match the selected filters.
+                {loadError || "No sessions match the selected filters."}
               </div>
             )}
 
@@ -485,10 +491,6 @@ export default function Reports() {
 
           </section>
 
-
-          <p className="reports-demo-note">
-            Demo content · Fixture data for interface review
-          </p>
 
         </main>
       </ParentLayout>

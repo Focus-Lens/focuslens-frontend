@@ -1,9 +1,5 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-
-import {
-  parent as parentDefaults,
-  child as childDefaults,
-} from "../data/mockData";
 
 import {
   clearTokens,
@@ -18,7 +14,8 @@ import {
 } from "../services/auth";
 
 import { getMe } from "../services/parents";
-import { getStudents } from "../services/access";
+import { getStudents, getStudent } from "../services/access";
+import { getCurrentUser } from "../services/users";
 
 const AuthContext = createContext(null);
 
@@ -30,21 +27,19 @@ const AuthContext = createContext(null);
 function normalizeParent(raw) {
   if (!raw || typeof raw !== "object") return null;
 
-  const firstName = raw.firstName ?? parentDefaults.firstName;
+  const firstName = raw.firstName ?? "";
   const lastName = raw.lastName ?? "";
 
   return {
-    ...parentDefaults,
     ...raw,
     firstName,
     lastName,
     fullName:
       raw.fullName ??
       [firstName, lastName].filter(Boolean).join(" ") ??
-      parentDefaults.fullName,
-    email: raw.email ?? parentDefaults.email,
-    hasChild:
-      typeof raw.hasChild === "boolean" ? raw.hasChild : parentDefaults.hasChild,
+      "Parent",
+    email: raw.email ?? "",
+    hasChild: Boolean(raw.hasChild),
   };
 }
 
@@ -52,15 +47,16 @@ function normalizeChild(raw) {
   if (!raw || typeof raw !== "object") return null;
 
   return {
-    ...childDefaults,
     ...raw,
+    fullName: raw.fullName ?? [raw.firstName, raw.lastName].filter(Boolean).join(" "),
     preferredName:
-      raw.preferredName ?? raw.fullName ?? childDefaults.preferredName,
-    fullName: raw.fullName ?? childDefaults.fullName,
-    subjects: Array.isArray(raw.subjects) ? raw.subjects : childDefaults.subjects,
+      raw.preferredName ?? raw.firstName ?? raw.fullName ?? "Student",
+    subjects: Array.isArray(raw.subjects)
+      ? raw.subjects.map((subject) => subject.customName ?? subject.type ?? subject)
+      : [],
     studyPriorities: Array.isArray(raw.studyPriorities ?? raw.priorities)
       ? raw.studyPriorities ?? raw.priorities
-      : childDefaults.studyPriorities,
+      : [],
   };
 }
 
@@ -73,12 +69,17 @@ export function AuthProvider({ children }) {
 
   const loadProfile = useCallback(async () => {
     try {
-      const [meResponse, studentsResponse] = await Promise.all([
-        getMe().catch(() => null),
-        getStudents().catch(() => null),
+      const [accountResponse, parentResponse, studentsResponse] = await Promise.all([
+        getCurrentUser(),
+        getMe(),
+        getStudents(),
       ]);
 
-      const normalizedUser = normalizeParent(meResponse) ?? parentDefaults;
+      const normalizedUser = normalizeParent({
+        ...parentResponse,
+        ...accountResponse,
+      });
+      if (!normalizedUser) throw new Error("Parent profile is unavailable.");
 
       const studentsList = Array.isArray(studentsResponse)
         ? studentsResponse
@@ -88,8 +89,10 @@ export function AuthProvider({ children }) {
 
       setStudents(studentsList);
 
-      const normalizedChild =
-        studentsList.length > 0 ? normalizeChild(studentsList[0]) : null;
+      const childDetails = studentsList.length > 0
+        ? await getStudent(studentsList[0].id)
+        : null;
+      const normalizedChild = normalizeChild(childDetails);
 
       setUser({
         ...normalizedUser,
@@ -130,29 +133,30 @@ export function AuthProvider({ children }) {
   const login = useCallback(
     async ({ email, password }) => {
       await loginRequest({ email, password });
-      await loadProfile();
+      const loaded = await loadProfile();
+      if (!loaded) throw new Error("Unable to load the parent profile.");
     },
     [loadProfile]
   );
 
   const registerParent = useCallback(
     async ({ email, password, firstName, lastName, acceptTerms }) => {
-      await registerParentRequest({
+      return registerParentRequest({
         email,
         password,
         firstName,
         lastName,
         acceptTerms,
       });
-      await loadProfile();
     },
-    [loadProfile]
+    []
   );
 
   const loginWithGoogleParent = useCallback(
     async (idToken) => {
       await loginWithGoogleParentRequest(idToken);
-      await loadProfile();
+      const loaded = await loadProfile();
+      if (!loaded) throw new Error("Unable to load the parent profile.");
     },
     [loadProfile]
   );
@@ -172,7 +176,7 @@ export function AuthProvider({ children }) {
   const refreshUser = useCallback(() => loadProfile(), [loadProfile]);
 
   const value = {
-    user: user ?? parentDefaults,
+    user: user ?? { firstName: "", lastName: "", fullName: "", email: "", hasChild: false },
     setUser,
     child,
     setChild,

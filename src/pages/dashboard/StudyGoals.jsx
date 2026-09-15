@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CalendarDays,
   CircleCheck,
@@ -9,7 +9,9 @@ import {
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
-import { child, parent, studyGoalMock } from "../../data/mockData";
+import { useAuth } from "../../context/AuthContext";
+import { createStudyGoal, getStudyGoal } from "../../services/studyGoals";
+import { ApiError } from "../../services/apiClient";
 
 import flagPending from "../../assets/flag1.jpg";
 import flagEmpty from "../../assets/flag2.png";
@@ -20,22 +22,14 @@ import activeGoalIcon from "../../assets/arrow.jpg";
 
 import "../../css/dashboard/StudyGoals.css";
 
-const initialGoal = {
-  ...studyGoalMock,
-  targetMinutes: 300,
-  completedMinutes: 180,
-  frequency: "Weekly",
-  cycle: "Sep 8 – Sep 14",
-  daysRemaining: 3,
-  suggestedBy: parent.firstName,
-  acceptedBy: child.preferredName,
-  dailyProgress: [
-    { day: "Monday", minutes: 40 },
-    { day: "Tuesday", minutes: 55 },
-    { day: "Wednesday", minutes: 0 },
-    { day: "Thursday", minutes: 35 },
-  ],
-};
+function normalizeGoal(goal) {
+  if (!goal) return null;
+  return {
+    ...goal,
+    cycle: `${goal.weekStart} – ${goal.weekEnd}`,
+    dailyProgress: Array.isArray(goal.dailyProgress) ? goal.dailyProgress : [],
+  };
+}
 
 function GoalDetails({ goal, showAcceptance = false }) {
   return (
@@ -73,24 +67,56 @@ function GoalDetails({ goal, showAcceptance = false }) {
 }
 
 export default function StudyGoals() {
-  const [view, setView] = useState("empty");
+  const { child, user } = useAuth();
+  const childName = child?.preferredName ?? "your child";
+  const [view, setView] = useState("loading");
   const [hours, setHours] = useState(5);
-  const [goal, setGoal] = useState(initialGoal);
+  const [goal, setGoal] = useState(null);
+  const [error, setError] = useState("");
 
-  function submitGoal(event) {
+  useEffect(() => {
+    let cancelled = false;
+    async function loadGoal() {
+      if (!child?.id) {
+        setView("empty");
+        return;
+      }
+      try {
+        const data = await getStudyGoal(child.id);
+        if (cancelled) return;
+        const normalized = normalizeGoal(data);
+        setGoal(normalized);
+        setView(normalized?.status === "active" ? "active" : normalized ? "pending" : "empty");
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof ApiError ? err.message : "Unable to load the study goal.");
+          setView("empty");
+        }
+      }
+    }
+    loadGoal();
+    return () => { cancelled = true; };
+  }, [child?.id]);
+
+  async function submitGoal(event) {
     event.preventDefault();
-
-    setGoal((current) => ({
-      ...current,
-      targetMinutes: Number(hours) * 60,
-    }));
-
-    setView("pending");
+    if (!child?.id) return;
+    setError("");
+    try {
+      const data = await createStudyGoal({
+        studentId: child.id,
+        targetMinutes: Number(hours) * 60,
+      });
+      setGoal(normalizeGoal(data));
+      setView("pending");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Unable to create the study goal.");
+    }
   }
 
-  const percentage = Math.round(
-    (goal.completedMinutes / goal.targetMinutes) * 100
-  );
+  const percentage = goal?.targetMinutes
+    ? Math.min(100, Math.round((goal.completedMinutes / goal.targetMinutes) * 100))
+    : 0;
 
   return (
     <div className="study-goals-page-shell">
@@ -103,10 +129,14 @@ export default function StudyGoals() {
 
             <p>
               {view === "create"
-                ? `Create a study-time goal for ${child.preferredName} to review and accept.`
-                : `Track progress toward ${child.preferredName}’s current study-time goal.`}
+                ? `Create a study-time goal for ${childName} to review and accept.`
+                : `Track progress toward ${childName}’s current study-time goal.`}
             </p>
           </header>
+
+          {error && <p className="password-error">{error}</p>}
+
+          {view === "loading" && <section className="goal-empty-state">Loading study goal…</section>}
 
           {view === "empty" && (
             <section className="goal-empty-state">
@@ -116,7 +146,7 @@ export default function StudyGoals() {
                 <img src={flagEmpty} alt="" />
                 <h2>No study goal yet</h2>
                 <p>
-                  Create a study-time goal for {child.preferredName} and send
+                  Create a study-time goal for {childName} and send
                   it for acceptance.
                 </p>
 
@@ -130,7 +160,7 @@ export default function StudyGoals() {
           {view === "create" && (
             <section className="goal-form-card">
               <form onSubmit={submitGoal}>
-                <h2>Set {child.preferredName}’s weekly goal</h2>
+                <h2>Set {childName}’s weekly goal</h2>
 
                 <p>
                   A new study-time goal is required at the start of each week.
@@ -177,20 +207,12 @@ export default function StudyGoals() {
                 <div>
                   <span className="pending-badge">● Pending</span>
                   <h2>Goal awaiting acceptance</h2>
-                  <p>Waiting for {child.preferredName} to accept this goal.</p>
+              <p>Waiting for {childName} to accept this goal.</p>
                 </div>
               </div>
 
               <GoalDetails goal={goal} />
 
-              {/* للتجربة فقط؛ احذفيه عند ربط قبول الطفل بالباك إند */}
-              <button
-                className="demo-accept-button"
-                onClick={() => setView("active")}
-                type="button"
-              >
-                Mark as accepted
-              </button>
             </section>
           )}
 
@@ -237,7 +259,7 @@ export default function StudyGoals() {
                     alt=""
                   />
 
-                  <GoalDetails goal={goal} showAcceptance />
+                    <GoalDetails goal={{ ...goal, suggestedBy: goal.suggestedBy || user.firstName }} showAcceptance />
                 </div>
               </section>
 

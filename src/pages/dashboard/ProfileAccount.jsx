@@ -3,19 +3,26 @@ import { ShieldCheck } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
-import { dashboardMockData } from "../../data/mockData";
-import { getMe } from "../../services/parents";
-import { updateCurrentUser } from "../../services/users";
+import { getCurrentUser, updateCurrentUser } from "../../services/users";
 import { ApiError } from "../../services/apiClient";
 import { useAuth } from "../../context/AuthContext";
 
 import "../../css/dashboard/ProfileAccount.css";
 
-export default function ProfileAccount() {
-  const { refreshUser } = useAuth();
+const emptyProfile = {
+  fullName: "",
+  email: "",
+  phone: "",
+  memberSince: "",
+  productUpdatesEnabled: true,
+  importantNoticesEnabled: true,
+};
 
-  const [profile, setProfile] = useState(dashboardMockData.profile);
-  const [draft, setDraft] = useState(dashboardMockData.profile);
+export default function ProfileAccount() {
+  const { refreshUser, child } = useAuth();
+
+  const [profile, setProfile] = useState(emptyProfile);
+  const [draft, setDraft] = useState(emptyProfile);
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState(null);
   const [emailError, setEmailError] = useState("");
@@ -25,16 +32,14 @@ export default function ProfileAccount() {
 
     async function loadProfile() {
       try {
-        const data = await getMe();
-        if (isCancelled || !data) return;
+        const userData = await getCurrentUser();
+        if (isCancelled) return;
 
         const merged = {
-          ...dashboardMockData.profile,
-          ...data,
+          ...emptyProfile,
+          ...userData,
           fullName:
-            data.fullName ??
-            [data.firstName, data.lastName].filter(Boolean).join(" ") ??
-            dashboardMockData.profile.fullName,
+            [userData.firstName, userData.lastName].filter(Boolean).join(" "),
         };
 
         setProfile(merged);
@@ -73,11 +78,6 @@ export default function ProfileAccount() {
   }
 
   async function saveProfile() {
-    if (!draft.email.includes("@") || !draft.email.includes(".")) {
-      setEmailError("Enter a valid email address.");
-      return;
-    }
-
     const [firstName, ...rest] = (draft.fullName || "").trim().split(" ");
 
     try {
@@ -103,18 +103,6 @@ export default function ProfileAccount() {
           : "Something went wrong. Please try again."
       );
     }
-  }
-
-  function toggleSetting(setting) {
-    setProfile((current) => ({
-      ...current,
-      [setting]: !current[setting],
-    }));
-
-    setDraft((current) => ({
-      ...current,
-      [setting]: !current[setting],
-    }));
   }
 
   return (
@@ -155,7 +143,7 @@ export default function ProfileAccount() {
             <aside className="profile-sidebar">
               <section className="profile-user-card">
                 <div className="profile-user-top">
-                  <span className="profile-avatar">MH</span>
+                  <span className="profile-avatar">{profile.fullName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "P"}</span>
 
                   <button
                     onClick={startEditing}
@@ -178,7 +166,7 @@ export default function ProfileAccount() {
                 </p>
 
                 <small>
-                  Member since {profile.memberSince}
+                  {profile.email}
                 </small>
               </section>
 
@@ -197,7 +185,7 @@ export default function ProfileAccount() {
 
                 <div className="profile-status-row">
                   <span>Connected child</span>
-                  <b className="dark-status">Youssef</b>
+                  <b className="dark-status">{child?.preferredName ?? "Not connected"}</b>
                 </div>
 
                 <div className="profile-status-row">
@@ -253,7 +241,7 @@ export default function ProfileAccount() {
                     <span>Full name</span>
 
                     <input
-                      disabled={!isEditing}
+                      disabled
                       name="fullName"
                       onChange={updateDraft}
                       value={draft.fullName}
@@ -265,7 +253,7 @@ export default function ProfileAccount() {
 
                     <input
                       className={emailError ? "error" : ""}
-                      disabled={!isEditing}
+                      disabled
                       name="email"
                       onChange={updateDraft}
                       value={draft.email}
@@ -284,7 +272,7 @@ export default function ProfileAccount() {
                       name="phone"
                       onChange={updateDraft}
                       value={draft.phone}
-                      placeholder="Phone number"
+                      placeholder="Not available from the API"
                     />
                   </label>
                 </div>
@@ -330,14 +318,13 @@ export default function ProfileAccount() {
                   </div>
 
                   <button
+                    disabled
+                    title="Notification preferences are not exposed by the parent API yet"
                     aria-pressed={profile.productUpdatesEnabled}
                     className={
                       profile.productUpdatesEnabled
                         ? "toggle active"
                         : "toggle"
-                    }
-                    onClick={() =>
-                      toggleSetting("productUpdatesEnabled")
                     }
                     type="button"
                   >
@@ -354,14 +341,13 @@ export default function ProfileAccount() {
                   </div>
 
                   <button
+                    disabled
+                    title="Notification preferences are not exposed by the parent API yet"
                     aria-pressed={profile.importantNoticesEnabled}
                     className={
                       profile.importantNoticesEnabled
                         ? "toggle active"
                         : "toggle"
-                    }
-                    onClick={() =>
-                      toggleSetting("importantNoticesEnabled")
                     }
                     type="button"
                   >

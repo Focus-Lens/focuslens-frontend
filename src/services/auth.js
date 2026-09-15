@@ -22,11 +22,14 @@ export async function registerParent({
     { auth: false }
   );
 
-  if (data?.accessToken && data?.refreshToken) {
-    setTokens(data);
-  }
-
   return data;
+}
+
+function storeAuthTokens(data) {
+  const tokens = data?.tokens ?? data;
+  if (tokens?.accessToken && tokens?.refreshToken) {
+    setTokens(tokens);
+  }
 }
 
 export async function login({ email, password }) {
@@ -36,9 +39,7 @@ export async function login({ email, password }) {
     { auth: false }
   );
 
-  if (data?.accessToken && data?.refreshToken) {
-    setTokens(data);
-  }
+  storeAuthTokens(data);
 
   return data;
 }
@@ -50,9 +51,7 @@ export async function loginWithGoogleParent(idToken) {
     { auth: false }
   );
 
-  if (data?.accessToken && data?.refreshToken) {
-    setTokens(data);
-  }
+  storeAuthTokens(data);
 
   return data;
 }

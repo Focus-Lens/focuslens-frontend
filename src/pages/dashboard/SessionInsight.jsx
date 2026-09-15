@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -6,12 +6,10 @@ import {
   ArrowUp,
   Check,
   Pause,
-  TrendingUp,
   LockKeyhole,
 } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
-import { dashboardMockData } from "../../data/mockData";
 import DashboardHeader from "../../components/ui/DashboardHeader";
 import { useAuth } from "../../context/AuthContext";
 import { getSessionDetail } from "../../services/reports";
@@ -33,24 +31,12 @@ export default function SessionInsight() {
   const { sessionId } = useParams();
   const { child } = useAuth();
 
-  const mockSession = useMemo(
-    () =>
-      dashboardMockData.reports.sessions.find(
-        (item) => item.id === sessionId
-      ),
-    [sessionId]
-  );
-
-  const [session, setSession] = useState(mockSession);
-
-  useEffect(() => {
-    setSession(mockSession);
-  }, [mockSession]);
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // ------------------------------------------------------------
   // جلب تفاصيل الجلسة من GET /api/reports/sessions/{sessionId}.
-  // شكل الاستجابة غير موثق بالـ spec، فيتم دمج الحقول المعروفة
-  // فقط فوق بيانات الـ mock (إن وُجدت) دون كسر الواجهة.
+  // The backend returns a stable report contract. AI-only fields are nullable.
   // ------------------------------------------------------------
   useEffect(() => {
     let isCancelled = false;
@@ -60,15 +46,13 @@ export default function SessionInsight() {
         const data = await getSessionDetail(sessionId, {
           studentId: child?.id,
         });
-        if (isCancelled || !data) return;
-
-        setSession((current) => ({
-          ...(current ?? {}),
-          ...data,
-          id: sessionId,
-        }));
+        if (isCancelled) return;
+        setSession(data ?? null);
       } catch (err) {
         console.error("Failed to load session detail:", err);
+        if (!isCancelled) setSession(null);
+      } finally {
+        if (!isCancelled) setLoading(false);
       }
     }
 
@@ -79,14 +63,14 @@ export default function SessionInsight() {
     };
   }, [sessionId, child]);
 
-  if (!session) {
+  if (loading || !session) {
     return (
       <div className="session-insight-shell">
         <DashboardHeader activePage="reports" />
 
         <ParentLayout>
           <main className="session-not-found">
-            <h1>Session not found</h1>
+            <h1>{loading ? "Loading session…" : "Session not found"}</h1>
 
             <button
               onClick={() => navigate("/reports")}
@@ -270,7 +254,7 @@ export default function SessionInsight() {
               </div>
 
               <p>
-                {session.date} · {session.format}
+                {new Date(session.date).toLocaleString()} · {session.format}
               </p>
             </div>
           </section>
@@ -530,7 +514,7 @@ export default function SessionInsight() {
 
                   <span>
                     This session stayed close to
-                    Youssef&apos;s recent focus range.
+                    {child?.preferredName ?? "the student's"} recent focus range.
                   </span>
                 </div>
               </section>
@@ -674,7 +658,7 @@ export default function SessionInsight() {
                   </div>
 
                   <p>
-                    Youssef completed every question
+                    {child?.preferredName ?? "The student"} completed every question
                     in this session.
                   </p>
                 </div>

@@ -25,13 +25,17 @@ export default function InvitationLanding() {
 
         if (isCancelled || !data) return;
 
+        sessionStorage.setItem("pendingInvitationPreview", JSON.stringify(data));
+
         if (data.childPreferredName || data.preferredName || data.childName) {
           setChildName(
             data.childPreferredName || data.preferredName || data.childName
           );
         }
 
-        if (data.expiresIn || data.invitationExpiresIn) {
+        if (data.expiresAtUtc) {
+          setExpiresIn(new Date(data.expiresAtUtc).toLocaleString());
+        } else if (data.expiresIn || data.invitationExpiresIn) {
           setExpiresIn(data.expiresIn || data.invitationExpiresIn);
         }
       } catch {

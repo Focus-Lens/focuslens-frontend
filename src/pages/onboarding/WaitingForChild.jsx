@@ -59,7 +59,8 @@ export default function WaitingForChild() {
     if (draftId) {
       try {
         const data = await inviteChildSetupByLink(draftId);
-        const realLink = data?.link ?? data?.url ?? data?.inviteLink;
+        const realLink =
+          data?.invitationUrl ?? data?.link ?? data?.url ?? data?.inviteLink;
         if (realLink) link = realLink;
       } catch (err) {
         console.error("Failed to create child setup link:", err);

@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
-import { progressMock } from "../../data/mockData";
 import { getProgress, getBehavioralProgress } from "../../services/progress";
 import DashboardHeader from "../../components/ui/DashboardHeader";
+import { useAuth } from "../../context/AuthContext";
 
 import arrowImage from "../../assets/arrow.jpg";
 import mathImage from "../../assets/math.jpg";
@@ -39,12 +39,18 @@ function formatStudyTime(minutes) {
 
 export default function Progress() {
   const navigate = useNavigate();
+  const { child } = useAuth();
 
-  const [range, setRange] = useState("30");
-  const [progressData, setProgressData] = useState(progressMock);
+  const [range, setRange] = useState("Last30Days");
+  const [progressData, setProgressData] = useState({
+    focusQuality: { available: false, average: null, changePercent: null, trend: null, points: [] },
+    studyTime: { totalMinutes: 0, changeMinutes: 0, points: [] },
+    subjects: [],
+    timeOfDayPattern: null,
+  });
 
   const [selectedSubjectName, setSelectedSubjectName] = useState(
-    progressMock.subjects[0]?.name
+    null
   );
 
   const [selectedTimePeriod, setSelectedTimePeriod] = useState("Afternoon");
@@ -55,30 +61,41 @@ export default function Progress() {
     async function loadProgress() {
       try {
         const [progress, behavioral] = await Promise.all([
-          getProgress({ range }).catch(() => null),
-          getBehavioralProgress({ range }).catch(() => null),
+          getProgress({ studentId: child?.id, range }).catch(() => null),
+          getBehavioralProgress({ studentId: child?.id, range }).catch(() => null),
         ]);
 
         if (isCancelled) return;
 
-        if (progress || behavioral) {
-          setProgressData((current) => ({
-            ...current,
-            ...(progress ?? {}),
-            ...(behavioral ? { timeOfDayPattern: behavioral.timeOfDayPattern ?? current.timeOfDayPattern } : {}),
-            focusQuality: {
-              ...current.focusQuality,
-              ...(progress?.focusQuality ?? {}),
-            },
-            studyTime: {
-              ...current.studyTime,
-              ...(progress?.studyTime ?? {}),
-            },
-            subjects: Array.isArray(progress?.subjects)
-              ? progress.subjects
-              : current.subjects,
-          }));
-        }
+        const focusPoints = (behavioral?.daily ?? []).map(
+          (day) => day.focusScore ?? 0
+        );
+
+        setProgressData({
+          focusQuality: {
+            available: behavioral?.focus?.latestScore != null,
+            average: behavioral?.focus?.latestScore ?? null,
+            changePercent: 0,
+            trend: behavioral?.focus?.trend?.toLowerCase() ?? null,
+            points: focusPoints,
+          },
+          studyTime: {
+            totalMinutes: progress?.actualStudyMinutes ?? 0,
+            changeMinutes: 0,
+            points: (progress?.daily ?? []).map(
+              (day) => day.actualStudyMinutes ?? 0
+            ),
+          },
+          subjects: (progress?.subjects ?? []).map((subject) => ({
+            ...subject,
+            name: subject.subject,
+            sessions: subject.sessionCount,
+            totalMinutes: subject.actualStudyMinutes,
+            trend: null,
+            hasEnoughData: subject.dataStatus === "EnoughData",
+          })),
+          timeOfDayPattern: null,
+        });
       } catch (err) {
         console.error("Failed to load progress data:", err);
       }
@@ -89,7 +106,7 @@ export default function Progress() {
     return () => {
       isCancelled = true;
     };
-  }, [range]);
+  }, [range, child?.id]);
 
   const selectedSubject = useMemo(
     () =>
@@ -116,9 +133,7 @@ export default function Progress() {
     })
     .join(" ");
 
-  const maxStudyMinutes = Math.max(
-    ...progressData.studyTime.points
-  );
+  const maxStudyMinutes = Math.max(1, ...progressData.studyTime.points);
 
   return (
     <div className="progress-page-shell">
@@ -149,24 +164,24 @@ export default function Progress() {
 
             <div className="progress-ranges">
               <button
-                className={range === "7" ? "active" : ""}
-                onClick={() => setRange("7")}
+                className={range === "Last7Days" ? "active" : ""}
+                onClick={() => setRange("Last7Days")}
                 type="button"
               >
                 Last 7 days
               </button>
 
               <button
-                className={range === "30" ? "active" : ""}
-                onClick={() => setRange("30")}
+                className={range === "Last30Days" ? "active" : ""}
+                onClick={() => setRange("Last30Days")}
                 type="button"
               >
                 Last 30 days
               </button>
 
               <button
-                className={range === "custom" ? "active" : ""}
-                onClick={() => setRange("custom")}
+                disabled
+                title="Custom date ranges are not available in this view yet"
                 type="button"
               >
                 Custom range
@@ -204,10 +219,13 @@ export default function Progress() {
                   </span>
 
                   <strong>
-                    {progressData.focusQuality.average}%
+                    {progressData.focusQuality.available
+                      ? `${progressData.focusQuality.average}%`
+                      : "—"}
                   </strong>
                 </div>
 
+                {progressData.focusQuality.available ? (
                 <span className="progress-change positive">
                   <ArrowUp
                     size={14}
@@ -217,6 +235,9 @@ export default function Progress() {
                   {progressData.focusQuality.changePercent}% vs
                   previous period
                 </span>
+                ) : (
+                  <span className="progress-change">Available after AI analysis</span>
+                )}
 
                 <div className="focus-chart">
 
@@ -339,8 +360,9 @@ export default function Progress() {
                 </div>
 
                 <p className="progress-card-note">
-                  Focus quality is improving compared with the
-                  previous period.
+                  {progressData.focusQuality.available
+                    ? "Focus quality compared with the previous period."
+                    : "Focus analysis is intentionally deferred to the second integration stage."}
                 </p>
               </section>
 

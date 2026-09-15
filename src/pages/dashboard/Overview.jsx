@@ -21,59 +21,15 @@ import {
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
-import { child, parent } from "../../data/mockData";
 import elementIcon from "../../assets/elementIcon.png";
 import { useAuth } from "../../context/AuthContext";
-import { getSessionsByDay } from "../../services/home";
-import { getSessions } from "../../services/reports";
+import { getParentDashboard } from "../../services/dashboard";
 
 import "../../css/dashboard/Overview.css";
 
-const defaultSessions = [
-  {
-    subject: "Mathematics",
-    date: "Today, Oct 20 · 5:10 PM",
-    duration: "50 min",
-    format: "Digital",
-    status: "Completed",
-    focus: "88%",
-    note: "(Steady focus)",
-    icon: <Plus size={13} />,
-    tone: "",
-  },
-  {
-    subject: "English Literature",
-    date: "Yesterday, Oct 19 · 4:20 PM",
-    duration: "35 min",
-    format: "Paper notes",
-    status: "Completed",
-    focus: "82%",
-    note: "(Calm interval)",
-    icon: <BookText size={13} />,
-    tone: "tone-blue",
-  },
-  {
-    subject: "Physics",
-    date: "Oct 18 · 6:00 PM",
-    duration: "22 min",
-    format: "Digital",
-    status: "Paused",
-    focus: "",
-    note: "Not evaluated (<25m)",
-    icon: <Atom size={13} />,
-    tone: "tone-orange",
-  },
-];
-
 const hours = ["9am", "11am", "2pm", "5pm", "7pm"];
 
-const defaultHeatmap = [
-  [0, 0, 0, 0, 0, 2, 0],
-  [1, 0, 2, 0, 1, 3, 0],
-  [0, 2, 1, 1, 0, 0, 1],
-  [3, 3, 2, 3, 3, 0, 0],
-  [3, 0, 3, 2, 1, 0, 0],
-];
+const emptyHeatmap = Array.from({ length: 5 }, () => Array(7).fill(0));
 
 const days = ["M", "T", "W", "T", "F", "S", "S"];
 
@@ -108,7 +64,7 @@ function formatSessionForCard(raw) {
 
   return {
     subject,
-    date: raw.date ?? "",
+    date: raw.date ? new Date(raw.date).toLocaleString() : "",
     duration:
       durationMinutes != null
         ? `${durationMinutes} min`
@@ -123,62 +79,57 @@ function formatSessionForCard(raw) {
   };
 }
 
+function formatMinutes(minutes) {
+  const value = Number(minutes) || 0;
+  const hoursValue = Math.floor(value / 60);
+  const remaining = value % 60;
+  return hoursValue ? `${hoursValue}h ${remaining}m` : `${remaining}m`;
+}
+
 export default function Overview() {
   const { user, child: authChild } = useAuth();
-  const activeChild = authChild ?? child;
+  const activeChild = authChild ?? { preferredName: "your child", id: null };
 
   const [sessionFilter, setSessionFilter] = useState("all");
-  const [sessions, setSessions] = useState(defaultSessions);
-  const [heatmap, setHeatmap] = useState(defaultHeatmap);
+  const [sessions, setSessions] = useState([]);
+  const [heatmap, setHeatmap] = useState(emptyHeatmap);
+  const [dashboard, setDashboard] = useState(null);
 
   // ------------------------------------------------------------
-  // جلب أحدث الجلسات ونمط الجلسات حسب اليوم من الـ API.
-  // شكل الاستجابة غير موثق بالـ spec، فيتم التحقق من الشكل
-  // (خاصة أبعاد مصفوفة الـ heatmap) قبل استبدال البيانات
-  // الافتراضية، وأي فشل يبقي الواجهة كما كانت.
+  // Load the parent-authorized dashboard aggregate for the linked child.
   // ------------------------------------------------------------
   useEffect(() => {
     let isCancelled = false;
 
     async function loadOverviewData() {
       try {
-        const [sessionsByDay, recentSessions] = await Promise.all([
-          getSessionsByDay().catch(() => null),
-          getSessions({ studentId: activeChild?.id, pageSize: 3 }).catch(
-            () => null
-          ),
-        ]);
+        if (!activeChild?.id) return;
+        const data = await getParentDashboard(activeChild.id);
 
         if (isCancelled) return;
 
-        const matrix = Array.isArray(sessionsByDay)
-          ? sessionsByDay
-          : Array.isArray(sessionsByDay?.matrix)
-          ? sessionsByDay.matrix
-          : null;
+        const matrix = data?.activityMatrix;
 
         if (
           Array.isArray(matrix) &&
-          matrix.length === defaultHeatmap.length &&
+            matrix.length === emptyHeatmap.length &&
           matrix.every(
             (row) =>
-              Array.isArray(row) && row.length === defaultHeatmap[0].length
+              Array.isArray(row) && row.length === emptyHeatmap[0].length
           )
         ) {
           setHeatmap(matrix);
         }
 
-        const sessionItems = Array.isArray(recentSessions)
-          ? recentSessions
-          : Array.isArray(recentSessions?.items)
-          ? recentSessions.items
-          : null;
-
-        if (sessionItems && sessionItems.length > 0) {
-          setSessions(sessionItems.slice(0, 3).map(formatSessionForCard));
-        }
+        setDashboard(data);
+        setSessions((data?.recentSessions ?? []).map(formatSessionForCard));
       } catch (err) {
         console.error("Failed to load overview data:", err);
+        if (!isCancelled) {
+          setDashboard(null);
+          setSessions([]);
+          setHeatmap(emptyHeatmap);
+        }
       }
     }
 
@@ -187,7 +138,21 @@ export default function Overview() {
     return () => {
       isCancelled = true;
     };
-  }, [activeChild]);
+  }, [activeChild.id]);
+
+  const weeklyMinutes = dashboard?.weeklyMinutes ?? 0;
+  const previousWeekMinutes = dashboard?.previousWeekMinutes ?? 0;
+  const weeklyChange = weeklyMinutes - previousWeekMinutes;
+  const activeGoal = dashboard?.activeGoal;
+  const goalPercentage = activeGoal?.targetMinutes
+    ? Math.min(100, Math.round((activeGoal.completedMinutes / activeGoal.targetMinutes) * 100))
+    : 0;
+  const weeklyPoints = dashboard?.dailyStudyMinutes?.map((item) => item.minutes) ?? Array(7).fill(0);
+  const maxWeeklyMinutes = Math.max(1, ...weeklyPoints);
+  const chartPoints = weeklyPoints
+    .map((minutes, index) => `${10 + index * 40},${82 - (minutes / maxWeeklyMinutes) * 62}`)
+    .join(" ");
+  const peakIndex = weeklyPoints.indexOf(Math.max(...weeklyPoints));
 
   const filteredSessions = sessions.filter((session) => {
     if (sessionFilter === "all") return true;
@@ -233,12 +198,12 @@ export default function Overview() {
 
               <span className="green-badge">
                 <TrendingUp size={12} />
-                45 min from last week
+                {weeklyChange >= 0 ? "+" : ""}{weeklyChange} min from last week
               </span>
 
               <div className="weekly-main">
                 <div>
-                  <strong>4h 20m</strong>
+                  <strong>{formatMinutes(weeklyMinutes)}</strong>
 
                   <small>
                     <CheckCircle2 size={14} />
@@ -247,7 +212,7 @@ export default function Overview() {
                 </div>
 
                 <div className="line-chart">
-                  <span className="chart-tip">Fri: 1h 30m</span>
+                  <span className="chart-tip">Peak: {formatMinutes(weeklyPoints[peakIndex] ?? 0)}</span>
 
                   <svg
                     viewBox="0 0 260 92"
@@ -275,23 +240,17 @@ export default function Overview() {
                       </linearGradient>
                     </defs>
 
-                    <path
-                      fill="url(#pulseFill)"
-                      d="M10 70 C30 70 32 68 50 67 S72 61 90 58 S112 52 130 48 S152 32 170 30 S192 36 210 40 S232 44 250 46 L250 92 L10 92 Z"
-                    />
-
-                    <path
-                      className="chart-line"
-                      d="M10 70 C30 70 32 68 50 67 S72 61 90 58 S112 52 130 48 S152 32 170 30 S192 36 210 40 S232 44 250 46"
-                    />
-
-                    <circle className="chart-dot" cx="10" cy="70" r="2.6" />
-                    <circle className="chart-dot" cx="50" cy="67" r="2.6" />
-                    <circle className="chart-dot" cx="90" cy="58" r="2.6" />
-                    <circle className="chart-dot" cx="130" cy="48" r="2.6" />
-                    <circle className="chart-peak" cx="170" cy="30" r="4.5" />
-                    <circle className="chart-dot" cx="210" cy="40" r="2.6" />
-                    <circle className="chart-dot" cx="250" cy="46" r="2.6" />
+                    <polygon fill="url(#pulseFill)" points={`10,92 ${chartPoints} 250,92`} />
+                    <polyline className="chart-line" fill="none" points={chartPoints} />
+                    {weeklyPoints.map((minutes, index) => (
+                      <circle
+                        className={index === peakIndex && minutes > 0 ? "chart-peak" : "chart-dot"}
+                        cx={10 + index * 40}
+                        cy={82 - (minutes / maxWeeklyMinutes) * 62}
+                        key={index}
+                        r={index === peakIndex && minutes > 0 ? 4.5 : 2.6}
+                      />
+                    ))}
                   </svg>
 
                   <div className="chart-days">
@@ -299,7 +258,7 @@ export default function Overview() {
                     <span>Tue</span>
                     <span>Wed</span>
                     <span>Thu</span>
-                    <b>Fri (Peak)</b>
+                    <span>Fri</span>
                     <span>Sat</span>
                     <span>Sun</span>
                   </div>
@@ -309,17 +268,17 @@ export default function Overview() {
               <div className="weekly-footer">
                 <span>
                   <CheckCircle2 size={13} />
-                  5 of 6 sessions completed
+                  {dashboard?.completedSessionsThisWeek ?? 0} of {dashboard?.sessionsThisWeek ?? 0} sessions completed
                 </span>
 
                 <span>
                   <CalendarCheck size={13} />
-                  4 active study days
+                  {dashboard?.activeStudyDays ?? 0} active study days
                 </span>
 
                 <span>
                   <TrendingUp size={13} />
-                  Focus quality <b>improving</b>
+                  Focus quality <b>available after AI analysis</b>
                 </span>
               </div>
             </article>
@@ -379,8 +338,9 @@ export default function Overview() {
               </div>
 
               <p className="insight">
-                <b>Insight:</b> {activeChild.preferredName}’s most consistent sessions
-                happen between 5:00 PM and 7:00 PM based on verified logs.
+                <b>Insight:</b> {dashboard?.mostConsistentTimeOfDay
+                  ? `${activeChild.preferredName} most often studies in the ${dashboard.mostConsistentTimeOfDay.toLowerCase()}.`
+                  : "More completed sessions are needed to identify a pattern."}
               </p>
             </article>
           </section>
@@ -389,16 +349,16 @@ export default function Overview() {
             <article className="figma-card goal-card">
               <CardTitle icon={<Flag size={17} />} title="Active Goal" />
 
-              <span className="weekly-label">Weekly</span>
+              <span className="weekly-label">{activeGoal?.frequency ?? "Weekly"}</span>
 
               <div className="goal-number">
-                <strong>4h 20m</strong>
-                <span>of 6h</span>
-                <b>72% complete</b>
+                <strong>{formatMinutes(activeGoal?.completedMinutes ?? 0)}</strong>
+                <span>of {formatMinutes(activeGoal?.targetMinutes ?? 0)}</span>
+                <b>{activeGoal ? `${goalPercentage}% complete` : "No goal this week"}</b>
               </div>
 
               <div className="goal-progress">
-                <i />
+                <i style={{ width: `${goalPercentage}%` }} />
               </div>
 
               <div className="goal-badges">
@@ -409,22 +369,20 @@ export default function Overview() {
 
                 <span>
                   <Check size={12} />
-                  Accepted by {activeChild.preferredName}
+                  {activeGoal?.status === "active" ? `Accepted by ${activeChild.preferredName}` : "Pending acceptance"}
                 </span>
               </div>
 
               <p>
-                {activeChild.preferredName} completed four Math sessions in the last
-                14 days.
+                {activeChild.preferredName} has completed {dashboard?.completedSessionsThisWeek ?? 0} sessions this week.
               </p>
 
               <p>
-                Sessions completed before 7 PM showed stronger sustained focus
-                than evening sessions.
+                AI-based focus comparisons will appear after the second integration stage.
               </p>
 
               <footer>
-                <span>2 days remaining in cycle</span>
+                <span>{activeGoal?.daysRemaining ?? 0} days remaining in cycle</span>
 
                 <Link to="/study-goals">
                   View goal
@@ -527,11 +485,11 @@ export default function Overview() {
 
               <footer>
                 <span>
-                  Showing {filteredSessions.length} of 18 historical sessions
+                  Showing {filteredSessions.length} recent sessions
                 </span>
 
                 <Link to="/reports">
-                  View all 18 historical reports
+                  View all historical reports
                   <ArrowRight size={13} />
                 </Link>
               </footer>

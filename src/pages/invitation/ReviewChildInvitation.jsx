@@ -8,6 +8,7 @@ import {
   declineParentInvitation,
 } from "../../services/access";
 import { useAuth } from "../../context/AuthContext";
+import { ApiError } from "../../services/apiClient";
 import {
   UserRoundPlus,
   Check,
@@ -19,22 +20,27 @@ export default function ReviewChildInvitation() {
   const navigate = useNavigate();
   const { setUser, refreshUser } = useAuth();
   const [showDecline, setShowDecline] = useState(false);
+  const [error, setError] = useState("");
 
-  const childName = mockChild.preferredName;
+  const previewRaw = sessionStorage.getItem("pendingInvitationPreview");
+  const preview = previewRaw ? JSON.parse(previewRaw) : null;
+  const childName = preview?.studentPreferredName ?? mockChild.preferredName;
   const sharedItems = mockInvitation.sharedItems;
 
   async function handleConfirmConnection() {
     const token = sessionStorage.getItem("pendingInvitationToken");
+    setError("");
 
     try {
-      if (token) {
-        await acceptParentInvitation(token);
-      }
+      if (!token) throw new Error("The invitation token is missing.");
+      await acceptParentInvitation(token);
     } catch (err) {
-      console.error("Failed to accept parent invitation:", err);
+      setError(err instanceof ApiError ? err.message : err.message);
+      return;
     }
 
     sessionStorage.removeItem("pendingInvitationToken");
+    sessionStorage.removeItem("pendingInvitationPreview");
     setUser((current) => (current ? { ...current, hasChild: true } : current));
     refreshUser();
     navigate("/overview");
@@ -42,16 +48,19 @@ export default function ReviewChildInvitation() {
 
   async function handleDecline() {
     const token = sessionStorage.getItem("pendingInvitationToken");
+    setError("");
 
     try {
-      if (token) {
-        await declineParentInvitation(token);
-      }
+      if (!token) throw new Error("The invitation token is missing.");
+      await declineParentInvitation(token);
     } catch (err) {
-      console.error("Failed to decline parent invitation:", err);
+      setError(err instanceof ApiError ? err.message : err.message);
+      setShowDecline(false);
+      return;
     }
 
     sessionStorage.removeItem("pendingInvitationToken");
+    sessionStorage.removeItem("pendingInvitationPreview");
     setUser((current) => (current ? { ...current, hasChild: false } : current));
     navigate("/overview");
   }
@@ -111,6 +120,7 @@ export default function ReviewChildInvitation() {
             </div>
 
             <div className="review-invitation-actions">
+              {error && <p className="password-error">{error}</p>}
               <Button onClick={handleConfirmConnection}>
                 Confirm connection
               </Button>

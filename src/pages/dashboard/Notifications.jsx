@@ -1,15 +1,25 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ParentLayout } from "../../components/ui/CommonUI";
-import { dashboardMockData } from "../../data/mockData";
+import { useAuth } from "../../context/AuthContext";
+import { getNotifications, markNotificationRead } from "../../services/notifications";
 import "../../css/dashboard/Notifications.css";
 
 export default function Notifications() {
   const navigate = useNavigate();
+  const { child } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
-  const [notifications, setNotifications] = useState(
-    dashboardMockData.notifications
-  );
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getNotifications()
+      .then((data) => {
+        if (!cancelled) setNotifications(Array.isArray(data) ? data : data?.items ?? []);
+      })
+      .catch((error) => console.error("Failed to load notifications:", error));
+    return () => { cancelled = true; };
+  }, [child?.id]);
 
   const filteredNotifications = useMemo(() => {
     if (activeTab === "all") {
@@ -25,7 +35,7 @@ export default function Notifications() {
     (notification) => !notification.isRead
   ).length;
 
-  function openNotification(notification) {
+  async function openNotification(notification) {
     setNotifications((current) =>
       current.map((item) =>
         item.id === notification.id
@@ -34,7 +44,16 @@ export default function Notifications() {
       )
     );
 
-    navigate(notification.actionPath);
+    if (!notification.isRead) {
+      try {
+        await markNotificationRead(notification.id);
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+      }
+    }
+    if (notification.actionPath) {
+      navigate(notification.actionPath);
+    }
   }
 
   return (
@@ -49,7 +68,7 @@ export default function Notifications() {
               <span>{unreadCount} unread</span>
             </div>
 
-            <p>Meaningful updates about Youssef&apos;s learning activity.</p>
+            <p>Meaningful updates about {child?.preferredName ?? "your child"}&apos;s learning activity.</p>
           </div>
         </header>
 
@@ -96,7 +115,7 @@ export default function Notifications() {
               <div className="notification-content">
                 <div className="notification-top-row">
                   <h2>{notification.title}</h2>
-                  <small>{notification.date}</small>
+                  <small>{new Date(notification.createdAtUtc).toLocaleString()}</small>
                 </div>
 
                 <p>{notification.message}</p>

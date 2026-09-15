@@ -36,6 +36,38 @@ function calculateAge(dateOfBirth) {
   return age;
 }
 
+const priorityValues = {
+  "Help my child build a study routine": "BuildStudyRoutine",
+  "Help my child stay focused": "StayFocused",
+  "Help my child understand difficult topics": "UnderstandDifficultTopics",
+  "Support my child’s exam preparation": "ExamPreparation",
+  "Encourage my child to reach study goals": "ReachStudyGoals",
+};
+
+function toGrade(value) {
+  if (!value) return null;
+  return value === "Other" ? "Other" : value.replace(/\s+/g, "");
+}
+
+function toSubject(value) {
+  const type = value === "Mathematics" ? "Math" : value;
+  const known = [
+    "Math",
+    "English",
+    "History",
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "Geography",
+    "Languages",
+    "ComputerScience",
+  ];
+
+  return known.includes(type)
+    ? { type, customName: null }
+    : { type: "Other", customName: value };
+}
+
 export default function ReviewChildProfile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -85,18 +117,25 @@ export default function ReviewChildProfile() {
 
     if (draftId) {
       try {
-        // ملاحظة: بعض الحقول هنا (subjects / studyPriorities / studyTimeGoal)
-        // مرتبطة بقيم enum في الـ backend غير موثّقة في ملف الـ OpenAPI،
-        // لذلك يتم إرسالها بشكل آمن (فارغة) لحين تأكيد القيم الفعلية —
-        // باقي الحقول (الاسم وتاريخ الميلاد) يتم إرسالها فعليًا.
+        const weeklyHours = Number(child.studyTimeGoal?.value);
+
         await updateChildSetupDraft(draftId, {
           firstName: child.preferredName || "",
           lastName: child.lastName || "",
           dateOfBirth: child.dateOfBirth || null,
-          grade: null,
-          subjects: [],
-          studyPriorities: [],
-          studyTimeGoal: null,
+          grade: toGrade(child.grade),
+          subjects: (child.subjects ?? []).map(toSubject),
+          studyPriorities: (child.studyPriorities ?? [])
+            .map((priority) => priorityValues[priority])
+            .filter(Boolean),
+          studyTimeGoal: Number.isFinite(weeklyHours)
+            ? {
+                period: "Weekly",
+                targetMinutes: weeklyHours * 60,
+                days: ["Monday"],
+                startDate: null,
+              }
+            : null,
         });
       } catch (err) {
         console.error("Failed to sync child setup draft:", err);

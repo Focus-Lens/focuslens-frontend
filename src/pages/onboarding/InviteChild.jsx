@@ -98,7 +98,13 @@ export default function InviteChild() {
     }
 
     try {
-      await inviteChildSetupByEmail(draftId, { childEmail: cleanEmail });
+      const invitation = await inviteChildSetupByEmail(draftId, {
+        childEmail: cleanEmail,
+      });
+      sessionStorage.setItem("pendingChildEmail", cleanEmail);
+      if (invitation?.invitationUrl) {
+        sessionStorage.setItem("pendingChildInvitationUrl", invitation.invitationUrl);
+      }
       navigate("/setup/invitation-sent");
     } catch (err) {
       showSendingError(
@@ -138,7 +144,8 @@ export default function InviteChild() {
     if (draftId) {
       try {
         const data = await inviteChildSetupByLink(draftId);
-        const realLink = data?.link ?? data?.url ?? data?.inviteLink;
+        const realLink =
+          data?.invitationUrl ?? data?.link ?? data?.url ?? data?.inviteLink;
         if (realLink) link = realLink;
       } catch (err) {
         console.error("Failed to create child setup link:", err);

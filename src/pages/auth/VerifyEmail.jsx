@@ -76,12 +76,8 @@ export default function VerifyEmail() {
     if (isOpening) return;
 
     setIsOpening(true);
-    setToastDescription("Your parent account is ready.");
-    setToast("Email verified");
-
-    setTimeout(() => {
-      navigate("/account-created");
-    }, 3000);
+    window.location.href = "mailto:";
+    window.setTimeout(() => setIsOpening(false), 1000);
   }
 
   async function resendLink() {
@@ -153,7 +149,7 @@ export default function VerifyEmail() {
               onClick={openEmailApp}
               disabled={isOpening}
             >
-              {isOpening ? "Email verified" : "Open email app"}
+              {isOpening ? "Opening email app…" : "Open email app"}
             </button>
 
             <button

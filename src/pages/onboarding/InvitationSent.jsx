@@ -16,12 +16,12 @@ import "../../css/onboarding/InvitationSent.css";
 export default function InvitationSent() {
   const navigate = useNavigate();
   const [showCopiedModal, setShowCopiedModal] = useState(false);
+  const invitationUrl = sessionStorage.getItem("pendingChildInvitationUrl") ?? "";
+  const childEmail = sessionStorage.getItem("pendingChildEmail") ?? child.email;
 
   async function copyInvitationLink() {
     try {
-      await navigator.clipboard.writeText(
-        "focuslens.example/invite/youssef-demo"
-      );
+      await navigator.clipboard.writeText(invitationUrl);
 
       setShowCopiedModal(true);
     } catch {
@@ -51,7 +51,7 @@ export default function InvitationSent() {
 
               {/* EMAIL */}
               <p className="invitation-sent-email">
-                Sent to {child.email}
+                Sent to {childEmail}
               </p>
 
               {/* DESCRIPTION */}
@@ -74,6 +74,7 @@ export default function InvitationSent() {
               {/* SECONDARY BUTTON */}
               <button
                 className="invitation-sent-secondary"
+                disabled={!invitationUrl}
                 onClick={copyInvitationLink}
                 type="button"
               >
