@@ -236,9 +236,10 @@ export default function CreateParentAccount() {
   // onSuccess={signInWithGoogle} // في SignIn
   onError={() => setGoogleError("Google sign-in failed. Please try again.")}
   text="continue_with"
+  locale="en"
   theme="outline"
-  size="large"
-  shape="rectangular"
+  size="medium"
+  shape="pill"
   width="400"
 />
           </div>
