@@ -31,13 +31,20 @@ export default function SignIn({ restoreAccount = false }) {
 
     try {
       setError("");
+
       const response = await api("/api/auth/login", {
         method: "POST",
         auth: false,
         body: { email: email.trim(), password },
       });
+
       login(response);
-      navigate(sessionStorage.getItem("pendingInvitationToken") ? "/choose-start" : "/overview");
+
+      navigate(
+        sessionStorage.getItem("pendingInvitationToken")
+          ? "/choose-start"
+          : "/overview",
+      );
     } catch (requestError) {
       setError(requestError.message);
     }
@@ -52,11 +59,13 @@ export default function SignIn({ restoreAccount = false }) {
     try {
       setIsSubmitting(true);
       setError("");
+
       await api("/api/auth/restore-account", {
         method: "POST",
         auth: false,
         body: { email: email.trim(), password },
       });
+
       setSuccess("Your account has been restored. You can sign in now.");
     } catch (requestError) {
       setError(requestError.message);
@@ -68,13 +77,20 @@ export default function SignIn({ restoreAccount = false }) {
   async function signInWithGoogle(credentialResponse) {
     try {
       setError("");
+
       const response = await api("/api/auth/google/parent", {
         method: "POST",
         auth: false,
         body: { idToken: credentialResponse.credential },
       });
+
       login(response);
-      navigate(sessionStorage.getItem("pendingInvitationToken") ? "/choose-start" : "/overview");
+
+      navigate(
+        sessionStorage.getItem("pendingInvitationToken")
+          ? "/choose-start"
+          : "/overview",
+      );
     } catch {
       setError("Google sign-in failed. Please try again.");
     }
@@ -91,6 +107,7 @@ export default function SignIn({ restoreAccount = false }) {
 
         <Field
           label="Email address"
+          type="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
         />
@@ -103,37 +120,69 @@ export default function SignIn({ restoreAccount = false }) {
         />
 
         {error && <p className="password-error">{error}</p>}
-        {success && <p className="signin-subtitle">{success} <Link to="/sign-in">Sign in</Link></p>}
 
-        {!restoreAccount && <div className="form-row">
-          <label className="check">
-            <input type="checkbox" />
-            <span>Remember me</span>
-          </label>
+        {success && (
+          <p className="signin-subtitle">
+            {success} <Link to="/sign-in">Sign in</Link>
+          </p>
+        )}
 
-          <Link to="/forgot-password">Forgot password?</Link>
-        </div>}
+        {!restoreAccount && (
+          <div className="form-row">
+            <label className="check">
+              <input type="checkbox" />
+              <span>Remember me</span>
+            </label>
+
+            <Link to="/forgot-password">Forgot password?</Link>
+          </div>
+        )}
 
         <div className="actions signin-actions">
-          <Button disabled={isSubmitting} onClick={restoreAccount ? restoreDeletedAccount : handleSignIn}>
-            {restoreAccount ? (isSubmitting ? "Restoring..." : "Restore account") : "Sign in"}
+          <Button
+            disabled={isSubmitting}
+            onClick={restoreAccount ? restoreDeletedAccount : handleSignIn}
+          >
+            {restoreAccount
+              ? isSubmitting
+                ? "Restoring..."
+                : "Restore account"
+              : "Sign in"}
           </Button>
         </div>
 
-        {!restoreAccount && <div className="google-button-wrap">
-          <GoogleLogin onSuccess={signInWithGoogle} onError={() => setError("Google sign-in failed. Please try again.")} />
-        </div>}
+        {!restoreAccount && (
+          <div className="google-button-wrap">
+            <GoogleLogin
+              onSuccess={signInWithGoogle}
+              onError={() => setError("Google sign-in failed. Please try again.")}
+              text="continue_with"
+              theme="outline"
+              size="large"
+              shape="pill"
+              width="400"
+            />
+          </div>
+        )}
 
-        {!restoreAccount && <p className="already-account">
-          New to FocusLens?{" "}
-          <Link to="/register">Create a parent account</Link>
-        </p>}
+        {!restoreAccount && (
+          <p className="already-account">
+            New to FocusLens?{" "}
+            <Link to="/register">Create a parent account</Link>
+          </p>
+        )}
 
-        <p className="already-account"><Link to={restoreAccount ? "/sign-in" : "/restore-account"}>{restoreAccount ? "Back to sign in" : "Restore a deleted account"}</Link></p>
+        <p className="already-account">
+          <Link to={restoreAccount ? "/sign-in" : "/restore-account"}>
+            {restoreAccount ? "Back to sign in" : "Restore a deleted account"}
+          </Link>
+        </p>
 
-        {!restoreAccount && <p className="invitation-expiry">
-          Invitation expires in 7 days
-        </p>}
+        {!restoreAccount && (
+          <p className="invitation-expiry">
+            Invitation expires in 7 days
+          </p>
+        )}
       </Card>
     </AuthLayout>
   );
