@@ -240,7 +240,7 @@ export default function CreateParentAccount() {
   theme="outline"
   size="medium"
   shape="pill"
-  width="390"
+  width="400"
 />
           </div>
 
