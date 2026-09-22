@@ -153,17 +153,16 @@ export default function SignIn({ restoreAccount = false }) {
 
         {!restoreAccount && (
           <div className="google-button-wrap">
-            <GoogleLogin
-  onSuccess={loginWithGoogle} // في CreateParentAccount
-  // onSuccess={signInWithGoogle} // في SignIn
-  onError={() => setGoogleError("Google sign-in failed. Please try again.")}
-  text="continue_with"
-  theme="outline"
-  size="large"
-  shape="rectangular"
-  width="400"
-/>
-          </div>
+  <GoogleLogin
+    onSuccess={signInWithGoogle}
+    onError={() => setError("Google sign-in failed. Please try again.")}
+    text="continue_with"
+    theme="outline"
+    size="large"
+    shape="rectangular"
+    width="400"
+  />
+</div>
         )}
 
         {!restoreAccount && (
