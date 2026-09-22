@@ -232,14 +232,15 @@ export default function CreateParentAccount() {
 
           <div className="google-button-wrap">
             <GoogleLogin
-              onSuccess={loginWithGoogle}
-              onError={() => setGoogleError("Google sign-in failed. Please try again.")}
-              text="continue_with"
-              theme="outline"
-              size="large"
-              shape="pill"
-              width="400"
-            />
+  onSuccess={loginWithGoogle} // في CreateParentAccount
+  // onSuccess={signInWithGoogle} // في SignIn
+  onError={() => setGoogleError("Google sign-in failed. Please try again.")}
+  text="continue_with"
+  theme="outline"
+  size="large"
+  shape="rectangular"
+  width="400"
+/>
           </div>
 
           {googleError && <p className="email-error">{googleError}</p>}
