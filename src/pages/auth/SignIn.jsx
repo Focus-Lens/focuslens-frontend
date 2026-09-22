@@ -158,8 +158,8 @@ export default function SignIn({ restoreAccount = false }) {
     onError={() => setError("Google sign-in failed. Please try again.")}
     text="continue_with"
     theme="outline"
-    size="large"
-    shape="rectangular"
+    size="medium"
+    shape="pill"
     width="400"
   />
 </div>
