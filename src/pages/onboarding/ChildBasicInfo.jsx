@@ -1,35 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ParentLayout, Button, Card, Field, AuthLayout } from "../../components/ui/CommonUI";
-import { child } from "../../data/mockData";
-import { createChildSetupDraft } from "../../services/parents";
-import { Info, ArrowLeft } from "lucide-react";
+import { useChildProfile } from "../../context/ChildProfileContext";
+import { Info, ArrowLeft, UserRound } from "lucide-react";
 import "../../css/onboarding/ChildBasicInfo.css";
 
 export default function ChildBasicInfo() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { child, updateChild } = useChildProfile();
 
   const [name, setName] = useState(child.preferredName || "");
   const [lastName, setLastName] = useState(child.lastName || "");
   const [dateOfBirth, setDateOfBirth] = useState(child.dateOfBirth || "");
-
-  // ننشئ مسودة إعداد الطفل (child-setup draft) مرة واحدة عند بداية الرحلة،
-  // ونحتفظ بمعرّفها لباقي خطوات الإعداد (الأمر لا يظهر في الواجهة إطلاقًا).
-  useEffect(() => {
-    if (sessionStorage.getItem("childSetupDraftId")) return;
-
-    createChildSetupDraft()
-      .then((data) => {
-        const draftId = data?.id ?? data?.draftId;
-        if (draftId) {
-          sessionStorage.setItem("childSetupDraftId", draftId);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to create child setup draft:", err);
-      });
-  }, []);
 
   const steps = [
     "Basic info",
@@ -41,9 +24,7 @@ export default function ChildBasicInfo() {
   ];
 
   function handleContinue() {
-    child.preferredName = name;
-    child.lastName = lastName;
-    child.dateOfBirth = dateOfBirth;
+    updateChild({ preferredName: name.trim(), lastName: lastName.trim(), dateOfBirth });
 
     const returnTo = searchParams.get("returnTo");
 
@@ -106,7 +87,9 @@ export default function ChildBasicInfo() {
             ========================= */}
             <div className="child-basic-avatar-row">
               <span className="child-basic-avatar">
-                {name?.[0]?.toUpperCase() ?? "Y"}
+                {name.trim()
+                  ? name.trim()[0].toUpperCase()
+                  : <UserRound size={20} strokeWidth={1.8} aria-label="Profile placeholder" />}
               </span>
 
               <div className="child-basic-avatar-text">
@@ -121,7 +104,11 @@ export default function ChildBasicInfo() {
             <Field
               label="Preferred name"
               value={name}
-              onChange={(event) => setName(event.target.value)}
+              onChange={(event) => {
+                const nextName = event.target.value;
+                setName(nextName);
+                updateChild({ preferredName: nextName.trim() });
+              }}
             />
 
             {/* =========================
@@ -130,7 +117,11 @@ export default function ChildBasicInfo() {
             <Field
               label="Last name"
               value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
+              onChange={(event) => {
+                const nextLastName = event.target.value;
+                setLastName(nextLastName);
+                updateChild({ lastName: nextLastName.trim() });
+              }}
             />
 
             {/* =========================
@@ -140,7 +131,11 @@ export default function ChildBasicInfo() {
               label="Date of birth"
               type="date"
               value={dateOfBirth}
-              onChange={(event) => setDateOfBirth(event.target.value)}
+              onChange={(event) => {
+                const nextDateOfBirth = event.target.value;
+                setDateOfBirth(nextDateOfBirth);
+                updateChild({ dateOfBirth: nextDateOfBirth });
+              }}
             />
 
             {/* =========================

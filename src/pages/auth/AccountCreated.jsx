@@ -1,13 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
-import { useAuth } from "../../context/AuthContext";
-
+import { parent } from "../../data/mockData";
+import "../../css/auth/AccountCreated.css"
 export default function AccountCreated() {
   const navigate = useNavigate();
-  const { setUser } = useAuth();
 
   function handleDoThisLater() {
-    setUser((current) => (current ? { ...current, hasChild: false } : current));
+    parent.hasChild = false;
     navigate("/overview");
   }
 
@@ -19,7 +18,7 @@ export default function AccountCreated() {
 
         <div className="account-created-logo">
           <img
-            src="/public/images/Focuslens logo animation - success 2.png"
+            src="/images/Focuslens logo animation - success 2.png"
             alt="FocusLens"
           />
         </div>

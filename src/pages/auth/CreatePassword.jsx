@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
-import { useAuth } from "../../context/AuthContext";
-import { ApiError } from "../../services/apiClient";
+import { api } from "../../services/api";
 
 import {
   RiEyeLine,
@@ -15,13 +14,12 @@ import "../../css/auth/CreatePassword.css";
 
 export default function CreatePassword() {
   const navigate = useNavigate();
-  const { registerParent } = useAuth();
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [submitError, setSubmitError] = useState("");
+  const [requestError, setRequestError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const checks = [
@@ -62,51 +60,35 @@ export default function CreatePassword() {
 
   async function handleConfirm() {
     if (isSubmitting) return;
-
-    setSubmitError("");
-
-    const draftRaw = sessionStorage.getItem("pendingRegistration");
-    const draft = draftRaw ? JSON.parse(draftRaw) : null;
-
-    if (!draft?.email) {
-      setSubmitError("Registration details were lost. Please start again.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
+    let pending;
     try {
-      await registerParent({
-        email: draft.email,
-        password,
-        firstName: draft.firstName,
-        lastName: draft.lastName,
-        acceptTerms: draft.acceptTerms,
-      });
-
-      sessionStorage.setItem("pendingParentEmail", draft.email);
-      sessionStorage.removeItem("pendingRegistration");
-
+      setIsSubmitting(true);
+      setRequestError("");
+      pending = JSON.parse(sessionStorage.getItem("pendingParentRegistration") || "null");
+      if (!pending) throw new Error("Your registration details have expired. Please start again.");
+      await api("/api/auth/register/parent", { method: "POST", auth: false, body: { ...pending, password } });
+      sessionStorage.setItem("pendingParentEmail", pending.email);
       navigate("/verify-email");
-    } catch (err) {
-      const errorCode = err?.data?.errors?.[0]?.code;
-
-      if (
-        err instanceof ApiError &&
-        err.status === 409 &&
-        errorCode === "Identity_Email_Already_Registered"
-      ) {
-        sessionStorage.setItem("pendingParentEmail", draft.email);
-        sessionStorage.removeItem("pendingRegistration");
-        navigate("/verify-email");
-        return;
+    } catch (error) {
+      if (error.status === 409) {
+        sessionStorage.setItem(
+          "parentRegistrationEmailError",
+          "This email is already associated with an account. Sign in or use another email.",
+        );
+        navigate("/register");
+      } else {
+        const backendMessage = String(error.message || "").toLowerCase();
+        const emailDeliveryFailed =
+          error.status >= 500 ||
+          backendMessage.includes("gmail") ||
+          backendMessage.includes("smtp") ||
+          backendMessage.includes("verification email");
+        setRequestError(
+          emailDeliveryFailed
+            ? "Unable to send verification email. Please try again later."
+            : error.message,
+        );
       }
-
-      setSubmitError(
-        err instanceof ApiError
-          ? err.message
-          : "Something went wrong. Please try again."
-      );
     } finally {
       setIsSubmitting(false);
     }
@@ -135,7 +117,6 @@ export default function CreatePassword() {
             <input
               type={showPassword ? "text" : "password"}
               value={password}
-              disabled={isSubmitting}
               onChange={(event) =>
                 setPassword(event.target.value)
               }
@@ -145,7 +126,6 @@ export default function CreatePassword() {
             <button
               type="button"
               className="eye-button"
-              disabled={isSubmitting}
               onClick={() =>
                 setShowPassword(!showPassword)
               }
@@ -191,7 +171,6 @@ export default function CreatePassword() {
                   : "password"
               }
               value={confirmPassword}
-              disabled={isSubmitting}
               onChange={(event) =>
                 setConfirmPassword(
                   event.target.value
@@ -203,7 +182,6 @@ export default function CreatePassword() {
             <button
               type="button"
               className="eye-button"
-              disabled={isSubmitting}
               onClick={() =>
                 setShowConfirmPassword(
                   !showConfirmPassword
@@ -241,11 +219,7 @@ export default function CreatePassword() {
             </p>
           )}
 
-        {submitError && (
-          <p className="password-error">
-            {submitError}
-          </p>
-        )}
+        {requestError && <p className="password-error">{requestError}</p>}
 
         {/* =========================
             Password Strength
@@ -331,13 +305,9 @@ export default function CreatePassword() {
 
           {/* Confirm */}
 
-          {canContinue || isSubmitting ? (
-            <Button
-              onClick={handleConfirm}
-              isLoading={isSubmitting}
-              loadingLabel="Creating account…"
-            >
-              Confirm
+          {canContinue ? (
+            <Button onClick={handleConfirm} disabled={isSubmitting}>
+              {isSubmitting ? "Creating account..." : "Confirm"}
             </Button>
           ) : (
             <button

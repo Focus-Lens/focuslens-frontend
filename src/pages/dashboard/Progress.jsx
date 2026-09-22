@@ -7,6 +7,7 @@ import {
   CalendarDays,
   Clock3,
   Info,
+  Mail,
   Moon,
   Sun,
   TrendingUp,
@@ -14,8 +15,15 @@ import {
 } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
-import { getProgress, getBehavioralProgress } from "../../services/progress";
 import DashboardHeader from "../../components/ui/DashboardHeader";
+import { api } from "../../services/api";
+import {
+  cacheParentChildren,
+  findConnectedChild,
+  findPendingChild,
+  getCachedParentChildren,
+} from "../../services/parentChildrenCache";
+import { getPendingInvitationForUser } from "../../services/pendingInvitationCache";
 import { useAuth } from "../../context/AuthContext";
 
 import arrowImage from "../../assets/arrow.jpg";
@@ -39,84 +47,59 @@ function formatStudyTime(minutes) {
 
 export default function Progress() {
   const navigate = useNavigate();
-  const { child } = useAuth();
+  const { user } = useAuth();
 
-  const [range, setRange] = useState("Last30Days");
-  const [progressData, setProgressData] = useState({
-    focusQuality: { available: false, average: null, changePercent: null, trend: null, points: [] },
-    studyTime: { totalMinutes: 0, changeMinutes: 0, points: [] },
-    subjects: [],
-    timeOfDayPattern: null,
-  });
+  const [range, setRange] = useState("30");
 
-  const [selectedSubjectName, setSelectedSubjectName] = useState(
-    null
-  );
+  const [selectedSubjectName, setSelectedSubjectName] = useState("");
 
   const [selectedTimePeriod, setSelectedTimePeriod] = useState("Afternoon");
+  const [childInfo, setChildInfo] = useState(() => findConnectedChild(getCachedParentChildren()));
+  const [pendingChild, setPendingChild] = useState(
+    () => findPendingChild(getCachedParentChildren()) || getPendingInvitationForUser(user?.email)
+  );
+  const [dashboard, setDashboard] = useState(null);
+  const [sessionHistory, setSessionHistory] = useState([]);
 
   useEffect(() => {
-    let isCancelled = false;
-
-    async function loadProgress() {
-      try {
-        const [progress, behavioral] = await Promise.all([
-          getProgress({ studentId: child?.id, range }).catch(() => null),
-          getBehavioralProgress({ studentId: child?.id, range }).catch(() => null),
-        ]);
-
-        if (isCancelled) return;
-
-        const focusPoints = (behavioral?.daily ?? []).map(
-          (day) => day.focusScore ?? 0
+    let active = true;
+    api("/api/parents/overview/children")
+      .then(async (children) => {
+        if (!active) return;
+        cacheParentChildren(children);
+        const connectedChild = findConnectedChild(children);
+        setChildInfo(connectedChild);
+        setPendingChild(
+          findPendingChild(children) || getPendingInvitationForUser(user?.email)
         );
+        if (connectedChild?.studentId) {
+          const [dashboardData, history] = await Promise.all([
+            api(`/api/parents/students/${connectedChild.studentId}/dashboard`).catch(() => null),
+            api(`/api/parents/students/${connectedChild.studentId}/dashboard/sessions?page=1&pageSize=100`).catch(() => null),
+          ]);
+          if (active) {
+            setDashboard(dashboardData);
+            setSessionHistory(history?.sessions || dashboardData?.recentStudySessions || []);
+          }
+        } else if (active) {
+          setDashboard(null);
+          setSessionHistory([]);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!active) return;
+      });
+    return () => { active = false; };
+  }, [user?.email]);
 
-        setProgressData({
-          focusQuality: {
-            available: behavioral?.focus?.latestScore != null,
-            average: behavioral?.focus?.latestScore ?? null,
-            changePercent: 0,
-            trend: behavioral?.focus?.trend?.toLowerCase() ?? null,
-            points: focusPoints,
-          },
-          studyTime: {
-            totalMinutes: progress?.actualStudyMinutes ?? 0,
-            changeMinutes: 0,
-            points: (progress?.daily ?? []).map(
-              (day) => day.actualStudyMinutes ?? 0
-            ),
-          },
-          subjects: (progress?.subjects ?? []).map((subject) => ({
-            ...subject,
-            name: subject.subject,
-            sessions: subject.sessionCount,
-            totalMinutes: subject.actualStudyMinutes,
-            trend: null,
-            hasEnoughData: subject.dataStatus === "EnoughData",
-          })),
-          timeOfDayPattern: null,
-        });
-      } catch (err) {
-        console.error("Failed to load progress data:", err);
-      }
-    }
-
-    loadProgress();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [range, child?.id]);
-
+  const subjects = useMemo(() => buildSubjectStats(sessionHistory), [sessionHistory]);
   const selectedSubject = useMemo(
-    () =>
-      progressData.subjects.find(
-        (subject) => subject.name === selectedSubjectName
-      ) ?? progressData.subjects[0],
-    [selectedSubjectName, progressData.subjects]
+    () => subjects.find((subject) => subject.name === selectedSubjectName) || subjects[0],
+    [selectedSubjectName, subjects],
   );
-
-  const focusPoints = progressData.focusQuality.points;
+  const pulseDays = dashboard?.weeklyStudyPulse?.days || [];
+  const focusPoints = pulseDays.map(() => dashboard?.focusQuality ?? 0);
 
   const chartWidth = 330;
   const chartHeight = 150;
@@ -133,12 +116,59 @@ export default function Progress() {
     })
     .join(" ");
 
-  const maxStudyMinutes = Math.max(1, ...progressData.studyTime.points);
+  const studyPoints = pulseDays.map((day) => day.actualStudyMinutes || 0);
+  const maxStudyMinutes = Math.max(1, ...studyPoints);
+  const hasActivity = sessionHistory.length > 0 || (dashboard?.weeklyStudyPulse?.actualStudyMinutes || 0) > 0;
+
+  if (!childInfo) {
+    return (
+      <div className="progress-page-shell">
+        <DashboardHeader activePage="progress" />
+        <ParentLayout>
+          <ProgressUnavailable
+            childName={pendingChild?.firstName}
+            onAction={() => navigate(pendingChild ? "/children" : "/choose-start")}
+          />
+        </ParentLayout>
+      </div>
+    );
+  }
+
+  if (!hasActivity) {
+    return (
+      <div className="progress-page-shell">
+        <DashboardHeader activePage="progress" />
+        <ParentLayout>
+          <main className="progress-page progress-empty-connected-page">
+            <header className="progress-heading">
+              <div>
+                <h1>Progress</h1>
+                <p>See how focus quality and study patterns change over time.</p>
+              </div>
+            </header>
+            <section className="progress-connected-empty-card">
+              <span className="progress-empty-spark"><TrendingUp size={30} /></span>
+              <h2>{childInfo.firstName || "Your child"}&apos;s progress will grow here</h2>
+              <p>
+                There&apos;s no shared study activity yet. Once {childInfo.firstName || "your child"}
+                records sessions, this page will show real study time, focus quality, and subject progress.
+              </p>
+              <div>
+                <span>Study time</span><b>0m</b>
+                <span>Focus quality</span><b>Not available yet</b>
+                <span>Sessions</span><b>0</b>
+              </div>
+            </section>
+          </main>
+        </ParentLayout>
+      </div>
+    );
+  }
 
   return (
     <div className="progress-page-shell">
 
-      {/*
+      {/* 
         null = مفيش أي item في الـ navbar Active
         لو عايزة Progress يبقى Active:
         activePage="progress"
@@ -164,24 +194,24 @@ export default function Progress() {
 
             <div className="progress-ranges">
               <button
-                className={range === "Last7Days" ? "active" : ""}
-                onClick={() => setRange("Last7Days")}
+                className={range === "7" ? "active" : ""}
+                onClick={() => setRange("7")}
                 type="button"
               >
                 Last 7 days
               </button>
 
               <button
-                className={range === "Last30Days" ? "active" : ""}
-                onClick={() => setRange("Last30Days")}
+                className={range === "30" ? "active" : ""}
+                onClick={() => setRange("30")}
                 type="button"
               >
                 Last 30 days
               </button>
 
               <button
-                disabled
-                title="Custom date ranges are not available in this view yet"
+                className={range === "custom" ? "active" : ""}
+                onClick={() => setRange("custom")}
                 type="button"
               >
                 Custom range
@@ -219,25 +249,20 @@ export default function Progress() {
                   </span>
 
                   <strong>
-                    {progressData.focusQuality.available
-                      ? `${progressData.focusQuality.average}%`
-                      : "—"}
+                    {dashboard?.focusQuality != null ? `${dashboard.focusQuality}%` : "—"}
                   </strong>
                 </div>
 
-                {progressData.focusQuality.available ? (
                 <span className="progress-change positive">
                   <ArrowUp
                     size={14}
                     strokeWidth={2.2}
                   />
 
-                  {progressData.focusQuality.changePercent}% vs
-                  previous period
+                  {dashboard?.focusQuality != null
+                    ? "Average shared focus quality"
+                    : "Focus quality has not been shared"}
                 </span>
-                ) : (
-                  <span className="progress-change">Available after AI analysis</span>
-                )}
 
                 <div className="focus-chart">
 
@@ -347,22 +372,16 @@ export default function Progress() {
                     </svg>
 
                     <div className="focus-x-axis">
-                      <span>Mar 1</span>
-                      <span>Mar 6</span>
-                      <span>Mar 11</span>
-                      <span>Mar 16</span>
-                      <span>Mar 21</span>
-                      <span>Mar 26</span>
-                      <span>Mar 31</span>
+                      {pulseDays.map((day) => <span key={day.date}>{formatDay(day.date)}</span>)}
                     </div>
 
                   </div>
                 </div>
 
                 <p className="progress-card-note">
-                  {progressData.focusQuality.available
-                    ? "Focus quality compared with the previous period."
-                    : "Focus analysis is intentionally deferred to the second integration stage."}
+                  {dashboard?.focusQuality != null
+                    ? "Focus quality reflects the child’s shared study activity."
+                    : "Focus quality will appear after enough activity is shared."}
                 </p>
               </section>
 
@@ -386,7 +405,7 @@ export default function Progress() {
 
                   <strong>
                     {formatStudyTime(
-                      progressData.studyTime.totalMinutes
+                      dashboard?.weeklyStudyPulse?.actualStudyMinutes
                     )}
                   </strong>
 
@@ -399,10 +418,10 @@ export default function Progress() {
                   /> */}
 
                   {formatStudyTime(
-                    progressData.studyTime.changeMinutes
+                    Math.abs(dashboard?.weeklyStudyPulse?.actualStudyMinutesTrend || 0)
                   )}
 
-                  {" "}more than previous period
+                  {" "}{(dashboard?.weeklyStudyPulse?.actualStudyMinutesTrend || 0) >= 0 ? "more than previous period" : "less than previous period"}
                 </span>
 
                 <div className="study-chart">
@@ -425,7 +444,7 @@ export default function Progress() {
 
                     <div className="progress-bars-chart">
 
-                      {progressData.studyTime.points.map(
+                      {studyPoints.map(
                         (minutes, index) => (
                           <div
                             className="study-bar-column"
@@ -434,7 +453,7 @@ export default function Progress() {
                             <i
                               className={
                                 index ===
-                                progressData.studyTime.points.length - 1
+                                studyPoints.length - 1
                                   ? "last"
                                   : ""
                               }
@@ -453,13 +472,7 @@ export default function Progress() {
                     </div>
 
                     <div className="study-x-axis">
-                      <span>Mar 1</span>
-                      <span>Mar 6</span>
-                      <span>Mar 11</span>
-                      <span>Mar 16</span>
-                      <span>Mar 21</span>
-                      <span>Mar 26</span>
-                      <span>Mar 31</span>
+                      {pulseDays.map((day) => <span key={day.date}>{formatDay(day.date)}</span>)}
                     </div>
 
                   </div>
@@ -497,7 +510,7 @@ export default function Progress() {
 
                     <tbody>
 
-                      {progressData.subjects.map((subject) => (
+                      {subjects.map((subject) => (
                         <tr key={subject.name}>
 
                           <td className="subject-name">
@@ -681,8 +694,7 @@ export default function Progress() {
                 <h2>About this data</h2>
 
                 <p>
-                  There is enough data to show trends for 3 of 5
-                  subjects.
+                  {subjects.length} subject{subjects.length === 1 ? "" : "s"} with shared study activity.
                 </p>
               </div>
 
@@ -705,7 +717,7 @@ export default function Progress() {
                 className="subject-close"
                 onClick={() =>
                   setSelectedSubjectName(
-                    progressData.subjects[0]?.name
+                    subjects[0]?.name || ""
                   )
                 }
                 type="button"
@@ -818,5 +830,62 @@ export default function Progress() {
         </main>
       </ParentLayout>
     </div>
+  );
+}
+
+function formatDay(date) {
+  return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: "short",
+  });
+}
+
+function buildSubjectStats(sessions) {
+  const byName = new Map();
+  sessions.forEach((session) => {
+    const name = session.subjectName || "Study session";
+    const existing = byName.get(name) || { name, sessions: 0, totalMinutes: 0 };
+    existing.sessions += 1;
+    existing.totalMinutes += session.actualStudyMinutes || 0;
+    byName.set(name, existing);
+  });
+  return [...byName.values()].map((subject) => ({
+    ...subject,
+    trend: null,
+    hasEnoughData: subject.sessions >= 3,
+  }));
+}
+
+function ProgressUnavailable({ childName, onAction }) {
+  const isPending = Boolean(childName);
+  const displayName = childName || "your child";
+
+  return (
+    <main className="progress-page progress-unavailable-page">
+      <header className="progress-heading">
+        <div>
+          <h1>Progress</h1>
+          <p>See how focus quality and study patterns change over time.</p>
+        </div>
+      </header>
+
+      <section className="progress-unavailable-card" aria-labelledby="progress-unavailable-title">
+        <span className="progress-unavailable-icon" aria-hidden="true">
+          {isPending ? <Mail size={25} strokeWidth={2} /> : <TrendingUp size={25} strokeWidth={2} />}
+        </span>
+        {isPending && <span className="progress-pending-badge">Invitation pending</span>}
+        <h2 id="progress-unavailable-title">
+          {isPending ? `Waiting for ${displayName} to accept` : "Add a child to see progress"}
+        </h2>
+        <p>
+          {isPending
+            ? `An invitation has been sent to ${displayName}. Progress will appear after the connection is approved and study activity begins.`
+            : "Enter your child’s information and send an invitation. Progress will appear after the connection is approved and study activity begins."}
+        </p>
+        <button type="button" onClick={onAction}>
+          {isPending ? "Manage invitation" : "Add child information"}
+        </button>
+        {isPending && <small className="progress-pending-note">You can resend or cancel the invitation from Children.</small>}
+      </section>
+    </main>
   );
 }

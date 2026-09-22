@@ -14,151 +14,257 @@ import {
   FileText,
   UserRound,
   Check,
-  Plus,
   BookText,
-  Atom,
 } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
-import elementIcon from "../../assets/elementIcon.png";
 import { useAuth } from "../../context/AuthContext";
-import { getParentDashboard } from "../../services/dashboard";
+import { api } from "../../services/api";
+import {
+  cacheParentChildren,
+  findConnectedChild,
+  findPendingChild,
+  getCachedParentChildren,
+} from "../../services/parentChildrenCache";
+import {
+  cachePendingInvitation,
+  clearPendingInvitation,
+  getPendingInvitationForUser,
+} from "../../services/pendingInvitationCache";
+import WaitingForChild from "../onboarding/WaitingForChild";
+import elementIcon from "../../assets/elementIcon.png";
+import logo from "../../assets/logo.png";
 
 import "../../css/dashboard/Overview.css";
 
-const hours = ["9am", "11am", "2pm", "5pm", "7pm"];
-
-const emptyHeatmap = Array.from({ length: 5 }, () => Array(7).fill(0));
-
-const days = ["M", "T", "W", "T", "F", "S", "S"];
-
-// ------------------------------------------------------------
-// اختيار أيقونة/لون موجودين مسبقًا في الملف حسب اسم المادة،
-// بنفس منطق الاختيار المستخدم أصلاً في هذه الصفحة — بدون أي
-// عنصر واجهة جديد.
-// ------------------------------------------------------------
-function getSessionVisual(subjectRaw) {
-  const subject = (subjectRaw || "").toLowerCase();
-
-  if (subject.includes("english") || subject.includes("literature")) {
-    return { icon: <BookText size={13} />, tone: "tone-blue" };
-  }
-
-  if (
-    subject.includes("physic") ||
-    subject.includes("science") ||
-    subject.includes("chemistry")
-  ) {
-    return { icon: <Atom size={13} />, tone: "tone-orange" };
-  }
-
-  return { icon: <Plus size={13} />, tone: "" };
-}
-
-function formatSessionForCard(raw) {
-  const subject = raw.subject ?? raw.subjectName ?? "Study session";
-  const visual = getSessionVisual(subject);
-  const statusRaw = (raw.status ?? "completed").toString().toLowerCase();
-  const durationMinutes = raw.durationMinutes ?? null;
-
-  return {
-    subject,
-    date: raw.date ? new Date(raw.date).toLocaleString() : "",
-    duration:
-      durationMinutes != null
-        ? `${durationMinutes} min`
-        : raw.duration ?? "",
-    format: raw.format ?? "Digital",
-    status: statusRaw === "paused" ? "Paused" : "Completed",
-    focus:
-      raw.focusScore != null ? `${raw.focusScore}%` : raw.focus ?? "",
-    note: raw.focusQuality ?? raw.note ?? "",
-    icon: visual.icon,
-    tone: visual.tone,
-  };
-}
-
-function formatMinutes(minutes) {
-  const value = Number(minutes) || 0;
-  const hoursValue = Math.floor(value / 60);
-  const remaining = value % 60;
-  return hoursValue ? `${hoursValue}h ${remaining}m` : `${remaining}m`;
-}
-
 export default function Overview() {
-  const { user, child: authChild } = useAuth();
-  const activeChild = authChild ?? { preferredName: "your child", id: null };
-
   const [sessionFilter, setSessionFilter] = useState("all");
-  const [sessions, setSessions] = useState([]);
-  const [heatmap, setHeatmap] = useState(emptyHeatmap);
+  const { user } = useAuth();
+  const [childInfo, setChildInfo] = useState(() => findConnectedChild(getCachedParentChildren()));
+  const [pendingChildInfo, setPendingChildInfo] = useState(
+    () =>
+      findPendingChild(getCachedParentChildren()) ||
+      getPendingInvitationForUser(user?.email)
+  );
   const [dashboard, setDashboard] = useState(null);
+  const [sessionHistory, setSessionHistory] = useState([]);
+  const [sessionPagination, setSessionPagination] = useState(null);
 
-  // ------------------------------------------------------------
-  // Load the parent-authorized dashboard aggregate for the linked child.
-  // ------------------------------------------------------------
   useEffect(() => {
-    let isCancelled = false;
-
-    async function loadOverviewData() {
-      try {
-        if (!activeChild?.id) return;
-        const data = await getParentDashboard(activeChild.id);
-
-        if (isCancelled) return;
-
-        const matrix = data?.activityMatrix;
-
-        if (
-          Array.isArray(matrix) &&
-            matrix.length === emptyHeatmap.length &&
-          matrix.every(
-            (row) =>
-              Array.isArray(row) && row.length === emptyHeatmap[0].length
-          )
-        ) {
-          setHeatmap(matrix);
-        }
-
-        setDashboard(data);
-        setSessions((data?.recentSessions ?? []).map(formatSessionForCard));
-      } catch (err) {
-        console.error("Failed to load overview data:", err);
-        if (!isCancelled) {
-          setDashboard(null);
-          setSessions([]);
-          setHeatmap(emptyHeatmap);
-        }
+    let active = true;
+    api("/api/parents/overview/children").then((children) => {
+      if (!active) return null;
+      cacheParentChildren(children);
+      const firstChild = findConnectedChild(children);
+      const pendingChild = findPendingChild(children);
+      setPendingChildInfo(
+        pendingChild || getPendingInvitationForUser(user?.email)
+      );
+      setChildInfo(firstChild);
+      if (firstChild) {
+        clearPendingInvitation();
+      } else if (pendingChild) {
+        cachePendingInvitation({
+          firstName: pendingChild.firstName,
+          parentEmail: user?.email,
+        });
       }
-    }
+      if (!firstChild) {
+        setDashboard(null);
+        return null;
+      }
+      return api(`/api/parents/students/${firstChild.studentId}/dashboard`).then(
+        async (dashboardData) => {
+          // The dashboard contains the summary; this endpoint provides the real
+          // session total and makes the filters work beyond the latest five items.
+          const history = await api(
+            `/api/parents/students/${firstChild.studentId}/dashboard/sessions?page=1&pageSize=20`,
+          ).catch(() => null);
+          return { dashboardData, history };
+        },
+      );
+    }).then((data) => {
+      if (!data || !active) return;
+      setDashboard(data.dashboardData);
+      setSessionHistory(data.history?.sessions || data.dashboardData.recentStudySessions || []);
+      setSessionPagination(data.history?.pagination || null);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, [user?.email]);
 
-    loadOverviewData();
+  const childName = childInfo?.firstName || "your child";
 
-    return () => {
-      isCancelled = true;
-    };
-  }, [activeChild.id]);
+  function handleInvitationCancelled(cancelledInvitation) {
+    const cancelledId = cancelledInvitation?.childSetupDraftId || cancelledInvitation?.id;
+    const remainingChildren = (getCachedParentChildren() || []).filter((item) => {
+      const itemId = item.childSetupDraftId || item.id;
+      return itemId !== cancelledId;
+    });
 
-  const weeklyMinutes = dashboard?.weeklyMinutes ?? 0;
-  const previousWeekMinutes = dashboard?.previousWeekMinutes ?? 0;
-  const weeklyChange = weeklyMinutes - previousWeekMinutes;
-  const activeGoal = dashboard?.activeGoal;
-  const goalPercentage = activeGoal?.targetMinutes
-    ? Math.min(100, Math.round((activeGoal.completedMinutes / activeGoal.targetMinutes) * 100))
-    : 0;
-  const weeklyPoints = dashboard?.dailyStudyMinutes?.map((item) => item.minutes) ?? Array(7).fill(0);
-  const maxWeeklyMinutes = Math.max(1, ...weeklyPoints);
-  const chartPoints = weeklyPoints
-    .map((minutes, index) => `${10 + index * 40},${82 - (minutes / maxWeeklyMinutes) * 62}`)
-    .join(" ");
-  const peakIndex = weeklyPoints.indexOf(Math.max(...weeklyPoints));
+    cacheParentChildren(remainingChildren);
+    clearPendingInvitation();
+    setPendingChildInfo(null);
+  }
+
+  const sessions = sessionHistory.map((session) => ({
+    id: session.id,
+    subject: session.subjectName || "Study session",
+    date: new Date(session.startedAtUtc).toLocaleString(),
+    duration: `${session.actualStudyMinutes} min`,
+    format: session.mode,
+    status: session.status,
+    focus: dashboard.focusQuality ? `${dashboard.focusQuality}%` : "",
+    note: "", icon: <BookText size={13} />, tone: "",
+  }));
 
   const filteredSessions = sessions.filter((session) => {
     if (sessionFilter === "all") return true;
 
     return session.status.toLowerCase() === sessionFilter;
   });
+
+  const pulse = dashboard?.weeklyStudyPulse;
+  const pulseDays = pulse?.days || [];
+  const peakDay = pulseDays.reduce(
+    (peak, day) =>
+      !peak || day.actualStudyMinutes > peak.actualStudyMinutes ? day : peak,
+    null,
+  );
+  const pulsePoints = buildPulsePoints(pulseDays);
+  const goal = dashboard?.currentStudyGoal;
+  const goalProgress = dashboard?.currentStudyGoalProgress;
+  const goalCompletion = Math.min(
+    100,
+    Math.max(0, Number(goalProgress?.completionPercentage || 0)),
+  );
+  const hasStudyData =
+    sessions.length > 0 ||
+    (pulse?.actualStudyMinutes || 0) > 0 ||
+    dashboard?.focusQuality != null ||
+    Boolean(goal);
+
+  if (!childInfo && pendingChildInfo) {
+    return (
+      <WaitingForChild
+        childName={pendingChildInfo.firstName}
+        childEmail={pendingChildInfo.email}
+        pendingChild={pendingChildInfo}
+        onInvitationCancelled={handleInvitationCancelled}
+      />
+    );
+  }
+
+  if (!childInfo) {
+    return (
+      <div className="overview-page">
+        <DashboardHeader activePage="overview" />
+        <ParentLayout>
+          <main className="overview-content">
+            <header className="overview-heading">
+              <h1>Welcome, {user?.firstName || "Parent"}</h1>
+              <p>Your parent account is ready. Let’s make room for your child.</p>
+            </header>
+            <section className="overview-empty-card">
+              <div className="overview-empty-content">
+                <div className="overview-mascot"><img src={logo} alt="FocusLens" /></div>
+                <h2>Your family’s FocusLens journey starts here</h2>
+                <p className="overview-empty-description">You haven’t added a child yet. Create their study profile and send a private invitation, or connect with a child who already uses FocusLens.</p>
+                <Link to="/choose-start" className="button">Add your child</Link>
+                <p className="overview-empty-hint">Your child chooses what to share. Study reports appear only after you connect.</p>
+              </div>
+            </section>
+          </main>
+        </ParentLayout>
+      </div>
+    );
+  }
+
+  // A connection only gives the parent permission to see shared data. Until the
+  // child records a session, never populate this view with sample statistics.
+  if (!hasStudyData) {
+    return (
+      <div className="overview-page">
+        <DashboardHeader activePage="overview" />
+        <ParentLayout>
+          <main className="overview-content">
+            <header className="overview-heading">
+              <h1>Welcome, {user?.firstName || "Parent"}</h1>
+              <p>
+                {childName} is connected. Shared study activity will appear
+                here.
+              </p>
+            </header>
+
+            <section className="overview-metrics">
+              <article className="overview-metric-card">
+                <CardTitle
+                  icon={<LineChart size={17} />}
+                  title="Weekly Study Pulse & Trend"
+                  subtitle="Cumulative focus rhythm"
+                />
+                <div className="overview-card-empty">
+                  <img className="overview-empty-mascot" src={logo} alt="" />
+                  <h2>A fresh start for {childName}</h2>
+                  <p>
+                    Once {childName} records and shares a study session, their
+                    weekly study rhythm will appear here.
+                  </p>
+                </div>
+              </article>
+
+              <article className="overview-metric-card">
+                <CardTitle
+                  icon={<img src={elementIcon} alt="" />}
+                  title="Focus pattern"
+                  subtitle="Recorded session density by time block"
+                />
+                <div className="overview-card-empty">
+                  <img
+                    className="overview-empty-pattern-icon"
+                    src={elementIcon}
+                    alt=""
+                  />
+                  <h2>Patterns take a little time</h2>
+                  <p>
+                    As shared sessions build up, you&apos;ll see when {childName}
+                    tends to study. AI insights need recorded activity first.
+                  </p>
+                </div>
+              </article>
+
+              <article className="overview-metric-card">
+                <CardTitle icon={<Flag size={17} />} title="Active Goal" />
+                <div className="overview-card-empty">
+                  <Flag size={38} />
+                  <h2>No shared goal yet</h2>
+                  <p>Suggest a gentle study-time goal. {childName} stays in control of accepting it.</p>
+                  <Link to="/study-goals" className="button">Suggest a goal</Link>
+                </div>
+              </article>
+            </section>
+
+            <section className="overview-sessions">
+              <CardTitle
+                icon={<BookOpenCheck size={17} />}
+                title="Recent study sessions"
+                subtitle={`Verified study session records shared by ${childName}`}
+              />
+              <div className="overview-sessions-empty">
+                <BookOpenCheck size={38} />
+                <h2>No study sessions shared yet</h2>
+                <p>
+                  Sessions will appear here when {childName} records them and
+                  chooses to share them with you.
+                </p>
+                <small>They stay in control of what you can see.</small>
+              </div>
+            </section>
+          </main>
+        </ParentLayout>
+      </div>
+    );
+  }
 
   return (
     <div className="overview-page">
@@ -168,10 +274,10 @@ export default function Overview() {
         <main className="figma-overview">
           <header className="figma-heading">
             <div>
-              <h1>Good morning, {user.firstName}</h1>
+              <h1>Good morning, {user?.firstName || "there"}</h1>
 
               <p>
-                Here’s how {activeChild.preferredName}’s studying is going this week.
+                Here’s how {childName}’s studying is going this week.
               </p>
             </div>
 
@@ -198,21 +304,25 @@ export default function Overview() {
 
               <span className="green-badge">
                 <TrendingUp size={12} />
-                {weeklyChange >= 0 ? "+" : ""}{weeklyChange} min from last week
+                {formatTrend(pulse?.actualStudyMinutesTrend)} from last week
               </span>
 
               <div className="weekly-main">
                 <div>
-                  <strong>{formatMinutes(weeklyMinutes)}</strong>
+                  <strong>{formatDuration(pulse?.actualStudyMinutes || 0)}</strong>
 
                   <small>
                     <CheckCircle2 size={14} />
-                    Verified study sessions
+                    Shared study time this week
                   </small>
                 </div>
 
                 <div className="line-chart">
-                  <span className="chart-tip">Peak: {formatMinutes(weeklyPoints[peakIndex] ?? 0)}</span>
+                  {peakDay?.actualStudyMinutes > 0 && (
+                    <span className="chart-tip">
+                      {formatDay(peakDay.date)}: {formatDuration(peakDay.actualStudyMinutes)}
+                    </span>
+                  )}
 
                   <svg
                     viewBox="0 0 260 92"
@@ -240,27 +350,34 @@ export default function Overview() {
                       </linearGradient>
                     </defs>
 
-                    <polygon fill="url(#pulseFill)" points={`10,92 ${chartPoints} 250,92`} />
-                    <polyline className="chart-line" fill="none" points={chartPoints} />
-                    {weeklyPoints.map((minutes, index) => (
+                    {pulsePoints.length > 1 && <polygon
+                      fill="url(#pulseFill)"
+                      points={`${pulsePoints} 250,92 10,92`}
+                    />}
+
+                    <polyline
+                      className="chart-line"
+                      points={pulsePoints}
+                    />
+                    {buildPulseCircles(pulseDays).map(({ x, y, isPeak }, index) => (
                       <circle
-                        className={index === peakIndex && minutes > 0 ? "chart-peak" : "chart-dot"}
-                        cx={10 + index * 40}
-                        cy={82 - (minutes / maxWeeklyMinutes) * 62}
+                        className={isPeak ? "chart-peak" : "chart-dot"}
+                        cx={x}
+                        cy={y}
+                        r={isPeak ? "4.5" : "2.6"}
                         key={index}
-                        r={index === peakIndex && minutes > 0 ? 4.5 : 2.6}
                       />
                     ))}
                   </svg>
 
                   <div className="chart-days">
-                    <span>Mon</span>
-                    <span>Tue</span>
-                    <span>Wed</span>
-                    <span>Thu</span>
-                    <span>Fri</span>
-                    <span>Sat</span>
-                    <span>Sun</span>
+                    {pulseDays.map((day) =>
+                      day === peakDay && day.actualStudyMinutes > 0 ? (
+                        <b key={day.date}>{formatDay(day.date)} (Peak)</b>
+                      ) : (
+                        <span key={day.date}>{formatDay(day.date)}</span>
+                      ),
+                    )}
                   </div>
                 </div>
               </div>
@@ -268,17 +385,17 @@ export default function Overview() {
               <div className="weekly-footer">
                 <span>
                   <CheckCircle2 size={13} />
-                  {dashboard?.completedSessionsThisWeek ?? 0} of {dashboard?.sessionsThisWeek ?? 0} sessions completed
+                  {dashboard?.completedSessionsCount || 0} completed this week
                 </span>
 
                 <span>
                   <CalendarCheck size={13} />
-                  {dashboard?.activeStudyDays ?? 0} active study days
+                  {dashboard?.activeStudyDaysCount || 0} active study days
                 </span>
 
                 <span>
                   <TrendingUp size={13} />
-                  Focus quality <b>available after AI analysis</b>
+                  Focus quality <b>{dashboard?.focusQuality != null ? `${dashboard.focusQuality}%` : "not shared"}</b>
                 </span>
               </div>
             </article>
@@ -287,32 +404,30 @@ export default function Overview() {
               <CardTitle
                 icon={<img src={elementIcon} alt="" />}
                 title="Focus pattern"
-                subtitle="Recorded session density by time block"
+                subtitle="Shared activity by day"
               />
 
               <div className="heatmap">
                 <div className="heat-row days">
-                  <span>Hour</span>
+                  <span>Day</span>
 
-                  {days.map((day, index) => (
-                    <span key={index}>{day}</span>
+                  {pulseDays.map((day) => (
+                    <span key={day.date}>{formatDay(day.date)}</span>
                   ))}
                 </div>
 
-                {hours.map((time, row) => (
-                  <div
-                    className={`heat-row${row >= 3 ? " is-active" : ""}`}
-                    key={time}
-                  >
-                    <span>{time}</span>
+                <div className="heat-row">
+                    <span>Minutes</span>
 
-                    {heatmap[row].map((level, index) => (
-                      <i className={`level-${level}`} key={index}>
-                        {level === 3 ? "★" : ""}
+                    {pulseDays.map((day) => {
+                      const level = intensityLevel(day.actualStudyMinutes);
+                      return (
+                      <i className={`level-${level}`} key={day.date}>
+                        {day.actualStudyMinutes > 0 ? day.actualStudyMinutes : ""}
                       </i>
-                    ))}
+                      );
+                    })}
                   </div>
-                ))}
               </div>
 
               <div className="intensity">
@@ -323,24 +438,23 @@ export default function Overview() {
                     <i /> None
                   </span>
 
+                  <span><i className="level-1" /> 1–29m</span>
+
                   <span>
-                    <i className="level-1" /> &lt;20m
+                    <i className="level-2" /> 30–59m
                   </span>
 
                   <span>
-                    <i className="level-2" /> 35m
-                  </span>
-
-                  <span>
-                    <i className="level-3" /> Deep
+                    <i className="level-3" /> 60m+
                   </span>
                 </div>
               </div>
 
               <p className="insight">
-                <b>Insight:</b> {dashboard?.mostConsistentTimeOfDay
-                  ? `${activeChild.preferredName} most often studies in the ${dashboard.mostConsistentTimeOfDay.toLowerCase()}.`
-                  : "More completed sessions are needed to identify a pattern."}
+                <b>Insight:</b>{" "}
+                {dashboard?.focusQuality != null
+                  ? `${childName}'s shared focus quality is ${dashboard.focusQuality}%.`
+                  : `Focus-quality insights will appear when ${childName} shares enough recorded activity.`}
               </p>
             </article>
           </section>
@@ -349,46 +463,40 @@ export default function Overview() {
             <article className="figma-card goal-card">
               <CardTitle icon={<Flag size={17} />} title="Active Goal" />
 
-              <span className="weekly-label">{activeGoal?.frequency ?? "Weekly"}</span>
+              <span className="weekly-label">{goal?.period || "No goal"}</span>
 
-              <div className="goal-number">
-                <strong>{formatMinutes(activeGoal?.completedMinutes ?? 0)}</strong>
-                <span>of {formatMinutes(activeGoal?.targetMinutes ?? 0)}</span>
-                <b>{activeGoal ? `${goalPercentage}% complete` : "No goal this week"}</b>
-              </div>
+              {goal ? (
+                <>
+                  <div className="goal-number">
+                    <strong>{formatDuration(goalProgress?.completedMinutes || 0)}</strong>
+                    <span>of {formatDuration(goal.targetMinutes)}</span>
+                    <b>{Math.round(goalCompletion)}% complete</b>
+                  </div>
 
-              <div className="goal-progress">
-                <i style={{ width: `${goalPercentage}%` }} />
-              </div>
+                  <div className="goal-progress">
+                    <i style={{ width: `${goalCompletion}%` }} />
+                  </div>
 
-              <div className="goal-badges">
-                <span>
-                  <UserRound size={12} />
-                  Suggested by {user.firstName}
-                </span>
+                  <div className="goal-badges">
+                    <span><UserRound size={12} /> Suggested by {dashboard?.currentStudyGoalAcceptedProposal?.suggestedByParentName || user?.firstName || "you"}</span>
+                    <span><Check size={12} /> Shared by {childName}</span>
+                  </div>
 
-                <span>
-                  <Check size={12} />
-                  {activeGoal?.status === "active" ? `Accepted by ${activeChild.preferredName}` : "Pending acceptance"}
-                </span>
-              </div>
+                  <p>{childName} has recorded {formatDuration(goalProgress?.completedMinutes || 0)} toward this goal in the current cycle.</p>
 
-              <p>
-                {activeChild.preferredName} has completed {dashboard?.completedSessionsThisWeek ?? 0} sessions this week.
-              </p>
-
-              <p>
-                AI-based focus comparisons will appear after the second integration stage.
-              </p>
-
-              <footer>
-                <span>{activeGoal?.daysRemaining ?? 0} days remaining in cycle</span>
-
-                <Link to="/study-goals">
-                  View goal
-                  <ArrowRight size={13} />
-                </Link>
-              </footer>
+                  <footer>
+                    <span>{goalProgress?.daysRemaining ?? 0} days remaining in cycle</span>
+                    <Link to="/study-goals">View goal <ArrowRight size={13} /></Link>
+                  </footer>
+                </>
+              ) : (
+                <div className="overview-card-empty">
+                  <Flag size={38} />
+                  <h2>No shared goal yet</h2>
+                  <p>{childName} has not shared an active study goal.</p>
+                  <Link to="/study-goals" className="button">Suggest a goal</Link>
+                </div>
+              )}
             </article>
 
             <article className="figma-card sessions-card">
@@ -396,7 +504,7 @@ export default function Overview() {
                 <CardTitle
                   icon={<BookOpenCheck size={17} />}
                   title="Recent study sessions"
-                  subtitle={`Verified study session records shared by ${activeChild.preferredName}`}
+                  subtitle={`Verified study session records shared by ${childName}`}
                 />
 
                 <div className="filters">
@@ -443,8 +551,8 @@ export default function Overview() {
                 <span>Focus Quality</span>
               </div>
 
-              {filteredSessions.map((session, index) => (
-                <div className="session" key={`${session.subject}-${index}`}>
+              {filteredSessions.map((session) => (
+                <div className="session" key={session.id}>
                   <div className="subject">
                     <i className={session.tone}>{session.icon}</i>
 
@@ -485,11 +593,11 @@ export default function Overview() {
 
               <footer>
                 <span>
-                  Showing {filteredSessions.length} recent sessions
+                  Showing {filteredSessions.length} of {sessionPagination?.totalCount ?? sessions.length} shared sessions
                 </span>
 
                 <Link to="/reports">
-                  View all historical reports
+                  View all shared reports
                   <ArrowRight size={13} />
                 </Link>
               </footer>
@@ -499,6 +607,52 @@ export default function Overview() {
       </ParentLayout>
     </div>
   );
+}
+
+function formatDuration(totalMinutes) {
+  const minutes = Math.max(0, Number(totalMinutes) || 0);
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (!hours) return `${remainingMinutes}m`;
+  return remainingMinutes ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+}
+
+function formatTrend(minutes) {
+  const value = Number(minutes) || 0;
+  if (value === 0) return "No change";
+  return value > 0
+    ? `${formatDuration(value)} more`
+    : `${formatDuration(Math.abs(value))} less`;
+}
+
+function formatDay(date) {
+  return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+    weekday: "short",
+  });
+}
+
+function intensityLevel(minutes) {
+  if (minutes >= 60) return 3;
+  if (minutes >= 30) return 2;
+  if (minutes > 0) return 1;
+  return 0;
+}
+
+function buildPulseCircles(days) {
+  const highest = Math.max(1, ...days.map((day) => day.actualStudyMinutes || 0));
+  const peak = Math.max(...days.map((day) => day.actualStudyMinutes || 0));
+  const step = days.length > 1 ? 240 / (days.length - 1) : 0;
+  return days.map((day, index) => ({
+    x: 10 + step * index,
+    y: 76 - ((day.actualStudyMinutes || 0) / highest) * 56,
+    isPeak: peak > 0 && day.actualStudyMinutes === peak,
+  }));
+}
+
+function buildPulsePoints(days) {
+  return buildPulseCircles(days)
+    .map(({ x, y }) => `${x},${y}`)
+    .join(" ");
 }
 
 function CardTitle({ icon, title, subtitle }) {

@@ -1,6 +1,7 @@
 import "../../css/components/ChildProfileModal.css";
 import headIcon from "../../assets/head.png";
 import openBookIcon from "../../assets/openbook.png";
+import { Link } from "react-router-dom";
 
 export default function ChildProfileModal({ child, onClose }) {
   return (
@@ -87,7 +88,7 @@ export default function ChildProfileModal({ child, onClose }) {
               Only profile information shared through the active connection is
               shown.
             </p>
-            <button type="button">Privacy &amp; access details →</button>
+            <Link to={`/privacy-policy?childId=${child.studentId || ""}`}>Privacy &amp; access details →</Link>
           </div>
         </div>
       </section>

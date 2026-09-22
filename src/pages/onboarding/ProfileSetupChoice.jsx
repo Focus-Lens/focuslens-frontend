@@ -1,17 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
-import { useAuth } from "../../context/AuthContext";
+import { parent } from "../../data/mockData";
 import { UserRoundPlus, Share2, Check } from "lucide-react";
 import "../../css/onboarding/ProfileSetupChoice.css";
 
 export default function ProfileSetupChoice() {
   const [choice, setChoice] = useState("parent");
   const navigate = useNavigate();
-  const { setUser } = useAuth();
 
   function handleDoThisLater() {
-    setUser((current) => (current ? { ...current, hasChild: false } : current));
+    parent.hasChild = false;
     navigate("/overview");
   }
 
@@ -84,11 +83,7 @@ export default function ProfileSetupChoice() {
             {/* Continue */}
             <div className="profile-setup-actions">
               <Button
-                to={
-                  choice === "parent"
-                    ? "/setup/send-link?next=setup-intro"
-                    : "/setup/send-link"
-                }
+                onClick={() => navigate(choice === "link" ? "/setup/send-link" : "/setup-intro")}
               >
                 Continue
               </Button>

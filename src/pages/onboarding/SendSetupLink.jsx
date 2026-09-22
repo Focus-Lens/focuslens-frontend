@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Button,
@@ -7,7 +7,7 @@ import {
   AuthLayout,
 } from "../../components/ui/CommonUI";
 import { RiArrowLeftLine } from "react-icons/ri";
-import { child } from "../../data/mockData";
+import { api } from "../../services/api";
 import "../../css/onboarding/SendSetupLink.css";
 
 export default function SendSetupLink() {
@@ -19,13 +19,31 @@ export default function SendSetupLink() {
       ? "/setup-intro"
       : "/overview";
 
-  const [link] = useState(
-    `https://focuslens.app/setup/${encodeURIComponent(
-      child.preferredName || "demo"
-    )}`
+  const draftId = sessionStorage.getItem("childSetupDraftId");
+  const [link, setLink] = useState("");
+  const [error, setError] = useState(() =>
+    draftId ? "" : "Your child setup draft is missing. Please start setup again.",
   );
+  const [isLoadingLink, setIsLoadingLink] = useState(Boolean(draftId));
+
+  useEffect(() => {
+    if (!draftId) return undefined;
+
+    let active = true;
+    api(`/api/parents/child-setups/${draftId}/invite/link/create`, { method: "POST" })
+      .then((response) => {
+        const invitationUrl = response?.invitationUrl || response?.setupUrl || response?.url;
+        if (!invitationUrl) throw new Error("The setup link was not returned by the server.");
+        if (active) setLink(invitationUrl);
+      })
+      .catch((requestError) => active && setError(requestError.message))
+      .finally(() => active && setIsLoadingLink(false));
+
+    return () => { active = false; };
+  }, [draftId]);
 
   async function handleCopy() {
+    if (!link) return;
     await navigator.clipboard?.writeText(link).catch(() => {});
     navigate(nextStep);
   }
@@ -54,6 +72,7 @@ export default function SendSetupLink() {
               readOnly
               className="setup-link-field"
             />
+            {error && <p className="password-error">{error}</p>}
 
             <p className="send-setup-link-hint">
               Share only with your child; the link includes your invitation.
@@ -83,7 +102,9 @@ export default function SendSetupLink() {
                 <RiArrowLeftLine />
               </button>
 
-              <Button onClick={handleCopy}>Copy setup link</Button>
+              <Button onClick={handleCopy} disabled={isLoadingLink || !link}>
+                {isLoadingLink ? "Creating link..." : "Copy setup link"}
+              </Button>
 
             </div>
 

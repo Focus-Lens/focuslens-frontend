@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { child } from "../../data/mockData";
+import { useChildProfile } from "../../context/ChildProfileContext";
 import {
   AuthLayout,
   ParentLayout,
@@ -15,13 +15,14 @@ import "../../css/onboarding/InvitationSent.css";
 
 export default function InvitationSent() {
   const navigate = useNavigate();
+  const { child } = useChildProfile();
   const [showCopiedModal, setShowCopiedModal] = useState(false);
-  const invitationUrl = sessionStorage.getItem("pendingChildInvitationUrl") ?? "";
-  const childEmail = sessionStorage.getItem("pendingChildEmail") ?? child.email;
 
   async function copyInvitationLink() {
     try {
-      await navigator.clipboard.writeText(invitationUrl);
+      await navigator.clipboard.writeText(
+        "focuslens.example/invite/youssef-demo"
+      );
 
       setShowCopiedModal(true);
     } catch {
@@ -51,7 +52,7 @@ export default function InvitationSent() {
 
               {/* EMAIL */}
               <p className="invitation-sent-email">
-                Sent to {childEmail}
+                Sent to {child.email}
               </p>
 
               {/* DESCRIPTION */}
@@ -74,7 +75,6 @@ export default function InvitationSent() {
               {/* SECONDARY BUTTON */}
               <button
                 className="invitation-sent-secondary"
-                disabled={!invitationUrl}
                 onClick={copyInvitationLink}
                 type="button"
               >

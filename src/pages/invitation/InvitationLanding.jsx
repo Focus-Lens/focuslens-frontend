@@ -1,54 +1,33 @@
 import { Link, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { child as mockChild, invitation as mockInvitation } from "../../data/mockData";
-import { resolveParentInvitation } from "../../services/access";
+import { resolveAccessInvitation } from "../../services/api";
 import "../../css/invitation/InvitationLanding.css";
 import logo from "../../assets/logo.png";
 
 export default function InvitationLanding() {
-  const { token = mockInvitation.token } = useParams();
+  const { token } = useParams();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const [childName, setChildName] = useState(mockChild.preferredName);
-  const [expiresIn, setExpiresIn] = useState(mockChild.invitationExpiresIn);
+  const [invitation, setInvitation] = useState(() => token ? null : {
+    studentPreferredName: "Youssef",
+    expiresAtUtc: null,
+  });
+  const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!token) return;
     sessionStorage.setItem("pendingInvitationToken", token);
+    resolveAccessInvitation(token)
+      .then((data) => {
+        sessionStorage.setItem("pendingInvitationName", data.studentPreferredName);
+        setInvitation(data);
+      })
+      .catch((requestError) => setError(requestError.message));
   }, [token]);
 
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function loadInvitation() {
-      try {
-        const data = await resolveParentInvitation(token);
-
-        if (isCancelled || !data) return;
-
-        sessionStorage.setItem("pendingInvitationPreview", JSON.stringify(data));
-
-        if (data.childPreferredName || data.preferredName || data.childName) {
-          setChildName(
-            data.childPreferredName || data.preferredName || data.childName
-          );
-        }
-
-        if (data.expiresAtUtc) {
-          setExpiresIn(new Date(data.expiresAtUtc).toLocaleString());
-        } else if (data.expiresIn || data.invitationExpiresIn) {
-          setExpiresIn(data.expiresIn || data.invitationExpiresIn);
-        }
-      } catch {
-        // نبقي على القيم الافتراضية لو تعذر جلب بيانات الدعوة
-      }
-    }
-
-    loadInvitation();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [token]);
+  const childName = invitation?.studentPreferredName;
+  const expiresIn = invitation?.expiresAtUtc
+    ? new Date(invitation.expiresAtUtc).toLocaleDateString()
+    : "7 days";
 
   return (
     <div className="invitation-landing-page">
@@ -97,28 +76,19 @@ export default function InvitationLanding() {
 
       <main className="invitation-landing-main">
         <section className="invitation-landing-card">
-          <div className="invitation-landing-avatar">
-            {childName[0]}
-          </div>
-
-          <h1>{childName} invited you to FocusLens</h1>
-
-          <p>
-            {childName} invited you to support his study progress.
-            <br />
-            You&apos;ll only see the information he chooses to share.
-          </p>
-
-          <Link
-            className="invitation-landing-continue"
-            to={`/invite/${token}/continue`}
-          >
-            Continue <span>→</span>
-          </Link>
-
-          <small>
-            ◷ Invitation expires in {expiresIn}
-          </small>
+          {error ? <p>{error}</p> : !invitation ? <p>Loading invitation…</p> : <>
+            <div className="invitation-landing-avatar">{childName?.[0] || "?"}</div>
+            <h1>{childName} invited you to FocusLens</h1>
+            <p>{childName} invited you to support their study progress.<br />You&apos;ll only see the information they choose to share.</p>
+            <Link
+              className="invitation-landing-continue"
+              to={token ? `/invite/${token}/continue` : "/invite/continue"}
+              state={{ invitationName: childName }}
+            >
+              Continue <span>→</span>
+            </Link>
+            <small>◷ Invitation expires {invitation.expiresAtUtc ? `on ${expiresIn}` : `in ${expiresIn}`}</small>
+          </>}
         </section>
       </main>
 

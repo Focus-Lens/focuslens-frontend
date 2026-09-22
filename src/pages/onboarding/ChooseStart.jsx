@@ -1,18 +1,34 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
-import { useAuth } from "../../context/AuthContext";
+import { api } from "../../services/api";
 import { Users, UserRoundPlus, Check } from "lucide-react";
 import "../../css/onboarding/ChooseStart.css";
 
 export default function ChooseStart() {
   const [choice, setChoice] = useState("connect");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { setUser } = useAuth();
 
   function handleDoThisLater() {
-    setUser((current) => (current ? { ...current, hasChild: false } : current));
     navigate("/overview");
+  }
+
+  async function handleContinue() {
+    if (choice === "connect") {
+      // A review can only be shown when the parent arrived through a real
+      // child invitation link, which stores its token for this session.
+      navigate(sessionStorage.getItem("pendingInvitationToken") ? "/review-invitation" : "/connect-child");
+      return;
+    }
+    try {
+      setSubmitting(true); setError("");
+      const draft = await api("/api/parents/child-setups", { method: "POST" });
+      sessionStorage.setItem("childSetupDraftId", draft.id);
+      navigate("/profile-setup-choice");
+    } catch (requestError) { setError(requestError.message); }
+    finally { setSubmitting(false); }
   }
 
   return (
@@ -83,15 +99,7 @@ export default function ChooseStart() {
 
             {/* Continue */}
             <div className="choose-start-actions">
-              <Button
-                to={
-                  choice === "setup"
-                    ? "/profile-setup-choice"
-                    : "/review-invitation"
-                }
-              >
-                Continue
-              </Button>
+              <Button onClick={handleContinue} disabled={submitting}>{submitting ? "Creating..." : "Continue"}</Button>
 
               <button
                 type="button"
@@ -101,6 +109,7 @@ export default function ChooseStart() {
                 I’ll do this later
               </button>
             </div>
+            {error && <p className="password-error">{error}</p>}
 
           </div>
         </Card>

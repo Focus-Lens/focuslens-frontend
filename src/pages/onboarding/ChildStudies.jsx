@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ParentLayout, Button, Card, AuthLayout } from "../../components/ui/CommonUI";
-import { child } from "../../data/mockData";
+import { useChildProfile } from "../../context/ChildProfileContext";
 
 import {
   Plus,
@@ -49,6 +49,7 @@ const steps = [
 export default function ChildStudies() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { child, updateChild } = useChildProfile();
 
   const [grade, setGrade] = useState(child.grade);
   const [selectedSubjects, setSelectedSubjects] = useState(child.subjects);
@@ -62,8 +63,7 @@ export default function ChildStudies() {
   }
 
   function handleContinue() {
-    child.grade = grade;
-    child.subjects = selectedSubjects;
+    updateChild({ grade, subjects: selectedSubjects });
 
     const returnTo = searchParams.get("returnTo");
 

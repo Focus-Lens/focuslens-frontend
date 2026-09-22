@@ -1,198 +1,57 @@
-/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-
-import {
-  clearTokens,
-  hasSession,
-} from "../services/apiClient";
-
-import {
-  login as loginRequest,
-  registerParent as registerParentRequest,
-  loginWithGoogleParent as loginWithGoogleParentRequest,
-  logout as logoutRequest,
-} from "../services/auth";
-
-import { getMe } from "../services/parents";
-import { getStudents, getStudent } from "../services/access";
-import { getCurrentUser } from "../services/users";
+import { api, clearSession, saveTokens } from "../services/api";
 
 const AuthContext = createContext(null);
 
-// ------------------------------------------------------------
-// تطبيع بيانات ولي الأمر القادمة من الـ API فوق القيم الافتراضية،
-// حتى لو اختلفت أسماء بعض الحقول أو كانت الاستجابة غير مكتملة —
-// الواجهة لا تنكسر ولا يظهر أي شكل مختلف عن المتوقع.
-// ------------------------------------------------------------
-function normalizeParent(raw) {
-  if (!raw || typeof raw !== "object") return null;
-
-  const firstName = raw.firstName ?? "";
-  const lastName = raw.lastName ?? "";
-
-  return {
-    ...raw,
-    firstName,
-    lastName,
-    fullName:
-      raw.fullName ??
-      [firstName, lastName].filter(Boolean).join(" ") ??
-      "Parent",
-    email: raw.email ?? "",
-    hasChild: Boolean(raw.hasChild),
-  };
-}
-
-function normalizeChild(raw) {
-  if (!raw || typeof raw !== "object") return null;
-
-  return {
-    ...raw,
-    fullName: raw.fullName ?? [raw.firstName, raw.lastName].filter(Boolean).join(" "),
-    preferredName:
-      raw.preferredName ?? raw.firstName ?? raw.fullName ?? "Student",
-    subjects: Array.isArray(raw.subjects)
-      ? raw.subjects.map((subject) => subject.customName ?? subject.type ?? subject)
-      : [],
-    studyPriorities: Array.isArray(raw.studyPriorities ?? raw.priorities)
-      ? raw.studyPriorities ?? raw.priorities
-      : [],
-  };
+function storedUser() {
+  try { return JSON.parse(sessionStorage.getItem("focusLensUser")); }
+  catch { return null; }
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [child, setChild] = useState(null);
-  const [students, setStudents] = useState([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(storedUser);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = useCallback(async () => {
+  const persistUser = useCallback((nextUser) => {
+    setUser(nextUser);
+    if (nextUser) sessionStorage.setItem("focusLensUser", JSON.stringify(nextUser));
+    else sessionStorage.removeItem("focusLensUser");
+  }, []);
+
+  const login = useCallback((response) => {
+    saveTokens(response.tokens);
+    const nextUser = {
+      userId: response.userId, email: response.email, firstName: response.firstName,
+      lastName: response.lastName, roles: response.roles || [],
+      requiresOnboarding: response.requiresOnboarding,
+      onboardingStatus: response.onboardingStatus,
+    };
+    persistUser(nextUser);
+    return nextUser;
+  }, [persistUser]);
+
+  const refreshUser = useCallback(async () => {
+    const nextUser = await api("/api/users/me");
+    persistUser(nextUser);
+    return nextUser;
+  }, [persistUser]);
+
+  const logout = useCallback(async () => {
+    const refreshToken = sessionStorage.getItem("refreshToken");
     try {
-      const [accountResponse, parentResponse, studentsResponse] = await Promise.all([
-        getCurrentUser(),
-        getMe(),
-        getStudents(),
-      ]);
-
-      const normalizedUser = normalizeParent({
-        ...parentResponse,
-        ...accountResponse,
-      });
-      if (!normalizedUser) throw new Error("Parent profile is unavailable.");
-
-      const studentsList = Array.isArray(studentsResponse)
-        ? studentsResponse
-        : Array.isArray(studentsResponse?.items)
-        ? studentsResponse.items
-        : [];
-
-      setStudents(studentsList);
-
-      const childDetails = studentsList.length > 0
-        ? await getStudent(studentsList[0].id)
-        : null;
-      const normalizedChild = normalizeChild(childDetails);
-
-      setUser({
-        ...normalizedUser,
-        hasChild: studentsList.length > 0 || normalizedUser.hasChild,
-      });
-      setChild(normalizedChild);
-      setIsAuthenticated(true);
-
-      return true;
-    } catch {
-      setIsAuthenticated(false);
-      return false;
+      if (refreshToken) await api("/api/auth/logout", { method: "POST", body: { refreshToken } });
+    } finally {
+      clearSession();
+      setUser(null);
     }
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
+    if (!sessionStorage.getItem("accessToken")) { setLoading(false); return; }
+    refreshUser().catch(() => { clearSession(); setUser(null); }).finally(() => setLoading(false));
+  }, [refreshUser]);
 
-    async function bootstrap() {
-      if (!hasSession()) {
-        if (isMounted) setLoading(false);
-        return;
-      }
-
-      await loadProfile();
-
-      if (isMounted) setLoading(false);
-    }
-
-    bootstrap();
-
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const login = useCallback(
-    async ({ email, password }) => {
-      await loginRequest({ email, password });
-      const loaded = await loadProfile();
-      if (!loaded) throw new Error("Unable to load the parent profile.");
-    },
-    [loadProfile]
-  );
-
-  const registerParent = useCallback(
-    async ({ email, password, firstName, lastName, acceptTerms }) => {
-      return registerParentRequest({
-        email,
-        password,
-        firstName,
-        lastName,
-        acceptTerms,
-      });
-    },
-    []
-  );
-
-  const loginWithGoogleParent = useCallback(
-    async (idToken) => {
-      await loginWithGoogleParentRequest(idToken);
-      const loaded = await loadProfile();
-      if (!loaded) throw new Error("Unable to load the parent profile.");
-    },
-    [loadProfile]
-  );
-
-  const logout = useCallback(async () => {
-    try {
-      await logoutRequest();
-    } finally {
-      clearTokens();
-      setUser(null);
-      setChild(null);
-      setStudents([]);
-      setIsAuthenticated(false);
-    }
-  }, []);
-
-  const refreshUser = useCallback(() => loadProfile(), [loadProfile]);
-
-  const value = {
-    user: user ?? { firstName: "", lastName: "", fullName: "", email: "", hasChild: false },
-    setUser,
-    child,
-    setChild,
-    students,
-    isAuthenticated,
-    loading,
-    login,
-    registerParent,
-    loginWithGoogleParent,
-    logout,
-    refreshUser,
-  };
-
-  return (
-    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, loading, isAuthenticated: Boolean(user), login, refreshUser, logout, setUser: persistUser }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

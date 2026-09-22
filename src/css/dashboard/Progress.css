@@ -38,6 +38,82 @@
   line-height: 1.4;
 }
 
+/* Empty state */
+.progress-unavailable-card {
+  width: min(100%, 786px);
+  min-height: 349px;
+  margin: 88px auto 0;
+  padding: 36px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1.5px solid #b7f22c;
+  border-radius: 20px;
+  background: #fff;
+  text-align: center;
+}
+
+.progress-unavailable-icon {
+  width: 53px;
+  height: 53px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #f0eaff;
+  color: #8138f4;
+}
+
+.progress-unavailable-card h2 {
+  margin: 20px 0 0;
+  color: #25222b;
+  font-family: "DM Sans", sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.progress-pending-badge {
+  margin: 17px 0 0;
+  padding: 4px 16px;
+  border: 1px solid #ffd26c;
+  border-radius: 999px;
+  background: #fff8e8;
+  color: #a96900;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.progress-unavailable-card p {
+  max-width: 470px;
+  margin: 8px 0 20px;
+  color: #77727f;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.progress-unavailable-card button {
+  width: 172px;
+  height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: #8138f4;
+  color: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.progress-unavailable-card button:hover { background: #7433e9; }
+
+.progress-pending-note {
+  margin-top: 17px;
+  color: #908a96;
+  font-size: 9px;
+}
+
 /* =========================
    PERIOD BUTTONS
 ========================= */
@@ -676,13 +752,17 @@
 
 .time-pattern-options {
   display: grid;
-  grid-template-columns: repeat(3, 120px);
-  justify-content: center;
+  width: min(100%, 384px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-right: auto;
+  margin-left: auto;
   gap: 12px;
   margin-top: 14px;
 }
 
 .time-pattern-options button {
+  width: 100%;
+  min-width: 0;
   display: flex;
   height: 65px;
   flex-direction: column;
@@ -873,6 +953,19 @@
 
   .progress-bottom-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  /* The left card can be narrower than the viewport because it shares this
+     row with the "About this data" card. Avoid three fixed-width buttons. */
+  .time-pattern-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    justify-content: stretch;
+    gap: 8px;
+  }
+
+  .time-pattern-options button {
+    width: 100%;
+    min-width: 0;
   }
 
   .progress-table-wrap {
@@ -1124,6 +1217,100 @@
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+}
+
+/* Keep the parent navigation visible while this long page scrolls. */
+.progress-page-shell .dashboard-header {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.progress-connected-empty-card {
+  min-height: 360px;
+  padding: 46px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid #e6d9ff;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #ffffff, #faf6ff);
+  text-align: center;
+}
+
+.progress-empty-spark {
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 17px;
+  border-radius: 50%;
+  background: #efe4ff;
+  color: #8138f4;
+}
+
+.progress-connected-empty-card h2 {
+  margin: 0;
+  color: #302b35;
+  font-size: 25px;
+}
+
+.progress-connected-empty-card > p {
+  max-width: 600px;
+  margin: 11px 0 25px;
+  color: #6d6774;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.progress-connected-empty-card > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(115px, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid #e7dffc;
+  border-radius: 16px;
+  background: #e7dffc;
+}
+
+.progress-connected-empty-card > div span,
+.progress-connected-empty-card > div b {
+  padding: 12px 16px;
+  background: #fff;
+}
+
+.progress-connected-empty-card > div span {
+  color: #7b7483;
+  font-size: 11px;
+}
+
+.progress-connected-empty-card > div b {
+  padding-top: 0;
+  color: #39333f;
+  font-size: 13px;
+}
+
+@media (max-width: 620px) {
+  .progress-connected-empty-card {
+    min-height: 330px;
+    padding: 32px 18px;
+  }
+
+  .progress-connected-empty-card h2 {
+    font-size: 21px;
+  }
+
+  .progress-connected-empty-card > div {
+    width: 100%;
+    grid-template-columns: 1fr;
+  }
+
+  .progress-connected-empty-card > div span,
+  .progress-connected-empty-card > div b {
+    padding: 9px 12px;
+  }
 }
 
 @media (max-width: 700px) {

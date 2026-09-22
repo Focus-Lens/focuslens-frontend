@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 import InvitationLanding from "../pages/invitation/InvitationLanding";
 import ContinueInvitation from "../pages/invitation/ContinueInvitation";
@@ -35,23 +36,31 @@ import Progress from "../pages/dashboard/Progress";
 import StudyGoals from "../pages/dashboard/StudyGoals";
 
 import Children from "../pages/dashboard/Children";
-import Notifications from "../pages/dashboard/Notifications";
 import ProfileAccount from "../pages/dashboard/ProfileAccount";
 import SessionInsight from "../pages/dashboard/SessionInsight";
+import LegalDocument from "../pages/legal/LegalDocument";
 
-import ProtectedRoute from "./ProtectedRoute";
+function RequireAuth({ children }) {
+  const { isAuthenticated, loading } = useAuth();
+  // The stored session is available synchronously. Keep the current route on
+  // screen while the background session check completes instead of replacing it
+  // with a loading state on every protected-route transition.
+  if (loading && isAuthenticated) return children;
+  return isAuthenticated ? children : <Navigate replace to="/sign-in" />;
+}
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<InvitationLanding />} />
+        <Route path="/" element={<Navigate replace to="/sign-in" />} />
 
         <Route path="/invite/:token" element={<InvitationLanding />} />
         <Route
           path="/invite/:token/continue"
           element={<ContinueInvitation />}
         />
+        <Route path="/invite/continue" element={<ContinueInvitation />} />
 
         <Route path="/register" element={<CreateParentAccount />} />
         <Route path="/create-password" element={<CreatePassword />} />
@@ -59,12 +68,14 @@ export default function AppRouter() {
         <Route path="/account-created" element={<AccountCreated />} />
 
         <Route path="/sign-in" element={<SignIn />} />
+        <Route path="/restore-account" element={<SignIn restoreAccount />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route
           path="/forgot-password/sent"
           element={<ForgotPasswordEmailSent />}
         />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/change-password" element={<RequireAuth><ResetPassword /></RequireAuth>} />
         <Route
           path="/reset-password/success"
           element={<ResetPasswordSuccess />}
@@ -76,184 +87,43 @@ export default function AppRouter() {
 
         <Route
           path="/review-invitation"
-          element={
-            <ProtectedRoute>
-              <ReviewChildInvitation />
-            </ProtectedRoute>
-          }
+          element={<ReviewChildInvitation />}
         />
 
-        <Route
-          path="/choose-start"
-          element={
-            <ProtectedRoute>
-              <ChooseStart />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/connect-child"
-          element={
-            <ProtectedRoute>
-              <ConnectChild />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/choose-start" element={<ChooseStart />} />
+        <Route path="/connect-child" element={<ConnectChild />} />
         <Route
           path="/profile-setup-choice"
-          element={
-            <ProtectedRoute>
-              <ProfileSetupChoice />
-            </ProtectedRoute>
-          }
+          element={<ProfileSetupChoice />}
         />
-        <Route
-          path="/setup/send-link"
-          element={
-            <ProtectedRoute>
-              <SendSetupLink />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/setup/send-link" element={<SendSetupLink />} />
 
-        <Route
-          path="/setup-intro"
-          element={
-            <ProtectedRoute>
-              <SetupIntro />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/setup/basic-info"
-          element={
-            <ProtectedRoute>
-              <ChildBasicInfo />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/setup/studies"
-          element={
-            <ProtectedRoute>
-              <ChildStudies />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/setup/context"
-          element={
-            <ProtectedRoute>
-              <ChildStudyContext />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/setup/goal"
-          element={
-            <ProtectedRoute>
-              <ChildStudyGoal />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/setup/review"
-          element={
-            <ProtectedRoute>
-              <ReviewChildProfile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/setup/invite"
-          element={
-            <ProtectedRoute>
-              <InviteChild />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/setup-intro" element={<SetupIntro />} />
+        <Route path="/setup/basic-info" element={<ChildBasicInfo />} />
+        <Route path="/setup/studies" element={<ChildStudies />} />
+        <Route path="/setup/context" element={<ChildStudyContext />} />
+        <Route path="/setup/goal" element={<ChildStudyGoal />} />
+        <Route path="/setup/review" element={<ReviewChildProfile />} />
+        <Route path="/setup/invite" element={<InviteChild />} />
         <Route
           path="/setup/invitation-sent"
-          element={
-            <ProtectedRoute>
-              <InvitationSent />
-            </ProtectedRoute>
-          }
+          element={<InvitationSent />}
         />
-        <Route
-          path="/waiting-for-child"
-          element={
-            <ProtectedRoute>
-              <WaitingForChild />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/waiting-for-child" element={<WaitingForChild />} />
 
-        <Route
-          path="/overview"
-          element={
-            <ProtectedRoute>
-              <Overview />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/reports"
-          element={
-            <ProtectedRoute>
-              <Reports />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/overview" element={<RequireAuth><Overview /></RequireAuth>} />
+        <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
         <Route
           path="/reports/session/:sessionId"
-          element={
-            <ProtectedRoute>
-              <SessionInsight />
-            </ProtectedRoute>
-          }
+          element={<RequireAuth><SessionInsight /></RequireAuth>}
         />
-        <Route
-          path="/progress"
-          element={
-            <ProtectedRoute>
-              <Progress />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/study-goals"
-          element={
-            <ProtectedRoute>
-              <StudyGoals />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/progress" element={<RequireAuth><Progress /></RequireAuth>} />
+        <Route path="/study-goals" element={<RequireAuth><StudyGoals /></RequireAuth>} />
 
-        <Route
-          path="/children"
-          element={
-            <ProtectedRoute>
-              <Children />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/notifications"
-          element={
-            <ProtectedRoute>
-              <Notifications />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfileAccount />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/children" element={<RequireAuth><Children /></RequireAuth>} />
+        <Route path="/profile" element={<RequireAuth><ProfileAccount /></RequireAuth>} />
+        <Route path="/privacy-policy" element={<RequireAuth><LegalDocument type="privacy" /></RequireAuth>} />
+        <Route path="/terms-of-use" element={<RequireAuth><LegalDocument type="terms" /></RequireAuth>} />
 
         <Route path="*" element={<Navigate replace to="/" />} />
       </Routes>

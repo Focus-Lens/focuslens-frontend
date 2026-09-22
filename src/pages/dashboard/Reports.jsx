@@ -14,8 +14,17 @@ import {
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
+import { api } from "../../services/api";
+import {
+  cacheParentChildren,
+  findConnectedChild,
+  findPendingChild,
+  getCachedParentChildren,
+} from "../../services/parentChildrenCache";
+import { getPendingInvitationForUser } from "../../services/pendingInvitationCache";
 import { useAuth } from "../../context/AuthContext";
-import { getSessions } from "../../services/reports";
+import seclock from "../../assets/seclock.png";
+import people from "../../assets/people.png";
 
 
 
@@ -23,50 +32,17 @@ import "../../css/dashboard/Reports.css";
 
 export default function Reports() {
   const navigate = useNavigate();
-  const { child } = useAuth();
+  const { user } = useAuth();
 
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const sessionsPerPage = 4;
-
+  const [childInfo, setChildInfo] = useState(() => findConnectedChild(getCachedParentChildren()));
+  const [pendingChild, setPendingChild] = useState(
+    () => findPendingChild(getCachedParentChildren()) || getPendingInvitationForUser(user?.email)
+  );
   const [sessions, setSessions] = useState([]);
-  const [loadError, setLoadError] = useState("");
-
-  // ------------------------------------------------------------
-  // Load only records authorized for the linked child.
-  // ------------------------------------------------------------
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function loadSessions() {
-      try {
-        const data = await getSessions({ studentId: child?.id });
-        if (isCancelled || !data) return;
-
-        const items = Array.isArray(data)
-          ? data
-          : Array.isArray(data.items)
-          ? data.items
-          : null;
-
-        setSessions(items ?? []);
-        setLoadError("");
-      } catch (err) {
-        console.error("Failed to load reports sessions:", err);
-        if (!isCancelled) {
-          setSessions([]);
-          setLoadError("We couldn't load session reports. Please try again.");
-        }
-      }
-    }
-
-    loadSessions();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [child]);
+  const sessionsPerPage = 4;
 
   const filteredSessions = useMemo(() => {
     return sessions.filter((session) => {
@@ -107,6 +83,83 @@ export default function Reports() {
     filteredSessions.length
   );
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [subjectFilter, statusFilter]);
+
+  useEffect(() => {
+    let active = true;
+    api("/api/parents/overview/children")
+      .then(async (children) => {
+        if (!active) return;
+        cacheParentChildren(children);
+        const connectedChild = findConnectedChild(children);
+        setChildInfo(connectedChild);
+        setPendingChild(
+          findPendingChild(children) || getPendingInvitationForUser(user?.email)
+        );
+        if (connectedChild?.studentId) {
+          const history = await api(
+            `/api/parents/students/${connectedChild.studentId}/dashboard/sessions?page=1&pageSize=100`,
+          ).catch(() => null);
+          if (active) {
+            setSessions((history?.sessions || []).map(mapSession));
+          }
+        } else if (active) {
+          setSessions([]);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!active) return;
+        // A dashboard endpoint may be unavailable or privacy-restricted; that
+        // must render the empty state, never a blank page.
+      });
+    return () => { active = false; };
+  }, [user?.email]);
+
+  if (!childInfo) {
+    return (
+      <div className="reports-page-shell">
+        <DashboardHeader activePage="reports" />
+        <ParentLayout>
+          <ReportsUnavailable
+            childName={pendingChild?.firstName}
+            onAction={() => navigate(pendingChild ? "/waiting-for-child" : "/choose-start")}
+          />
+        </ParentLayout>
+      </div>
+    );
+  }
+
+  if (sessions.length === 0) {
+    return (
+      <div className="reports-page-shell">
+        <DashboardHeader activePage="reports" />
+        <ParentLayout>
+          <main className="reports-page reports-empty-connected-page">
+            <header className="reports-heading">
+              <div className="reports-title-content">
+                <span className="reports-eyebrow">✣ Parent learning view</span>
+                <h1>Reports</h1>
+                <p>Completed sessions shared by {childInfo.firstName || "your child"} will appear here.</p>
+              </div>
+            </header>
+            <section className="reports-connected-empty-card">
+              <span className="reports-connected-empty-icon"><Clock3 size={28} /></span>
+              <h2>No reports shared yet</h2>
+              <p>
+                {childInfo.firstName || "Your child"} is connected, but hasn&apos;t shared any study sessions yet.
+                Reports will appear automatically after their first recorded session.
+              </p>
+              <span>Shared data stays under {childInfo.firstName || "your child"}&apos;s control.</span>
+            </section>
+          </main>
+        </ParentLayout>
+      </div>
+    );
+  }
+
   return (
     <div className="reports-page-shell">
       <DashboardHeader activePage="reports" />
@@ -120,7 +173,7 @@ export default function Reports() {
 
           <header className="reports-heading">
 
-
+           
 
             <div className="reports-title-content">
 
@@ -131,7 +184,7 @@ export default function Reports() {
               <h1>Reports</h1>
 
               <p>
-                Sessions shared by {child?.preferredName ?? "your child"}.
+                Completed sessions shared by {childInfo.firstName || "your child"}.
               </p>
 
             </div>
@@ -146,7 +199,7 @@ export default function Reports() {
               />
 
               <span>
-                All available dates
+                Sep 1 – Sep 8, 2026
               </span>
             </button>
 
@@ -180,10 +233,7 @@ export default function Reports() {
 
                   <select
                     value={subjectFilter}
-                    onChange={(event) => {
-                      setSubjectFilter(event.target.value);
-                      setCurrentPage(1);
-                    }}
+                    onChange={(event) => setSubjectFilter(event.target.value)}
                   >
                     {subjects.map((subject) => (
                       <option
@@ -211,10 +261,7 @@ export default function Reports() {
 
                   <select
                     value={statusFilter}
-                    onChange={(event) => {
-                      setStatusFilter(event.target.value);
-                      setCurrentPage(1);
-                    }}
+                    onChange={(event) => setStatusFilter(event.target.value)}
                   >
                     <option value="all">
                       All statuses
@@ -285,7 +332,7 @@ export default function Reports() {
                             </b>
 
                             <small>
-                              {new Date(session.date).toLocaleString()}
+                              {session.date}
                             </small>
                           </div>
 
@@ -368,12 +415,7 @@ export default function Reports() {
                           }
                         >
 
-                          {!session.aiAnalysisAvailable ? (
-                            <>
-                              <span className="stable-line">—</span>
-                              Not available
-                            </>
-                          ) : session.focusTrend === "improving" ? (
+                          {session.focusTrend === "improving" ? (
                             <>
                               <ArrowUpRight
                                 size={15}
@@ -437,7 +479,7 @@ export default function Reports() {
 
             {filteredSessions.length === 0 && (
               <div className="reports-empty">
-                {loadError || "No sessions match the selected filters."}
+                No sessions match the selected filters.
               </div>
             )}
 
@@ -496,5 +538,60 @@ export default function Reports() {
       </ParentLayout>
 
     </div>
+  );
+}
+
+function mapSession(session) {
+  const subject = session.subjectName || "Study session";
+  return {
+    id: session.id,
+    subject,
+    subjectCode: subject.slice(0, 2).toUpperCase(),
+    date: new Date(session.startedAtUtc).toLocaleString(),
+    durationMinutes: session.actualStudyMinutes || 0,
+    format: session.mode || "Study session",
+    status: String(session.status || "").toLowerCase(),
+    focusTrend: null,
+  };
+}
+
+function ReportsUnavailable({ childName, onAction }) {
+  const isPending = Boolean(childName);
+
+  return (
+    <main className="reports-page reports-unavailable-page">
+      <header className="reports-heading">
+        <div className="reports-title-content">
+          <span className="reports-eyebrow">✣ Parent learning view</span>
+          <h1>Reports</h1>
+          <p>
+            {isPending
+              ? `Reports will appear after ${childName} confirms the connection.`
+              : "Connect with your child to view shared study reports."}
+          </p>
+        </div>
+      </header>
+      <section className="reports-unavailable-card" aria-labelledby="reports-unavailable-title">
+        <div className="reports-unavailable-icon">
+          {isPending ? (
+            <img src={seclock} alt="Waiting" />
+          ) : (
+            <img src={people} alt="" />
+          )}
+        </div>
+        <h2 id="reports-unavailable-title">
+          {isPending ? `Waiting for ${childName} to confirm` : "No child connected"}
+        </h2>
+        <p>
+          {isPending
+            ? `Reports will appear after ${childName} accepts your connection request and chooses what to share.`
+            : "Connect with your child to view shared sessions, focus trends, and learning progress."}
+        </p>
+        {isPending && <span className="reports-pending-badge">● Connection pending</span>}
+        <button type="button" onClick={onAction}>
+          {isPending ? "Manage invitation" : "Connect with your child"}
+        </button>
+      </section>
+    </main>
   );
 }

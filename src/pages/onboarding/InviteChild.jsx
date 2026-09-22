@@ -9,13 +9,14 @@ import {
 } from "lucide-react";
 
 import { Card } from "../../components/ui/CommonUI";
-import { child } from "../../data/mockData";
+import { parent } from "../../data/mockData";
 import { useAuth } from "../../context/AuthContext";
+import { useChildProfile } from "../../context/ChildProfileContext";
 import {
-  inviteChildSetupByEmail,
-  inviteChildSetupByLink,
-} from "../../services/parents";
-import { ApiError } from "../../services/apiClient";
+  getChildInvitationDraft,
+  saveChildInvitationDraft,
+} from "../../services/childInvitationDraft";
+import { api } from "../../services/api";
 import logo from "../../assets/logo.png";
 
 import "../../css/onboarding/InviteChild.css";
@@ -32,22 +33,35 @@ const steps = [
 export default function InviteChild() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user: parent } = useAuth();
+  const { user } = useAuth();
+  const { child, updateChild } = useChildProfile();
+  const parentName = user?.firstName || parent.firstName || "Account";
+
+  function buildInviteLink() {
+    return `https://focuslens.app/invite/${encodeURIComponent(
+      child.preferredName || "demo"
+    )}`;
+  }
 
   const [method, setMethod] = useState(
     searchParams.get("method") === "link" ? "link" : "email"
   );
 
-  const [email, setEmail] = useState(child.email);
+  const [email, setEmail] = useState(
+    () => getChildInvitationDraft().email || child.email
+  );
   const [status, setStatus] = useState("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [showErrorToast, setShowErrorToast] = useState(false);
 
-  const [inviteLink, setInviteLink] = useState("");
+  const [inviteLink, setInviteLink] = useState(() =>
+    searchParams.get("method") === "link" ? buildInviteLink() : ""
+  );
   const [showCopiedModal, setShowCopiedModal] = useState(false);
   const [showEmailMessage, setShowEmailMessage] = useState(false);
   const [showLinkMessage, setShowLinkMessage] = useState(false);
 
+  const sendingTimer = useRef(null);
   const errorToastTimer = useRef(null);
 
   const isSending = status === "sending";
@@ -55,9 +69,43 @@ export default function InviteChild() {
 
   useEffect(() => {
     return () => {
+      window.clearTimeout(sendingTimer.current);
       window.clearTimeout(errorToastTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    const draftId = sessionStorage.getItem("childSetupDraftId");
+    if (!draftId) return;
+
+    api(`/api/parents/child-setups/${draftId}`)
+      .then((draft) => {
+        if (!draft.firstName && !draft.lastName) return;
+
+        updateChild({
+          preferredName: draft.firstName || child.preferredName,
+          lastName: draft.lastName || child.lastName,
+          dateOfBirth: draft.dateOfBirth || child.dateOfBirth,
+          grade: draft.grade?.replace(/(\D)(\d)/, "$1 $2") || child.grade,
+          subjects: draft.subjects?.length
+            ? draft.subjects.map((subject) => subject.customName || subject.type)
+            : child.subjects,
+          studyPriorities: draft.studyPriorities?.length
+            ? draft.studyPriorities
+            : child.studyPriorities,
+          studyTimeGoal: draft.studyTimeGoal
+            ? {
+                goalType: draft.studyTimeGoal.period?.toLowerCase(),
+                value: String(draft.studyTimeGoal.targetMinutes / 60),
+                cycle: "Current week",
+              }
+            : child.studyTimeGoal,
+        });
+      })
+      .catch(() => {});
+  // This hydration only runs once when the page opens; user edits remain authoritative.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [updateChild]);
 
   function showSendingError(message) {
     setStatus("failed");
@@ -85,32 +133,106 @@ export default function InviteChild() {
       return;
     }
 
+    updateChild({ email: cleanEmail });
+    saveChildInvitationDraft({ email: cleanEmail });
     setStatus("sending");
     setErrorMessage("");
 
-    const draftId = sessionStorage.getItem("childSetupDraftId");
-
-    if (!draftId) {
-      showSendingError(
-        "We couldn't find this child's setup. Please go back and try again."
-      );
-      return;
-    }
-
     try {
-      const invitation = await inviteChildSetupByEmail(draftId, {
-        childEmail: cleanEmail,
-      });
-      sessionStorage.setItem("pendingChildEmail", cleanEmail);
-      if (invitation?.invitationUrl) {
-        sessionStorage.setItem("pendingChildInvitationUrl", invitation.invitationUrl);
+      const draftId = sessionStorage.getItem("childSetupDraftId");
+      if (!draftId) {
+        throw new Error("Start the child setup again before sending an invitation.");
       }
+      const targetHours = Number(child.studyTimeGoal?.value);
+      if (!Number.isFinite(targetHours) || targetHours <= 0) {
+        throw new Error("Add a weekly study goal before sending an invitation.");
+      }
+
+      const settings = await api("/api/parents/me/settings");
+      if (!settings.weekStartsOn) {
+        await api("/api/parents/me/settings", {
+          method: "PUT",
+          body: { weekStartsOn: "Sunday" },
+        });
+      }
+
+      const subjectTypes = {
+        Mathematics: "Math", Math: "Math", English: "English", History: "History",
+        Physics: "Physics", Chemistry: "Chemistry", Biology: "Biology",
+        Geography: "Geography", Languages: "Languages", "Computer Science": "ComputerScience",
+        ComputerScience: "ComputerScience", Other: "Other",
+      };
+      const priorities = {
+        "Help my child build a study routine": "BuildStudyRoutine",
+        "Help my child stay focused": "StayFocused",
+        "Help my child understand difficult topics": "UnderstandDifficultTopics",
+        "Support my child’s exam preparation": "ExamPreparation",
+        "Encourage my child to reach study goals": "ReachStudyGoals",
+        BuildStudyRoutine: "BuildStudyRoutine",
+        StayFocused: "StayFocused",
+        UnderstandDifficultTopics: "UnderstandDifficultTopics",
+        ExamPreparation: "ExamPreparation",
+        ReachStudyGoals: "ReachStudyGoals",
+      };
+      const selectedSubjects = (child.subjects || [])
+        .map((subject) => ({
+          type: subjectTypes[subject] || "Other",
+          customName: subjectTypes[subject] ? null : subject,
+        }));
+      const selectedPriorities = (child.studyPriorities || [])
+        .map((item) => priorities[item])
+        .filter(Boolean);
+
+      const missingSteps = [
+        !child.preferredName?.trim() && "preferred name",
+        !child.lastName?.trim() && "last name",
+        !child.grade && "grade",
+        selectedSubjects.length === 0 && "at least one subject",
+        selectedPriorities.length === 0 && "at least one study priority",
+      ].filter(Boolean);
+      if (missingSteps.length) {
+        throw new Error(`Complete ${missingSteps.join(", ")} before sending an invitation.`);
+      }
+
+      await api(`/api/parents/child-setups/${draftId}`, {
+        method: "PUT",
+        body: {
+          firstName: child.preferredName?.trim(),
+          lastName: child.lastName?.trim(),
+          dateOfBirth: child.dateOfBirth || null,
+          grade: child.grade?.replace(/\s/g, "") || null,
+          subjects: selectedSubjects,
+          studyPriorities: selectedPriorities,
+          studyTimeGoal: {
+            period: "Weekly",
+            targetMinutes: Math.round(targetHours * 60),
+            days: null,
+            startDate: new Date().toISOString().slice(0, 10),
+          },
+        },
+      });
+
+      const updatedDraft = await api(`/api/parents/child-setups/${draftId}`);
+      const completed =
+        updatedDraft.firstName &&
+        updatedDraft.lastName &&
+        updatedDraft.grade &&
+        updatedDraft.subjects?.length &&
+        updatedDraft.studyPriorities?.length &&
+        updatedDraft.studyTimeGoal;
+      if (!completed) {
+        throw new Error("Complete the child setup before sending an invitation.");
+      }
+
+      const invitation = await api(`/api/parents/child-setups/${draftId}/invite`, {
+        method: "POST",
+        body: { childEmail: cleanEmail },
+      });
+      sessionStorage.setItem("childSetupInvitation", JSON.stringify(invitation));
       navigate("/setup/invitation-sent");
-    } catch (err) {
+    } catch (requestError) {
       showSendingError(
-        err instanceof ApiError
-          ? err.message
-          : "We couldn’t send the link."
+        requestError.message || "We couldn’t send the invitation. Please try again.",
       );
     }
   }
@@ -132,28 +254,22 @@ export default function InviteChild() {
     setStatus("idle");
     setShowErrorToast(false);
     setShowEmailMessage(false);
-    setShowLinkMessage(false);
+    setInviteLink((currentLink) => currentLink || buildInviteLink());
+    setShowLinkMessage(true);
   }
 
-  async function handleCopyLink() {
-    const draftId = sessionStorage.getItem("childSetupDraftId");
-    let link = `https://focuslens.app/invite/${encodeURIComponent(
-      child.preferredName || "demo"
-    )}`;
-
-    if (draftId) {
-      try {
-        const data = await inviteChildSetupByLink(draftId);
-        const realLink =
-          data?.invitationUrl ?? data?.link ?? data?.url ?? data?.inviteLink;
-        if (realLink) link = realLink;
-      } catch (err) {
-        console.error("Failed to create child setup link:", err);
-      }
-    }
+  function handleCopyLink() {
+    const link = inviteLink || buildInviteLink();
 
     setInviteLink(link);
-    navigator.clipboard?.writeText(link).catch(() => {});
+    if (!navigator.clipboard) {
+      showSendingError("Your browser could not copy the link. Please copy it manually.");
+      return;
+    }
+
+    navigator.clipboard.writeText(link).catch(() => {
+      showSendingError("Your browser could not copy the link. Please try again.");
+    });
 
     setShowLinkMessage(true);
     setShowCopiedModal(true);
@@ -170,13 +286,13 @@ export default function InviteChild() {
         <Link
           to="/profile"
           className="invite-parent-profile"
-          aria-label="Open Mariam's profile"
+          aria-label={`Open ${parentName}'s profile`}
         >
           <span className="invite-parent-avatar">
-            {parent.firstName?.[0] ?? "M"}
+            {parentName[0]?.toUpperCase() ?? "A"}
           </span>
 
-          <span>{parent.firstName}</span>
+          <span>{parentName}</span>
 
           <ChevronDown size={15} strokeWidth={1.8} />
         </Link>
@@ -184,7 +300,7 @@ export default function InviteChild() {
 
       <main className="invite-main">
         {showErrorToast && (
-          <div className="invite-error-toast" role="alert">
+          <div className="invite-error-toast" role="alert" aria-live="assertive">
             <span className="invite-error-icon">
               <CircleAlert size={22} strokeWidth={2.4} />
             </span>
@@ -283,7 +399,11 @@ export default function InviteChild() {
                       type="email"
                       value={email}
                       disabled={isSending}
-                      onChange={(event) => setEmail(event.target.value)}
+                      onChange={(event) => {
+                        const nextEmail = event.target.value;
+                        setEmail(nextEmail);
+                        saveChildInvitationDraft({ email: nextEmail });
+                      }}
                     />
                   </div>
 
@@ -313,10 +433,7 @@ export default function InviteChild() {
                       id="private-link"
                       type="text"
                       readOnly
-                      value={
-                        inviteLink ||
-                        "Tap “Copy invitation” to generate a link"
-                      }
+                      value={inviteLink}
                     />
                   </div>
 

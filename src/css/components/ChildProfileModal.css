@@ -190,7 +190,8 @@
   line-height: 1.45;
 }
 
-.child-profile-privacy button {
+.child-profile-privacy button,
+.child-profile-privacy a {
   margin: 9px 0 0;
   padding: 0;
   border: 0;

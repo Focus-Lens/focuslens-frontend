@@ -1,12 +1,22 @@
 import { AuthLayout, Button } from "../../components/ui/CommonUI";
-import { child } from "../../data/mockData";
+import { useLocation, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { resolveAccessInvitation } from "../../services/api";
 import "../../css/invitation/ContinueInvitation.css";
 
 export default function ContinueInvitation() {
-  const previewRaw = sessionStorage.getItem("pendingInvitationPreview");
-  const preview = previewRaw ? JSON.parse(previewRaw) : null;
-  const childName = preview?.studentPreferredName ?? child.preferredName;
-
+  const { token } = useParams();
+  const location = useLocation();
+  const [name, setName] = useState(() => location.state?.invitationName || sessionStorage.getItem("pendingInvitationName") || "");
+  useEffect(() => {
+    if (!token) return;
+    sessionStorage.setItem("pendingInvitationToken", token);
+    resolveAccessInvitation(token)
+      .then((data) => {
+        sessionStorage.setItem("pendingInvitationName", data.studentPreferredName);
+        setName(data.studentPreferredName);
+      }).catch(() => {});
+  }, [token]);
   return (
     <AuthLayout hideFooter>
       <section className="invitation-landing-main">
@@ -14,12 +24,12 @@ export default function ContinueInvitation() {
           <h1>How would you like to continue?</h1>
 
           <p>
-  {childName}’s invitation will stay attached while you create or
+  {name || "This student"}’s invitation will stay attached while you create or
   <br />
   sign in to your parent account.
 </p>
 
-          <div className="actions">
+          <div className="continue-invitation-actions">
             <div className="continue-invitation-button1">
               <Button to="/register">Create a parent account</Button>
             </div>

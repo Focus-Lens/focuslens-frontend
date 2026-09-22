@@ -265,6 +265,15 @@
   object-fit: contain;
 }
 
+.overview-empty-pattern-icon {
+  width: 30px;
+  height: 30px;
+  display: block;
+  margin: 0 auto 14px;
+  object-fit: contain;
+  background: transparent;
+}
+
 .overview-card-empty h2,
 .overview-sessions-empty h2 {
   margin: 0;
@@ -1622,4 +1631,3 @@
   border-color: #d6cdf0;
   background: #faf8ff;
 }
-

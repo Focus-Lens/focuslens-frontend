@@ -18,7 +18,7 @@ import {
   AuthLayout,
 } from "../../components/ui/CommonUI";
 
-import { child } from "../../data/mockData";
+import { useChildProfile } from "../../context/ChildProfileContext";
 
 import "../../css/onboarding/ChildStudyContext.css";
 
@@ -57,6 +57,7 @@ const steps = [
 export default function ChildStudyContext() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { child, updateChild } = useChildProfile();
 
   const [selectedSupport, setSelectedSupport] = useState(
     child.studyPriorities ?? []
@@ -71,7 +72,7 @@ export default function ChildStudyContext() {
   }
 
   function handleContinue() {
-    child.studyPriorities = selectedSupport;
+    updateChild({ studyPriorities: selectedSupport });
 
     const returnTo = searchParams.get("returnTo");
 

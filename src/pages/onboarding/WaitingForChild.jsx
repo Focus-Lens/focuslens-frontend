@@ -1,26 +1,72 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CircleAlert, Check, Clock3 } from "lucide-react";
 
 import { ParentLayout, Button } from "../../components/ui/CommonUI";
-import { child } from "../../data/mockData";
-import { useAuth } from "../../context/AuthContext";
-import {
-  resendChildSetupInvite,
-  cancelChildSetupInvite,
-  inviteChildSetupByLink,
-} from "../../services/parents";
+import { parent } from "../../data/mockData";
 
 import DashboardHeader from "../../components/ui/DashboardHeader";
+import { useAuth } from "../../context/AuthContext";
+import { useChildProfile } from "../../context/ChildProfileContext";
+import {
+  cachePendingInvitation,
+  clearPendingInvitation,
+} from "../../services/pendingInvitationCache";
+import { getChildInvitationDraft } from "../../services/childInvitationDraft";
+import { api } from "../../services/api";
 
 import "../../css/onboarding/WaitingForChild.css";
 
-export default function WaitingForChild() {
+export default function WaitingForChild({
+  childName,
+  childEmail,
+  pendingChild,
+  onInvitationCancelled,
+}) {
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+  const { user } = useAuth();
+  const { child } = useChildProfile();
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [isResending, setIsResending] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const [serverInvitation, setServerInvitation] = useState(null);
+
+  const displayedName =
+    serverInvitation?.firstName || pendingChild?.firstName || childName || child.preferredName || "your child";
+  const displayedEmail =
+    serverInvitation?.targetEmail ||
+    pendingChild?.email ||
+    childEmail ||
+    getChildInvitationDraft().email ||
+    child.email;
+  const displayedGrade = serverInvitation?.grade
+    ? serverInvitation.grade.replace(/(\D)(\d)/, "$1 $2")
+    : child.grade;
+
+  useEffect(() => {
+    cachePendingInvitation({
+      firstName: displayedName,
+      email: displayedEmail,
+      parentEmail: user?.email,
+    });
+  }, [displayedName, displayedEmail, user?.email]);
+
+  useEffect(() => {
+    let active = true;
+
+    api("/api/parents/child-setups/invitations")
+      .then((invitations) => {
+        if (active) setServerInvitation(invitations[0] || null);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function showFeedback(title, message) {
     setFeedback({ title, message });
@@ -31,65 +77,98 @@ export default function WaitingForChild() {
   }
 
   async function handleResendInvitation() {
-    const draftId = sessionStorage.getItem("childSetupDraftId");
+    if (isResending) return;
 
     try {
-      if (draftId) {
-        await resendChildSetupInvite(draftId);
+      let invitation = serverInvitation || pendingChild;
+      let draftId =
+        invitation?.draftId ||
+        invitation?.childSetupDraftId ||
+        getChildInvitationDraft().draftId ||
+        getChildInvitationDraft().childSetupDraftId;
+
+      // Refresh from the server if this page was opened directly or after a reload.
+      if (!draftId) {
+        const invitations = await api("/api/parents/child-setups/invitations");
+        invitation = invitations[0];
+        draftId = invitation?.draftId || invitation?.childSetupDraftId;
+        if (invitation) setServerInvitation(invitation);
       }
 
+      if (!draftId) {
+        throw new Error("No pending invitation was found to resend.");
+      }
+
+      setIsResending(true);
+      await api(`/api/parents/child-setups/${draftId}/invite/resend`, {
+        method: "POST",
+      });
       showFeedback(
         "Invitation resent",
-        `A new invitation was sent to ${child.email}.`
+        `A new invitation was sent to ${displayedEmail}.`,
       );
-    } catch (err) {
+    } catch (error) {
       showFeedback(
-        "Couldn't resend invitation",
-        err?.message || "Please try again in a moment."
+        "We couldn't resend the invitation",
+        error.message || "Please try again in a moment.",
       );
+    } finally {
+      setIsResending(false);
     }
   }
 
-  async function handleCopyLink() {
-    const draftId = sessionStorage.getItem("childSetupDraftId");
-    let link = `https://focuslens.app/invite/${encodeURIComponent(
-      child.preferredName || "demo"
+  function handleCopyLink() {
+    const link = `https://focuslens.app/invite/${encodeURIComponent(
+      displayedName || "demo"
     )}`;
-
-    if (draftId) {
-      try {
-        const data = await inviteChildSetupByLink(draftId);
-        const realLink =
-          data?.invitationUrl ?? data?.link ?? data?.url ?? data?.inviteLink;
-        if (realLink) link = realLink;
-      } catch (err) {
-        console.error("Failed to create child setup link:", err);
-      }
-    }
 
     navigator.clipboard?.writeText(link).catch(() => {});
 
     showFeedback(
       "Invitation link copied",
-      `Share it privately with ${child.preferredName}.`
+      `Share it privately with ${displayedName}.`
     );
   }
 
   async function handleCancelInvitation() {
-    const draftId = sessionStorage.getItem("childSetupDraftId");
+    if (isCancelling) return;
+
+    let invitation = serverInvitation || pendingChild;
+    let draftId =
+      invitation?.draftId || invitation?.childSetupDraftId || invitation?.id;
+    setCancelError("");
 
     try {
-      if (draftId) {
-        await cancelChildSetupInvite(draftId);
+      if (!draftId) {
+        const children = await api("/api/parents/overview/children");
+        invitation = children.find(
+          (item) =>
+            !item.studentId &&
+            item.type === "ChildSetup" &&
+            item.childSetupInvitationStatus === "Pending",
+        );
+        draftId =
+          invitation?.draftId || invitation?.childSetupDraftId || invitation?.id;
       }
-    } catch (err) {
-      console.error("Failed to cancel child setup invite:", err);
-    }
 
-    sessionStorage.removeItem("childSetupDraftId");
-    setUser((current) => (current ? { ...current, hasChild: false } : current));
-    setShowCancelModal(false);
-    navigate("/overview");
+      if (!draftId) {
+        throw new Error("No active invitation was found for this account.");
+      }
+
+      setIsCancelling(true);
+      await api(`/api/parents/child-setups/${draftId}/invite/cancel`, {
+        method: "POST",
+      });
+      parent.hasChild = false;
+      clearPendingInvitation();
+      setShowCancelModal(false);
+      onInvitationCancelled?.(invitation);
+      navigate("/overview", { replace: true });
+    } catch (error) {
+      setCancelError(error.message || "Please try again in a moment.");
+    } finally {
+      setIsCancelling(false);
+    }
   }
 
   return (
@@ -123,10 +202,10 @@ export default function WaitingForChild() {
 
           {/* Page heading */}
           <section className="waiting-heading">
-            <h1>Waiting for {child.preferredName} to join</h1>
+            <h1>Waiting for {displayedName} to join</h1>
 
             <p>
-              Study progress will appear after {child.preferredName} activates
+              Study progress will appear after {displayedName} activates
               FocusLens and chooses what to share.
             </p>
           </section>
@@ -143,12 +222,12 @@ export default function WaitingForChild() {
 
             <div className="invitation-info">
               <span>
-                {child.preferredName} · {child.grade}
+                {displayedName} · {displayedGrade}
               </span>
 
               <span className="info-dot">•</span>
 
-              <span>Email: {child.email}</span>
+              <span>Email: {displayedEmail}</span>
             </div>
 
             <p className="invitation-expiry">
@@ -157,8 +236,8 @@ export default function WaitingForChild() {
             </p>
 
             <div className="waiting-actions">
-              <Button onClick={handleResendInvitation}>
-                Resend invitation
+              <Button onClick={handleResendInvitation} disabled={isResending}>
+                {isResending ? "Resending..." : "Resend invitation"}
               </Button>
 
               <Button secondary onClick={handleCopyLink}>
@@ -172,7 +251,7 @@ export default function WaitingForChild() {
             <h2>Setup checklist</h2>
 
             <p className="setup-description">
-              Profile ready, {child.preferredName} can review and adjust the
+              Profile ready, {displayedName} can review and adjust the
               setup.
             </p>
 
@@ -206,7 +285,7 @@ export default function WaitingForChild() {
             </div>
 
             <h2>
-              Cancel {child.preferredName}’s invitation?
+              Cancel {displayedName}’s invitation?
             </h2>
 
             <p>
@@ -214,18 +293,26 @@ export default function WaitingForChild() {
               profile stays saved, so you can invite them again later.
             </p>
 
+            {cancelError && (
+              <p className="confirm-error" role="alert">
+                {cancelError}
+              </p>
+            )}
+
             <button
               className="confirm-decline-link"
               onClick={handleCancelInvitation}
               type="button"
+              disabled={isCancelling}
             >
-              Cancel invitation
+              {isCancelling ? "Cancelling..." : "Cancel invitation"}
             </button>
 
             <button
               className="confirm-cancel-button"
               onClick={() => setShowCancelModal(false)}
               type="button"
+              disabled={isCancelling}
             >
               Keep invitation
             </button>

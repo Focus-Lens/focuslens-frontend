@@ -1,55 +1,70 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { AuthLayout, Button, Card, Field } from "../../components/ui/CommonUI";
+import { api } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import TermsPrivacyModal from "../../components/ui/TermsPrivacyModal";
 import "../../css/auth/CreateParentAccount.css";
-import { useAuth } from "../../context/AuthContext";
 
 export default function CreateParentAccount() {
   const navigate = useNavigate();
-  const { loginWithGoogleParent } = useAuth();
+  const { login } = useAuth();
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
+  const savedRegistration = (() => {
+    try {
+      return JSON.parse(sessionStorage.getItem("pendingParentRegistration") || "null") || {};
+    } catch {
+      return {};
+    }
+  })();
+
+  const [firstName, setFirstName] = useState(savedRegistration.firstName || "");
+  const [lastName, setLastName] = useState(savedRegistration.lastName || "");
+  const [email, setEmail] = useState(savedRegistration.email || "");
   const [emailTouched, setEmailTouched] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [emailError, setEmailError] = useState(() => {
+    const error = sessionStorage.getItem("parentRegistrationEmailError") || "";
+    sessionStorage.removeItem("parentRegistrationEmailError");
+    return error;
+  });
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [googleError, setGoogleError] = useState("");
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   const emailHasError =
-    emailTouched &&
-    email.trim().length > 0 &&
-    !emailIsValid;
+    (emailTouched && email.trim().length > 0 && !emailIsValid) ||
+    Boolean(fieldErrors.email);
 
-  const formIsValid =
-    firstName.trim().length > 0 &&
-    lastName.trim().length > 0 &&
-    emailIsValid &&
-    acceptedTerms;
+  function validateRegistration() {
+    const nextErrors = {};
+    if (!firstName.trim()) nextErrors.firstName = "First name is required.";
+    if (!lastName.trim()) nextErrors.lastName = "Last name is required.";
+    if (!email.trim()) nextErrors.email = "Email address is required.";
+    else if (!emailIsValid) nextErrors.email = "Please enter a valid email address.";
+    if (!acceptedTerms) nextErrors.terms = "Please agree to the Terms and Privacy Policy to continue.";
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
 
-  async function handleGoogleSuccess(response) {
-    if (isGoogleLoading) return;
-
-    if (!acceptedTerms) {
-      setGoogleError("Accept the Terms and Privacy Policy before continuing with Google.");
-      return;
-    }
-
+  async function loginWithGoogle(credentialResponse) {
     try {
       setGoogleError("");
-      setIsGoogleLoading(true);
-      await loginWithGoogleParent(response.credential, true);
-      navigate("/overview");
-    } catch (error) {
-      console.error("Google parent sign-in failed:", error);
+      const response = await api("/api/auth/google/parent", {
+        method: "POST", auth: false, body: { idToken: credentialResponse.credential },
+      });
+      const account = login(response);
+      navigate(
+        sessionStorage.getItem("pendingInvitationToken") || account.requiresOnboarding
+          ? "/choose-start"
+          : "/overview",
+      );
+    } catch {
       setGoogleError("Google sign-in failed. Please try again.");
-    } finally {
-      setIsGoogleLoading(false);
     }
   }
 
@@ -58,23 +73,42 @@ export default function CreateParentAccount() {
     setShowTerms(false);
   }
 
-  function handleContinue() {
-    if (!formIsValid) return;
+  async function handleContinue() {
+    if (isCheckingEmail || !validateRegistration()) return;
 
-    const registrationDraft = {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email.trim(),
-      acceptTerms: acceptedTerms,
-    };
+    try {
+      setIsCheckingEmail(true);
+      setEmailError("");
+      const result = await api("/api/auth/check-email", {
+        method: "POST",
+        auth: false,
+        body: { email: email.trim() },
+      });
 
-    sessionStorage.setItem(
-      "pendingRegistration",
-      JSON.stringify(registrationDraft)
-    );
-    sessionStorage.setItem("pendingParentEmail", registrationDraft.email);
+      const emailAlreadyExists =
+        result?.exists === true ||
+        result?.emailExists === true ||
+        result?.isAvailable === false ||
+        result?.available === false;
 
-    navigate("/create-password");
+      if (emailAlreadyExists) {
+        setEmailError("This email is already associated with an account. Sign in or use another email.");
+        return;
+      }
+
+      sessionStorage.setItem("pendingParentRegistration", JSON.stringify({
+        firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(), acceptTerms: true,
+      }));
+      navigate("/create-password");
+    } catch (error) {
+      if (error.status === 409) {
+        setEmailError("This email is already associated with an account. Sign in or use another email.");
+      } else {
+        setEmailError(error.message || "We couldn’t check this email. Please try again.");
+      }
+    } finally {
+      setIsCheckingEmail(false);
+    }
   }
 
   return (
@@ -85,44 +119,70 @@ export default function CreateParentAccount() {
             Add your details first. You’ll create your password next.
           </p>
 
-          <div className="name-fields">
-            <Field
-              className="name-field"
-              label="First name"
-              value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
-            />
 
-            <Field
-              className="name-field"
-              label="Last name"
-              value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
-            />
+          <div className="name-fields">
+            <div className="name-field-wrapper">
+              <Field
+                aria-invalid={Boolean(fieldErrors.firstName)}
+                className={fieldErrors.firstName ? "name-field field-error" : "name-field"}
+                label="First name"
+                value={firstName}
+                onChange={(event) => {
+                  setFirstName(event.target.value);
+                  setFieldErrors((current) => ({ ...current, firstName: "" }));
+                }}
+              />
+              {fieldErrors.firstName && <p className="field-error-message">{fieldErrors.firstName}</p>}
+            </div>
+
+            <div className="name-field-wrapper">
+              <Field
+                aria-invalid={Boolean(fieldErrors.lastName)}
+                className={fieldErrors.lastName ? "name-field field-error" : "name-field"}
+                label="Last name"
+                value={lastName}
+                onChange={(event) => {
+                  setLastName(event.target.value);
+                  setFieldErrors((current) => ({ ...current, lastName: "" }));
+                }}
+              />
+              {fieldErrors.lastName && <p className="field-error-message">{fieldErrors.lastName}</p>}
+            </div>
           </div>
 
           <div className="email-field-wrapper">
             <Field
-              className={emailHasError ? "field-error" : ""}
+              className={emailHasError || emailError ? "field-error" : ""}
               label="Email address"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setEmailError("");
+                setFieldErrors((current) => ({ ...current, email: "" }));
+              }}
               onBlur={() => setEmailTouched(true)}
             />
 
-            {emailHasError && (
+            {fieldErrors.email || (emailTouched && !emailIsValid && email.trim()) ? (
               <p className="email-error">
-                Please enter a valid email address.
+                {fieldErrors.email || "Please enter a valid email address."}
               </p>
-            )}
+            ) : emailError ? (
+              <p className="email-error">
+                {emailError} <Link to="/sign-in">Sign in</Link>
+              </p>
+            ) : null}
           </div>
 
           <label className="terms-checkbox">
             <input
               type="checkbox"
               checked={acceptedTerms}
-              onChange={(event) => setAcceptedTerms(event.target.checked)}
+              onChange={(event) => {
+                setAcceptedTerms(event.target.checked);
+                setFieldErrors((current) => ({ ...current, terms: "" }));
+              }}
             />
 
             <button
@@ -133,38 +193,20 @@ export default function CreateParentAccount() {
               I agree to the Terms and Privacy Policy
             </button>
           </label>
+          {fieldErrors.terms && <p className="terms-error">{fieldErrors.terms}</p>}
 
           <div className="register-actions">
-            {formIsValid ? (
-              <Button onClick={handleContinue}>Continue</Button>
-            ) : (
-              <button type="button" className="continue-disabled" disabled>
-                Continue
-              </button>
-            )}
+            <Button onClick={handleContinue} disabled={isCheckingEmail}>
+              {isCheckingEmail ? "Checking email..." : "Continue"}
+            </Button>
           </div>
 
-          <div className="google-button" aria-busy={isGoogleLoading}>
-            {isGoogleLoading ? (
-              <span className="google-loading-state">
-                <span className="button-spinner" aria-hidden="true" />
-                Signing in with Google…
-              </span>
-            ) : (
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setGoogleError("Google sign-in failed. Please try again.")}
-                text="continue_with"
-                shape="rectangular"
-                width="360"
-              />
-            )}
-          </div>
+          <div className="google-button-wrap"><GoogleLogin onSuccess={loginWithGoogle} onError={() => setGoogleError("Google sign-in failed. Please try again.")} /></div>
 
           {googleError && <p className="email-error">{googleError}</p>}
 
           <p className="already-account">
-            Already have an account? <a href="/sign-in">Sign in</a>
+            Already have an account? <Link to="/sign-in">Sign in</Link>
           </p>
         </Card>
       </section>

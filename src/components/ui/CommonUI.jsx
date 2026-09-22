@@ -1,20 +1,12 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import "../../css/common/CommonUI.css";
 import logo from "../../assets/logo.png";
 import React from "react";
 
-export function Button({
-  children,
-  to,
-  secondary = false,
-  isLoading = false,
-  loadingLabel = "Loading…",
-  disabled = false,
-  ...props
-}) {
+export function Button({ children, to, secondary = false, ...props }) {
   const className = secondary ? "button button-secondary" : "button";
 
   if (to) {
@@ -26,14 +18,8 @@ export function Button({
   }
 
   return (
-    <button
-      className={className}
-      disabled={disabled || isLoading}
-      aria-busy={isLoading}
-      {...props}
-    >
-      {isLoading && <span className="button-spinner" aria-hidden="true" />}
-      <span>{isLoading ? loadingLabel : children}</span>
+    <button className={className} {...props}>
+      {children}
     </button>
   );
 }
@@ -54,7 +40,8 @@ export function AuthLayout({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
-  const { user: parent } = useAuth();
+  const { user } = useAuth();
+  const parentName = user?.firstName || "Account";
   const isOnboardingHeader =
     headerVariant === "onboarding" ||
     location.pathname === "/setup-intro" ||
@@ -82,13 +69,13 @@ export function AuthLayout({
           <Link
             to="/profile"
             className="onboarding-parent-profile"
-            aria-label="Open Mariam's profile"
+            aria-label={`Open ${parentName}'s profile`}
           >
             <span className="onboarding-parent-avatar">
-              {parent.firstName?.[0] ?? "M"}
+              {parentName[0]?.toUpperCase() ?? "A"}
             </span>
 
-            <span>{parent.firstName}</span>
+            <span>{parentName}</span>
 
             <ChevronDown size={14} strokeWidth={1.8} />
           </Link>

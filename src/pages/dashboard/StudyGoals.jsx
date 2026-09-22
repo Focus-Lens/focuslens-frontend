@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   CalendarDays,
   CircleCheck,
   Clock3,
+  Mail,
   Target,
   UserRound,
 } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
+import { api } from "../../services/api";
+import {
+  cacheParentChildren,
+  findConnectedChild,
+  findPendingChild,
+  getCachedParentChildren,
+} from "../../services/parentChildrenCache";
+import { getPendingInvitationForUser } from "../../services/pendingInvitationCache";
 import { useAuth } from "../../context/AuthContext";
-import { createStudyGoal, getStudyGoal } from "../../services/studyGoals";
-import { ApiError } from "../../services/apiClient";
 
 import flagPending from "../../assets/flag1.jpg";
 import flagEmpty from "../../assets/flag2.png";
@@ -21,15 +29,6 @@ import calendarImage from "../../assets/calender.jpg";
 import activeGoalIcon from "../../assets/arrow.jpg";
 
 import "../../css/dashboard/StudyGoals.css";
-
-function normalizeGoal(goal) {
-  if (!goal) return null;
-  return {
-    ...goal,
-    cycle: `${goal.weekStart} – ${goal.weekEnd}`,
-    dailyProgress: Array.isArray(goal.dailyProgress) ? goal.dailyProgress : [],
-  };
-}
 
 function GoalDetails({ goal, showAcceptance = false }) {
   return (
@@ -66,57 +65,129 @@ function GoalDetails({ goal, showAcceptance = false }) {
   );
 }
 
+function StudyGoalsUnavailable({ childName }) {
+  const isPending = Boolean(childName);
+  const displayName = childName || "your child";
+
+  return (
+    <main className="study-goals-page study-goals-unavailable-page">
+      <header className="study-goals-heading">
+        <h1>Study Goals</h1>
+        <p>
+          {isPending
+            ? `Track progress toward ${displayName}’s current study-time goal.`
+            : "Track progress toward your child’s current study-time goal."}
+        </p>
+      </header>
+
+      <section className="study-goals-unavailable-card" aria-labelledby="study-goals-unavailable-title">
+        {isPending ? (
+          <span className="study-goals-unavailable-icon" aria-hidden="true">
+            <Mail size={25} strokeWidth={2} />
+          </span>
+        ) : (
+          <img src={flagEmpty} alt="" />
+        )}
+        {isPending && <span className="study-goals-pending-badge">Invitation pending</span>}
+        <h2 id="study-goals-unavailable-title">
+          {isPending ? `Waiting for ${displayName} to accept` : "Add a child to see progress"}
+        </h2>
+        <p>
+          {isPending
+            ? `An invitation has been sent to ${displayName}. Study Goals will appear after the connection is approved and study activity begins.`
+            : "Enter your child’s information and send an invitation. Progress will appear after the connection is approved and study activity begins."}
+        </p>
+        <Link to={isPending ? "/children" : "/choose-start"}>
+          {isPending ? "Manage invitation" : "Add child information"}
+        </Link>
+        {isPending && <small className="study-goals-pending-note">You can resend or cancel the invitation from Children.</small>}
+      </section>
+    </main>
+  );
+}
+
 export default function StudyGoals() {
-  const { child, user } = useAuth();
-  const childName = child?.preferredName ?? "your child";
-  const [view, setView] = useState("loading");
+  const { user } = useAuth();
+  const [view, setView] = useState("empty");
   const [hours, setHours] = useState(5);
-  const [goal, setGoal] = useState(null);
-  const [error, setError] = useState("");
+  const [dashboard, setDashboard] = useState(null);
+  const [goalError, setGoalError] = useState("");
+  const [isSubmittingGoal, setIsSubmittingGoal] = useState(false);
+  const [childInfo, setChildInfo] = useState(() => findConnectedChild(getCachedParentChildren()));
+  const [pendingChild, setPendingChild] = useState(
+    () => findPendingChild(getCachedParentChildren()) || getPendingInvitationForUser(user?.email)
+  );
 
   useEffect(() => {
-    let cancelled = false;
-    async function loadGoal() {
-      if (!child?.id) {
-        setView("empty");
-        return;
-      }
-      try {
-        const data = await getStudyGoal(child.id);
-        if (cancelled) return;
-        const normalized = normalizeGoal(data);
-        setGoal(normalized);
-        setView(normalized?.status === "active" ? "active" : normalized ? "pending" : "empty");
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof ApiError ? err.message : "Unable to load the study goal.");
-          setView("empty");
+    let active = true;
+    api("/api/parents/overview/children")
+      .then(async (children) => {
+        if (!active) return;
+        cacheParentChildren(children);
+        const connectedChild = findConnectedChild(children);
+        setChildInfo(connectedChild);
+        setPendingChild(
+          findPendingChild(children) || getPendingInvitationForUser(user?.email)
+        );
+        if (connectedChild?.studentId) {
+          const nextDashboard = await api(
+            `/api/parents/students/${connectedChild.studentId}/dashboard`,
+          ).catch(() => null);
+          if (active) {
+            setDashboard(nextDashboard);
+            setView(nextDashboard?.pendingStudyGoalProposal ? "pending" : nextDashboard?.currentStudyGoal ? "active" : "empty");
+            setHours(nextDashboard?.currentStudyGoal?.targetMinutes / 60 || 5);
+          }
+        } else if (active) {
+          setDashboard(null);
         }
-      }
-    }
-    loadGoal();
-    return () => { cancelled = true; };
-  }, [child?.id]);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!active) return;
+      });
+    return () => { active = false; };
+  }, [user?.email]);
 
   async function submitGoal(event) {
     event.preventDefault();
-    if (!child?.id) return;
-    setError("");
+    if (!childInfo?.studentId) return;
     try {
-      const data = await createStudyGoal({
-        studentId: child.id,
-        targetMinutes: Number(hours) * 60,
-      });
-      setGoal(normalizeGoal(data));
+      setGoalError("");
+      setIsSubmittingGoal(true);
+      const proposal = await api(
+        `/api/parents/students/${childInfo.studentId}/study-goal-proposals`,
+        { method: "POST", body: { period: "Weekly", targetHours: Number(hours) } },
+      );
+      setDashboard((current) => ({ ...current, pendingStudyGoalProposal: proposal }));
       setView("pending");
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Unable to create the study goal.");
+    } catch (error) {
+      setGoalError(error.message || "We couldn’t create the goal. Please try again.");
+    } finally {
+      setIsSubmittingGoal(false);
     }
   }
 
-  const percentage = goal?.targetMinutes
-    ? Math.min(100, Math.round((goal.completedMinutes / goal.targetMinutes) * 100))
-    : 0;
+  const displayName = childInfo?.firstName || "your child";
+  const pendingGoal = dashboard?.pendingStudyGoalProposal;
+  const activeGoal = dashboard?.currentStudyGoal;
+  const activeProgress = dashboard?.currentStudyGoalProgress;
+  const goal = toDisplayGoal(
+    view === "pending" ? pendingGoal?.goal : activeGoal,
+    view === "pending" ? pendingGoal : dashboard?.currentStudyGoalAcceptedProposal,
+    activeProgress,
+    displayName,
+  );
+  const percentage = Math.min(100, Math.round(goal?.completionPercentage || 0));
+
+  if (!childInfo) {
+    return (
+      <div className="study-goals-page-shell">
+        <DashboardHeader activePage="study-goals" />
+        <ParentLayout><StudyGoalsUnavailable childName={pendingChild?.firstName} /></ParentLayout>
+      </div>
+    );
+  }
 
   return (
     <div className="study-goals-page-shell">
@@ -129,14 +200,10 @@ export default function StudyGoals() {
 
             <p>
               {view === "create"
-                ? `Create a study-time goal for ${childName} to review and accept.`
-                : `Track progress toward ${childName}’s current study-time goal.`}
+                ? `Create a study-time goal for ${displayName} to review and accept.`
+                : `Track progress toward ${displayName}’s current study-time goal.`}
             </p>
           </header>
-
-          {error && <p className="password-error">{error}</p>}
-
-          {view === "loading" && <section className="goal-empty-state">Loading study goal…</section>}
 
           {view === "empty" && (
             <section className="goal-empty-state">
@@ -146,7 +213,7 @@ export default function StudyGoals() {
                 <img src={flagEmpty} alt="" />
                 <h2>No study goal yet</h2>
                 <p>
-                  Create a study-time goal for {childName} and send
+                  Create a study-time goal for {displayName} and send
                   it for acceptance.
                 </p>
 
@@ -160,7 +227,7 @@ export default function StudyGoals() {
           {view === "create" && (
             <section className="goal-form-card">
               <form onSubmit={submitGoal}>
-                <h2>Set {childName}’s weekly goal</h2>
+                <h2>Set {displayName}’s weekly goal</h2>
 
                 <p>
                   A new study-time goal is required at the start of each week.
@@ -191,8 +258,11 @@ export default function StudyGoals() {
                     Back
                   </button>
 
-                  <button type="submit">Add weekly goal</button>
+                  <button disabled={isSubmittingGoal} type="submit">
+                    {isSubmittingGoal ? "Sending..." : "Add weekly goal"}
+                  </button>
                 </div>
+                {goalError && <p className="goal-form-error" role="alert">{goalError}</p>}
               </form>
             </section>
           )}
@@ -207,7 +277,7 @@ export default function StudyGoals() {
                 <div>
                   <span className="pending-badge">● Pending</span>
                   <h2>Goal awaiting acceptance</h2>
-              <p>Waiting for {childName} to accept this goal.</p>
+                  <p>Waiting for {displayName} to accept this goal.</p>
                 </div>
               </div>
 
@@ -259,7 +329,7 @@ export default function StudyGoals() {
                     alt=""
                   />
 
-                    <GoalDetails goal={{ ...goal, suggestedBy: goal.suggestedBy || user.firstName }} showAcceptance />
+                  <GoalDetails goal={goal} showAcceptance />
                 </div>
               </section>
 
@@ -301,7 +371,7 @@ export default function StudyGoals() {
                     Completing a time goal does not automatically mean that
                     focus quality was high.
                   </p>
-                  <a href="/progress">View focus progress →</a>
+                  <Link to="/progress">View focus progress →</Link>
                 </section>
               </div>
             </>
@@ -310,4 +380,35 @@ export default function StudyGoals() {
       </ParentLayout>
     </div>
   );
+}
+
+function toDisplayGoal(goal, proposal, progress, childName) {
+  if (!goal) return null;
+  const startsOn = progress?.startsOn || goal.startDate;
+  const endsOn = progress?.endsOn || goal.startDate;
+  const cycle = startsOn && endsOn
+    ? `${formatDate(startsOn)} – ${formatDate(endsOn)}`
+    : "Current cycle";
+  const dailyProgress = progress?.days?.map((day) => ({
+    day: new Date(`${day.date}T00:00:00`).toLocaleDateString(undefined, { weekday: "short" }),
+    minutes: day.actualStudyMinutes || 0,
+  })) || [];
+  return {
+    frequency: goal.period,
+    targetMinutes: goal.targetMinutes,
+    completedMinutes: progress?.completedMinutes || 0,
+    completionPercentage: progress?.completionPercentage || 0,
+    cycle,
+    daysRemaining: progress?.daysRemaining ?? 0,
+    suggestedBy: proposal?.suggestedByParentName || "your parent",
+    acceptedBy: childName,
+    dailyProgress,
+  };
+}
+
+function formatDate(date) {
+  return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
 }

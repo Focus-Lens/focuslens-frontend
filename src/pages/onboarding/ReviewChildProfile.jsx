@@ -1,11 +1,11 @@
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ParentLayout,
   Card,
   AuthLayout,
 } from "../../components/ui/CommonUI";
-import { child } from "../../data/mockData";
-import { updateChildSetupDraft } from "../../services/parents";
+import { useChildProfile } from "../../context/ChildProfileContext";
 import { Check, ChevronLeft } from "lucide-react";
 
 import "../../css/onboarding/ReviewChildProfile.css";
@@ -36,41 +36,10 @@ function calculateAge(dateOfBirth) {
   return age;
 }
 
-const priorityValues = {
-  "Help my child build a study routine": "BuildStudyRoutine",
-  "Help my child stay focused": "StayFocused",
-  "Help my child understand difficult topics": "UnderstandDifficultTopics",
-  "Support my child’s exam preparation": "ExamPreparation",
-  "Encourage my child to reach study goals": "ReachStudyGoals",
-};
-
-function toGrade(value) {
-  if (!value) return null;
-  return value === "Other" ? "Other" : value.replace(/\s+/g, "");
-}
-
-function toSubject(value) {
-  const type = value === "Mathematics" ? "Math" : value;
-  const known = [
-    "Math",
-    "English",
-    "History",
-    "Physics",
-    "Chemistry",
-    "Biology",
-    "Geography",
-    "Languages",
-    "ComputerScience",
-  ];
-
-  return known.includes(type)
-    ? { type, customName: null }
-    : { type: "Other", customName: value };
-}
-
 export default function ReviewChildProfile() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { child } = useChildProfile();
 
   const returnTo = searchParams.get("returnTo");
 
@@ -112,36 +81,7 @@ export default function ReviewChildProfile() {
     },
   ];
 
-  async function handleConfirm() {
-    const draftId = sessionStorage.getItem("childSetupDraftId");
-
-    if (draftId) {
-      try {
-        const weeklyHours = Number(child.studyTimeGoal?.value);
-
-        await updateChildSetupDraft(draftId, {
-          firstName: child.preferredName || "",
-          lastName: child.lastName || "",
-          dateOfBirth: child.dateOfBirth || null,
-          grade: toGrade(child.grade),
-          subjects: (child.subjects ?? []).map(toSubject),
-          studyPriorities: (child.studyPriorities ?? [])
-            .map((priority) => priorityValues[priority])
-            .filter(Boolean),
-          studyTimeGoal: Number.isFinite(weeklyHours)
-            ? {
-                period: "Weekly",
-                targetMinutes: weeklyHours * 60,
-                days: ["Monday"],
-                startDate: null,
-              }
-            : null,
-        });
-      } catch (err) {
-        console.error("Failed to sync child setup draft:", err);
-      }
-    }
-
+  function handleConfirm() {
     navigate(returnTo === "waiting" ? "/waiting-for-child" : "/setup/invite");
   }
 

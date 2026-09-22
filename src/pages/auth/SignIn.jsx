@@ -1,68 +1,98 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import {
   AuthLayout,
   Button,
   Card,
   Field,
 } from "../../components/ui/CommonUI";
-import { child } from "../../data/mockData";
+import { useChildProfile } from "../../context/ChildProfileContext";
+import { api } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
-import { ApiError } from "../../services/apiClient";
 import "../../css/auth/SignIn.css";
 
-function postAuthDestination() {
-  const token = sessionStorage.getItem("pendingInvitationToken");
-
-  return token ? "/review-invitation" : "/overview";
-}
-
-export default function SignIn() {
+export default function SignIn({ restoreAccount = false }) {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { child } = useChildProfile();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSignIn() {
-    if (isSubmitting) return;
-
     if (!email.trim() || !password.trim()) {
       setError("Please enter your email and password.");
       return;
     }
 
-    setError("");
-    setIsSubmitting(true);
+    try {
+      setError("");
+      const response = await api("/api/auth/login", {
+        method: "POST",
+        auth: false,
+        body: { email: email.trim(), password },
+      });
+      login(response);
+      navigate(sessionStorage.getItem("pendingInvitationToken") ? "/choose-start" : "/overview");
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  }
+
+  async function restoreDeletedAccount() {
+    if (!email.trim() || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
 
     try {
-      await login({ email: email.trim(), password });
-      navigate(postAuthDestination());
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Something went wrong. Please try again."
-      );
+      setIsSubmitting(true);
+      setError("");
+      await api("/api/auth/restore-account", {
+        method: "POST",
+        auth: false,
+        body: { email: email.trim(), password },
+      });
+      setSuccess("Your account has been restored. You can sign in now.");
+    } catch (requestError) {
+      setError(requestError.message);
     } finally {
       setIsSubmitting(false);
     }
   }
 
+  async function signInWithGoogle(credentialResponse) {
+    try {
+      setError("");
+      const response = await api("/api/auth/google/parent", {
+        method: "POST",
+        auth: false,
+        body: { idToken: credentialResponse.credential },
+      });
+      login(response);
+      navigate(sessionStorage.getItem("pendingInvitationToken") ? "/choose-start" : "/overview");
+    } catch {
+      setError("Google sign-in failed. Please try again.");
+    }
+  }
+
   return (
     <AuthLayout hideFooter>
-      <Card title="Welcome back">
+      <Card title={restoreAccount ? "Restore your account" : "Welcome back"}>
         <p className="signin-subtitle">
-          Sign in to continue with {child.preferredName}’s invitation.
+          {restoreAccount
+            ? "Enter the details for the account you want to restore."
+            : `Sign in to continue with ${child.preferredName || "your child"}’s invitation.`}
         </p>
 
         <Field
-          label="Email address or phone number"
+          label="Email address"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          disabled={isSubmitting}
         />
 
         <Field
@@ -70,38 +100,40 @@ export default function SignIn() {
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          disabled={isSubmitting}
         />
 
         {error && <p className="password-error">{error}</p>}
+        {success && <p className="signin-subtitle">{success} <Link to="/sign-in">Sign in</Link></p>}
 
-        <div className="form-row">
+        {!restoreAccount && <div className="form-row">
           <label className="check">
             <input type="checkbox" />
             <span>Remember me</span>
           </label>
 
           <Link to="/forgot-password">Forgot password?</Link>
-        </div>
+        </div>}
 
         <div className="actions signin-actions">
-          <Button
-            onClick={handleSignIn}
-            isLoading={isSubmitting}
-            loadingLabel="Signing in…"
-          >
-            Sign in
+          <Button disabled={isSubmitting} onClick={restoreAccount ? restoreDeletedAccount : handleSignIn}>
+            {restoreAccount ? (isSubmitting ? "Restoring..." : "Restore account") : "Sign in"}
           </Button>
         </div>
 
-        <p className="already-account">
+        {!restoreAccount && <div className="google-button-wrap">
+          <GoogleLogin onSuccess={signInWithGoogle} onError={() => setError("Google sign-in failed. Please try again.")} />
+        </div>}
+
+        {!restoreAccount && <p className="already-account">
           New to FocusLens?{" "}
           <Link to="/register">Create a parent account</Link>
-        </p>
+        </p>}
 
-        <p className="invitation-expiry">
+        <p className="already-account"><Link to={restoreAccount ? "/sign-in" : "/restore-account"}>{restoreAccount ? "Back to sign in" : "Restore a deleted account"}</Link></p>
+
+        {!restoreAccount && <p className="invitation-expiry">
           Invitation expires in 7 days
-        </p>
+        </p>}
       </Card>
     </AuthLayout>
   );

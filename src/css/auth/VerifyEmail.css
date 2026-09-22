@@ -74,6 +74,39 @@
   gap: 12px;
 }
 
+.verify-code-input {
+  width: 100%;
+  height: 44px;
+  box-sizing: border-box;
+  padding: 0 20px;
+
+  border: 1px solid #7d35e8;
+  border-radius: 999px;
+  outline: none;
+  background: #ffffff;
+  color: #242424;
+
+  font-family: "Nunito", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  text-align: center;
+
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.verify-code-input::placeholder {
+  color: #7130df;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: normal;
+}
+
+.verify-code-input:focus {
+  border-color: #6b24d4;
+  box-shadow: 0 0 0 3px rgba(125, 53, 232, 0.14);
+}
+
 .open-email-button,
 .resend-email-button {
   width: 100%;

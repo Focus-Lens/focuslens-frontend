@@ -6,7 +6,7 @@ import {
   Button,
   Card,
 } from "../../components/ui/CommonUI";
-import { child } from "../../data/mockData";
+import { useChildProfile } from "../../context/ChildProfileContext";
 import { Check } from "lucide-react";
 import "../../css/onboarding/ChildStudyGoal.css";
 
@@ -22,16 +22,20 @@ const steps = [
 export default function ChildStudyGoal() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [weeklyHours, setWeeklyHours] = useState("8");
+  const { child, updateChild } = useChildProfile();
+  const [weeklyHours, setWeeklyHours] = useState(
+    () => String(child.studyTimeGoal?.value || 8),
+  );
 
   function saveGoal() {
-    child.suggestedGoal = `${weeklyHours} hours per week`;
-
-    child.studyTimeGoal = {
+    updateChild({
+      suggestedGoal: `${weeklyHours} hours per week`,
+      studyTimeGoal: {
       goalType: "weekly",
       value: weeklyHours,
       cycle: "Current week",
-    };
+      },
+    });
 
     if (searchParams.get("returnTo") === "waiting") {
       navigate("/waiting-for-child");

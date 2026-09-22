@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import {
-  Bell,
   ChevronDown,
   LayoutGrid,
   FileText,
@@ -10,13 +9,24 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext";
+import {
+  findConnectedChild,
+  findPendingChild,
+  getCachedParentChildren,
+} from "../../services/parentChildrenCache";
+import { getPendingInvitationForUser } from "../../services/pendingInvitationCache";
 import logo from "../../assets/logo.png";
 
 import "../../css/dashboard/DashboardHeader.css";
 
 export default function DashboardHeader({ activePage = "overview" }) {
-  const { user: parent, child } = useAuth();
-
+  const { user } = useAuth();
+  const cachedChildren = getCachedParentChildren();
+  const child =
+    findConnectedChild(cachedChildren) ||
+    findPendingChild(cachedChildren) ||
+    getPendingInvitationForUser(user?.email);
+  const childName = child?.firstName || "Your children";
   const navItems = [
     {
       key: "overview",
@@ -93,25 +103,16 @@ export default function DashboardHeader({ activePage = "overview" }) {
 
       {/* Right side */}
       <div className="dashboard-header-right">
-        <button
-          type="button"
-          className="dashboard-notification"
-          aria-label="Notifications"
-        >
-          <Bell size={20} strokeWidth={1.8} />
-          <span className="notification-dot" />
-        </button>
-
         <Link
           to="/children"
           className="dashboard-user-pill"
         >
           <span className="dashboard-user-avatar child-avatar">
-            {child?.preferredName?.[0] ?? "Y"}
+            {childName[0]?.toUpperCase() ?? "Y"}
           </span>
 
           <span>
-            {child?.preferredName ?? "Youssef"} · {child?.grade ?? "Grade 8"}
+            {child?.grade ? `${childName} · ${child.grade}` : childName}
           </span>
 
           <ChevronDown
@@ -125,10 +126,10 @@ export default function DashboardHeader({ activePage = "overview" }) {
           className="dashboard-user-pill parent-pill"
         >
           <span className="dashboard-user-avatar parent-avatar">
-            {parent.firstName?.[0] ?? "M"}
+            {user?.firstName?.[0] ?? "M"}
           </span>
 
-          <span>{parent.firstName}</span>
+          <span>{user?.firstName || "Account"}</span>
 
           <ChevronDown
             size={17}

@@ -327,6 +327,11 @@
   min-height: 282px;
 }
 
+.privacy-panel.children-panel-compact,
+.current-goal-panel.children-panel-compact {
+  min-height: 0;
+}
+
 .privacy-title-row {
   display: flex;
   align-items: center;
@@ -429,6 +434,13 @@
   line-height: 1.55;
 }
 
+.children-data-empty {
+  margin: 12px 0 0;
+  color: #77717d;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
 /* =========================================================
    CURRENT GOAL
 ========================================================= */
@@ -511,6 +523,35 @@
 .children-goal-button {
   display: block;
   margin: 21px 0 0 auto;
+}
+
+.children-goal-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.children-goal-empty p {
+  margin: 0;
+  color: #5d5664;
+}
+
+.children-goal-empty .children-goal-button {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+@media (max-width: 500px) {
+  .children-goal-empty {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .children-goal-empty .children-goal-button {
+    margin-left: 0;
+  }
 }
 
 /* =========================================================
@@ -654,6 +695,73 @@
   grid-template-columns: 173px 1fr;
   align-items: center;
   min-height: 47px;
+}
+
+/* Empty state */
+.children-unavailable-heading {
+  margin-bottom: 20px;
+}
+
+.children-unavailable-card {
+  width: min(100%, 660px);
+  min-height: 401px;
+  margin: 0 auto;
+  padding: 38px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid #e0e4ed;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 18px 35px rgba(103, 67, 151, 0.09);
+  text-align: center;
+}
+
+.children-unavailable-mascot {
+  width: 87px;
+  height: 87px;
+  object-fit: contain;
+}
+
+.children-unavailable-card h2 {
+  margin: 20px 0 0;
+  color: #28252d;
+  font-family: "Nunito", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.children-unavailable-card > p {
+  max-width: 555px;
+  margin: 20px 0 18px;
+  color: #65616c;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.children-unavailable-card button {
+  width: 181px;
+  height: 37px;
+  border: 0;
+  border-radius: 999px;
+  background: #8138f4;
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.children-unavailable-card button:hover { background: #7433e9; }
+
+.children-unavailable-card small {
+  margin-top: 18px;
+  color: #77717d;
+  font-size: 9px;
+  line-height: 1.5;
 }
 
 .pending-detail-row span {

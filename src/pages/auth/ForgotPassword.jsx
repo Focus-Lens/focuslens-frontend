@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card, Field } from "../../components/ui/CommonUI";
-import { forgotPassword } from "../../services/auth";
-import { ApiError } from "../../services/apiClient";
+import { api } from "../../services/api";
 import "../../css/auth/ForgotPassword.css";
 
 export default function ForgotPassword() {
@@ -17,19 +16,12 @@ export default function ForgotPassword() {
       return;
     }
 
-    setError("");
-
     try {
-      await forgotPassword({ email: email.trim() });
+      setError("");
+      await api("/api/auth/forgot-password", { method: "POST", auth: false, body: { email: email.trim() } });
       sessionStorage.setItem("pendingResetEmail", email.trim());
-      navigate("/forgot-password/sent");
-    } catch (err) {
-      setError(
-        err instanceof ApiError
-          ? err.message
-          : "Something went wrong. Please try again."
-      );
-    }
+      navigate("/reset-password");
+    } catch (requestError) { setError(requestError.message); }
   }
 
   return (
@@ -37,13 +29,14 @@ export default function ForgotPassword() {
       <main className="forgot-password-page">
         <Card title="Forgot your password?">
           <p className="forgot-password-text">
-            Enter the email or phone you use for your parent account.
+            Enter the email you use for your parent account.
             <br />
             We’ll help you reset your password.
           </p>
 
           <Field
-            label="Email or phone"
+            label="Email address"
+            type="email"
             value={email}
             onChange={(event) => setEmail(event.target.value)}
           />

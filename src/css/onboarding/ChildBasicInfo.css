@@ -213,7 +213,7 @@
 
   box-sizing: border-box;
 
-  padding: 0 16px;
+  padding: 0 16px 2px;
 
   border: none;
   outline: none;
@@ -225,6 +225,7 @@
   font-family: "Nunito";
   font-size: 15px;
   font-weight: 400;
+  line-height: normal;
 }
 
 /* =========================

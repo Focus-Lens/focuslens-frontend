@@ -49,6 +49,28 @@
   gap: 16px;
 }
 
+.name-field-wrapper .field {
+  margin-bottom: 0;
+}
+
+.field-error-message,
+.terms-error {
+  margin: 6px 0 0;
+  color: #c81e1e;
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.create-parent-account .page-card .terms-error {
+  margin-top: 6px;
+  color: #c81e1e !important;
+  font-size: 11px !important;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+}
+
 .email-field-wrapper {
   width: 100%;
 }
@@ -67,10 +89,15 @@
 
 .email-error {
   margin: 6px 0 16px;
-  color: #dc2626;
-  font-size: 12px;
+  color: #c81e1e;
+  font-size: 11px;
   line-height: 1.4;
   text-align: left;
+}
+
+.email-error a {
+  color: inherit;
+  font-weight: 700;
 }
 
 .create-parent-account .field {
@@ -225,18 +252,6 @@
   font-size: 13px;
   color: #6b7280 !important;
   font-weight: 500;
-}
-
-.create-parent-account .google-loading-state {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-}
-
-.create-parent-account .google-loading-state .button-spinner {
-  border-color: rgba(124, 53, 233, 0.25);
-  border-top-color: #7c35e9;
 }
 
 .create-parent-account .google-icon {

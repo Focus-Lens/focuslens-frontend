@@ -354,6 +354,12 @@
   line-height: 1.6;
 }
 
+.confirm-modal .confirm-error {
+  margin: -10px 0 18px;
+  color: #c31d1d;
+  font-weight: 600;
+}
+
 .confirm-decline-link,
 .confirm-cancel-button {
   width: 100%;

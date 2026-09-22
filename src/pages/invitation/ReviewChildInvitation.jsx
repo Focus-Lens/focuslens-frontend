@@ -1,14 +1,14 @@
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
 import DeclineInvitationModal from "../../components/ui/DeclineInvitationModal";
-import { child as mockChild, invitation as mockInvitation } from "../../data/mockData";
 import {
-  acceptParentInvitation,
-  declineParentInvitation,
-} from "../../services/access";
-import { useAuth } from "../../context/AuthContext";
-import { ApiError } from "../../services/apiClient";
+  acceptAccessInvitation,
+  clearAccessInvitation,
+  declineAccessInvitation,
+  getAccessInvitationId,
+  resolveAccessInvitation,
+} from "../../services/api";
 import {
   UserRoundPlus,
   Check,
@@ -18,51 +18,57 @@ import "../../css/invitation/ReviewChildInvitation.css";
 
 export default function ReviewChildInvitation() {
   const navigate = useNavigate();
-  const { setUser, refreshUser } = useAuth();
+  const location = useLocation();
   const [showDecline, setShowDecline] = useState(false);
+  const [invitation, setInvitation] = useState(() => location.state?.invitation || null);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const token = sessionStorage.getItem("pendingInvitationToken");
 
-  const previewRaw = sessionStorage.getItem("pendingInvitationPreview");
-  const preview = previewRaw ? JSON.parse(previewRaw) : null;
-  const childName = preview?.studentPreferredName ?? mockChild.preferredName;
-  const sharedItems = mockInvitation.sharedItems;
-
-  async function handleConfirmConnection() {
-    const token = sessionStorage.getItem("pendingInvitationToken");
-    setError("");
-
-    try {
-      if (!token) throw new Error("The invitation token is missing.");
-      await acceptParentInvitation(token);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : err.message);
+  useEffect(() => {
+    if (invitation) return;
+    if (!token) {
+      navigate("/connect-child", {
+        replace: true,
+        state: { invitationError: "This private invitation code is invalid or has expired." },
+      });
       return;
     }
+    resolveAccessInvitation(token)
+      .then(setInvitation)
+      .catch(() => {
+        navigate("/connect-child", {
+          replace: true,
+          state: { invitationError: "This private invitation code is invalid or has expired." },
+        });
+      });
+  }, [invitation, navigate, token]);
 
-    sessionStorage.removeItem("pendingInvitationToken");
-    sessionStorage.removeItem("pendingInvitationPreview");
-    setUser((current) => (current ? { ...current, hasChild: true } : current));
-    refreshUser();
-    navigate("/overview");
+  const childName = invitation?.studentPreferredName || sessionStorage.getItem("pendingInvitationName") || "student";
+  const sharedItems = ["Study schedule", "Goals & routines", "Focus-session summaries"];
+
+  async function handleConfirmConnection() {
+    try {
+      setSubmitting(true);
+      const invitationId = getAccessInvitationId(invitation);
+      if (!invitationId) throw new Error("This invitation could not be identified. Please reopen the invitation link.");
+      await acceptAccessInvitation(invitationId);
+      clearAccessInvitation();
+      navigate("/overview");
+    } catch (requestError) { setError(requestError.message); }
+    finally { setSubmitting(false); }
   }
 
   async function handleDecline() {
-    const token = sessionStorage.getItem("pendingInvitationToken");
-    setError("");
-
     try {
-      if (!token) throw new Error("The invitation token is missing.");
-      await declineParentInvitation(token);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : err.message);
-      setShowDecline(false);
-      return;
-    }
-
-    sessionStorage.removeItem("pendingInvitationToken");
-    sessionStorage.removeItem("pendingInvitationPreview");
-    setUser((current) => (current ? { ...current, hasChild: false } : current));
-    navigate("/overview");
+      setSubmitting(true);
+      const invitationId = getAccessInvitationId(invitation);
+      if (!invitationId) throw new Error("This invitation could not be identified. Please reopen the invitation link.");
+      await declineAccessInvitation(invitationId);
+      clearAccessInvitation();
+      navigate("/overview");
+    } catch (requestError) { setError(requestError.message); }
+    finally { setSubmitting(false); }
   }
 
   return (
@@ -71,6 +77,7 @@ export default function ReviewChildInvitation() {
         <Card>
           <div className="review-invitation-page">
 
+            {error ? <p className="password-error">{error}</p> : !invitation ? <p>Loading invitation…</p> : <>
             <div className="review-invitation-icon">
               <UserRoundPlus size={27} strokeWidth={1.6} />
             </div>
@@ -91,7 +98,7 @@ export default function ReviewChildInvitation() {
               <div className="review-invitation-identity-text">
                 <b>{childName}</b>
                 <small>
-                  Age range 13–15 · Preferred name only
+                  Private invitation · Preferred name only
                 </small>
               </div>
             </div>
@@ -120,19 +127,19 @@ export default function ReviewChildInvitation() {
             </div>
 
             <div className="review-invitation-actions">
-              {error && <p className="password-error">{error}</p>}
-              <Button onClick={handleConfirmConnection}>
-                Confirm connection
+              <Button onClick={handleConfirmConnection} disabled={submitting}>
+                {submitting ? "Updating…" : "Confirm connection"}
               </Button>
 
               <button
                 type="button"
                 className="review-invitation-decline"
+                disabled={submitting}
                 onClick={() => setShowDecline(true)}
               >
                 Decline invitation
               </button>
-            </div>
+            </div></>}
 
           </div>
         </Card>

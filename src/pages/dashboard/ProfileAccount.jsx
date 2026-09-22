@@ -1,60 +1,59 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
-import { getCurrentUser, updateCurrentUser } from "../../services/users";
-import { ApiError } from "../../services/apiClient";
+import { api } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 
 import "../../css/dashboard/ProfileAccount.css";
 
-const emptyProfile = {
-  fullName: "",
-  email: "",
-  phone: "",
-  memberSince: "",
-  productUpdatesEnabled: true,
-  importantNoticesEnabled: true,
-};
+function toProfile(user) {
+  return {
+    fullName: `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "Parent",
+    email: user?.email || "",
+    phone: user?.phoneNumber || "",
+    productUpdatesEnabled: false,
+    importantNoticesEnabled: true,
+  };
+}
 
 export default function ProfileAccount() {
-  const { refreshUser, child } = useAuth();
-
-  const [profile, setProfile] = useState(emptyProfile);
-  const [draft, setDraft] = useState(emptyProfile);
+  const { logout, refreshUser, user: signedInUser } = useAuth();
+  const navigate = useNavigate();
+  // The signed-in user is already stored in the session, so render it at once
+  // and refresh the full profile in the background.
+  const [profile, setProfile] = useState(() => toProfile(signedInUser));
+  const [draft, setDraft] = useState(() => toProfile(signedInUser));
+  const [accountStatus, setAccountStatus] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState(null);
-  const [emailError, setEmailError] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
-    let isCancelled = false;
-
-    async function loadProfile() {
-      try {
-        const userData = await getCurrentUser();
-        if (isCancelled) return;
-
-        const merged = {
-          ...emptyProfile,
-          ...userData,
-          fullName:
-            [userData.firstName, userData.lastName].filter(Boolean).join(" "),
-        };
-
-        setProfile(merged);
-        setDraft(merged);
-      } catch (err) {
-        console.error("Failed to load parent profile:", err);
-      }
-    }
-
-    loadProfile();
-
-    return () => {
-      isCancelled = true;
-    };
+    let active = true;
+    Promise.all([api("/api/users/me"), api("/api/users/me/account-status")])
+      .then(([user, status]) => {
+        if (!active) return;
+        const nextProfile = toProfile(user);
+        setProfile(nextProfile);
+        setDraft(nextProfile);
+        setAccountStatus(status);
+      })
+      .catch((requestError) => active && setMessage(requestError.message));
+    return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    if (!message) return undefined;
+    const timeoutId = window.setTimeout(() => setMessage(null), 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [message]);
 
   function updateDraft(event) {
     const { name, value } = event.target;
@@ -67,43 +66,65 @@ export default function ProfileAccount() {
 
   function startEditing() {
     setDraft(profile);
-    setEmailError("");
+    setSaveError("");
     setIsEditing(true);
   }
 
   function cancelEditing() {
     setDraft(profile);
-    setEmailError("");
+    setSaveError("");
     setIsEditing(false);
   }
 
   async function saveProfile() {
-    const [firstName, ...rest] = (draft.fullName || "").trim().split(" ");
-
+    const [firstName, ...lastNameParts] = draft.fullName.trim().split(/\s+/);
+    if (!firstName || !lastNameParts.length) {
+      setSaveError("Please enter both first and last name.");
+      return;
+    }
     try {
-      await updateCurrentUser({
-        firstName: firstName || "",
-        lastName: rest.join(" "),
+      const user = await api("/api/users/me", {
+        method: "PUT", body: { firstName, lastName: lastNameParts.join(" "), phoneNumber: draft.phone || null },
       });
-
-      setProfile(draft);
-      setDraft(draft);
-      setIsEditing(false);
-      setEmailError("");
+      const nextProfile = { ...draft, fullName: `${user.firstName} ${user.lastName}`, email: user.email, phone: user.phoneNumber || "" };
+      setProfile(nextProfile); setDraft(nextProfile); setIsEditing(false); setSaveError("");
+      await refreshUser();
       setMessage("Profile updated successfully");
-      refreshUser();
+    } catch (requestError) { setSaveError(requestError.message); }
+  }
 
-      window.setTimeout(() => {
-        setMessage(null);
-      }, 3000);
-    } catch (err) {
-      setEmailError(
-        err instanceof ApiError
-          ? err.message
-          : "Something went wrong. Please try again."
-      );
+  function toggleSetting(setting) {
+    setProfile((current) => ({
+      ...current,
+      [setting]: !current[setting],
+    }));
+
+    setDraft((current) => ({
+      ...current,
+      [setting]: !current[setting],
+    }));
+  }
+
+  function signOut() {
+    navigate("/invite/continue", { replace: true });
+    void logout();
+  }
+
+  async function deleteAccount() {
+    setIsDeleting(true);
+    setDeleteError("");
+    try {
+      await api("/api/users/me", { method: "DELETE" });
+      navigate("/invite/continue", { replace: true });
+      void logout();
+    } catch (requestError) {
+      setDeleteError(requestError.message);
+      setIsDeleting(false);
     }
   }
+
+  const initials = profile.fullName.split(" ").filter(Boolean).map((name) => name[0]).join("").slice(0, 2).toUpperCase();
+  const relationship = accountStatus?.childRelationships?.[0];
 
   return (
     <div className="profile-page-shell">
@@ -143,7 +164,7 @@ export default function ProfileAccount() {
             <aside className="profile-sidebar">
               <section className="profile-user-card">
                 <div className="profile-user-top">
-                  <span className="profile-avatar">{profile.fullName.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() || "P"}</span>
+                  <span className="profile-avatar">{initials}</span>
 
                   <button
                     onClick={startEditing}
@@ -162,12 +183,10 @@ export default function ProfileAccount() {
 
                 <p className="profile-email-verified">
                   <span>●</span>
-                  Email verified
+                  {accountStatus?.emailConfirmed ? "Email verified" : "Email not verified"}
                 </p>
 
-                <small>
-                  {profile.email}
-                </small>
+                <small>Parent account</small>
               </section>
 
               <section className="profile-status-card">
@@ -175,28 +194,28 @@ export default function ProfileAccount() {
 
                 <div className="profile-status-row">
                   <span>Email</span>
-                  <b className="verified-status">Verified</b>
+                  <b className="verified-status">{accountStatus?.emailVerificationStatus || "Unknown"}</b>
                 </div>
 
                 <div className="profile-status-row">
                   <span>Account status</span>
-                  <b className="verified-status">Active</b>
+                  <b className="verified-status">{accountStatus?.accountStatus || "Unknown"}</b>
                 </div>
 
                 <div className="profile-status-row">
                   <span>Connected child</span>
-                  <b className="dark-status">{child?.preferredName ?? "Not connected"}</b>
+                  <b className="dark-status">{relationship?.childName || "No connected child"}</b>
                 </div>
 
                 <div className="profile-status-row">
                   <span>Relationship status</span>
-                  <b className="dark-status">Confirmed</b>
+                  <b className="dark-status">{relationship?.relationshipStatus || "—"}</b>
                 </div>
               </section>
             </aside>
 
             <div className="profile-content">
-              <section className="profile-card personal-card">
+              <section className="profile-card personal-card" id="personal-information">
                 <div className="profile-card-heading">
                   <div>
                     <h2>Personal information</h2>
@@ -236,12 +255,14 @@ export default function ProfileAccount() {
                   )}
                 </div>
 
+                {saveError && <p className="profile-form-error">{saveError}</p>}
+
                 <div className="profile-fields">
                   <label>
                     <span>Full name</span>
 
                     <input
-                      disabled
+                      disabled={!isEditing}
                       name="fullName"
                       onChange={updateDraft}
                       value={draft.fullName}
@@ -252,16 +273,11 @@ export default function ProfileAccount() {
                     <span>Email address</span>
 
                     <input
-                      className={emailError ? "error" : ""}
                       disabled
                       name="email"
                       onChange={updateDraft}
                       value={draft.email}
                     />
-
-                    {emailError && (
-                      <small>{emailError}</small>
-                    )}
                   </label>
 
                   <label>
@@ -272,7 +288,7 @@ export default function ProfileAccount() {
                       name="phone"
                       onChange={updateDraft}
                       value={draft.phone}
-                      placeholder="Not available from the API"
+                      placeholder="Phone number"
                     />
                   </label>
                 </div>
@@ -287,7 +303,7 @@ export default function ProfileAccount() {
                     <small>Last updated recently</small>
                   </div>
 
-                  <button type="button">
+                  <button type="button" onClick={() => navigate("/change-password")}>
                     Change password
                   </button>
                 </div>
@@ -300,7 +316,7 @@ export default function ProfileAccount() {
                     </small>
                   </div>
 
-                  <button type="button">
+                  <button type="button" onClick={signOut}>
                     Sign out
                   </button>
                 </div>
@@ -318,13 +334,14 @@ export default function ProfileAccount() {
                   </div>
 
                   <button
-                    disabled
-                    title="Notification preferences are not exposed by the parent API yet"
                     aria-pressed={profile.productUpdatesEnabled}
                     className={
                       profile.productUpdatesEnabled
                         ? "toggle active"
                         : "toggle"
+                    }
+                    onClick={() =>
+                      toggleSetting("productUpdatesEnabled")
                     }
                     type="button"
                   >
@@ -341,13 +358,14 @@ export default function ProfileAccount() {
                   </div>
 
                   <button
-                    disabled
-                    title="Notification preferences are not exposed by the parent API yet"
                     aria-pressed={profile.importantNoticesEnabled}
                     className={
                       profile.importantNoticesEnabled
                         ? "toggle active"
                         : "toggle"
+                    }
+                    onClick={() =>
+                      toggleSetting("importantNoticesEnabled")
                     }
                     type="button"
                   >
@@ -360,18 +378,18 @@ export default function ProfileAccount() {
                 <h2>Privacy &amp; data</h2>
 
                 {[
-                  "Privacy policy",
-                  "Terms of use",
-                  "Data and account settings",
-                ].map((item) => (
-                  <button
+                  ["Privacy policy", "/privacy-policy"],
+                  ["Terms of use", "/terms-of-use"],
+                  ["Data and account settings", "/profile#personal-information"],
+                ].map(([item, to]) => (
+                  <Link
                     className="profile-link-row"
                     key={item}
-                    type="button"
+                    to={to}
                   >
                     <span>{item}</span>
                     <b>›</b>
-                  </button>
+                  </Link>
                 ))}
 
                 <p className="profile-privacy-note">
@@ -394,7 +412,7 @@ export default function ProfileAccount() {
                   </small>
                 </div>
 
-                <button type="button">
+                <button type="button" onClick={() => { setDeleteError(""); setShowDeleteConfirmation(true); }}>
                   Delete account
                 </button>
               </section>
@@ -402,6 +420,35 @@ export default function ProfileAccount() {
           </div>
         </main>
       </ParentLayout>
+
+      {showDeleteConfirmation && (
+        <div className="delete-account-overlay" role="presentation">
+          <section aria-labelledby="delete-account-title" aria-modal="true" className="delete-account-modal" role="dialog">
+            <h2 id="delete-account-title">Delete parent account?</h2>
+            <p className="delete-account-intro">
+              Deleting your parent account affects your parent profile, access, and approved student
+              relationships. Final legal language is pending professional review.
+            </p>
+            <ul className="delete-account-effects">
+              <li>Your parent access ends and you will be signed out.</li>
+              <li>Approved parent and student relationships are disconnected.</li>
+              <li>Deleting the parent account does not automatically delete the student’s account.</li>
+            </ul>
+            <p className="delete-account-legal">
+              [Legal review required: confirm deletion effects and any applicable processing details.]
+            </p>
+            {deleteError && <p className="delete-account-error">{deleteError}</p>}
+            <div className="delete-account-actions">
+              <button className="delete-account-cancel" disabled={isDeleting} onClick={() => setShowDeleteConfirmation(false)} type="button">
+                Cancel
+              </button>
+              <button className="delete-account-confirm" disabled={isDeleting} onClick={deleteAccount} type="button">
+                {isDeleting ? "Deleting account…" : "Delete parent account"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

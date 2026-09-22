@@ -551,34 +551,23 @@
   }
 }
 
-@media (min-width: 601px) {
-  html:has(.invite-shell),
-  body:has(.invite-shell),
-  #root:has(.invite-shell) {
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .invite-shell {
-    height: 100dvh;
-    overflow: hidden;
-  }
-
+@media (min-width: 601px) and (max-width: 900px) {
   .invite-main {
-    height: 100dvh;
-    min-height: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 104px 20px 18px;
-    overflow: hidden;
-  }
-
-  .invite-page {
-    margin: 0 auto;
+    padding-right: 24px;
+    padding-left: 24px;
   }
 
   .invite-page .page-card {
-    padding: 34px 48px 32px;
+    padding: 38px 32px;
+    border-radius: 32px;
+  }
+
+  .invite-step {
+    gap: 5px;
+    font-size: 12px;
+  }
+
+  .invite-stepper {
+    gap: 6px;
   }
 }

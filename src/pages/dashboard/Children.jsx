@@ -4,126 +4,85 @@ import { useNavigate } from "react-router-dom";
 import { ParentLayout } from "../../components/ui/CommonUI";
 import ChildProfileModal from "../../components/ui/ChildProfileModal";
 import DashboardHeader from "../../components/ui/DashboardHeader";
+import { api } from "../../services/api";
+import { cacheParentChildren, findConnectedChild, findPendingChild, getCachedParentChildren } from "../../services/parentChildrenCache";
+import logo from "../../assets/logo.png";
+import peopleImage from "../../assets/people.png";
+import bookImage from "../../assets/book.jpg";
+import arrowImage from "../../assets/arrow.jpg";
+import secureImage from "../../assets/secure.png";
+import paperImage from "../../assets/paper.png";
+import columnImage from "../../assets/colum.png";
+import flashImage from "../../assets/flash.png";
+import messageImage from "../../assets/message.png";
+import doubleImage from "../../assets/double.png";
+import sessionClockImage from "../../assets/seclock.png";
 
-import { getStudents, getStudent } from "../../services/access";
-import { getParentDashboard } from "../../services/dashboard";
-import {
-  resendChildSetupInvite,
-  cancelChildSetupInvite,
-  inviteChildSetupByLink,
-  getChildSetupInvitations,
-} from "../../services/parents";
 
 import "../../css/dashboard/Children.css";
 
-const emptyChild = {
-  id: null,
-  fullName: "",
-  preferredName: "Student",
-  grade: "Not provided",
-  email: "",
-  connectionStatus: "not_connected",
-  subjects: [],
-  priorities: [],
-  availableData: [],
-  currentGoal: null,
-  invitation: null,
-};
+function ChildrenUnavailable({ onAction }) {
+  return (
+    <main className="children-page children-unavailable-page">
+      <header className="children-heading children-unavailable-heading">
+        <div>
+          <h1>Children</h1>
+          <p>Add a child to view their profile and shared progress.</p>
+        </div>
+      </header>
 
-function normalizeStudent(raw, dashboard) {
-  if (!raw || typeof raw !== "object") return null;
-
-  return {
-    ...emptyChild,
-    ...raw,
-    fullName: raw.fullName ?? [raw.firstName, raw.lastName].filter(Boolean).join(" "),
-    subjects: Array.isArray(raw.subjects)
-      ? raw.subjects.map((subject) => subject.customName ?? subject.type ?? subject)
-      : [],
-    priorities: Array.isArray(raw.priorities ?? raw.studyPriorities)
-      ? raw.priorities ?? raw.studyPriorities
-      : [],
-    availableData: Array.isArray(raw.availableData)
-      ? raw.availableData
-      : ["Session summaries", "Study-time progress", "Study goals"],
-    currentGoal: dashboard?.activeGoal ?? {
-      targetMinutes: 0,
-      completedMinutes: 0,
-    },
-    invitation: raw.invitation ?? null,
-    connectionStatus: "connected",
-  };
+      <section className="children-unavailable-card" aria-labelledby="children-unavailable-title">
+        <img className="children-unavailable-mascot" src={logo} alt="" />
+        <h2 id="children-unavailable-title">No child added yet</h2>
+        <p>
+          Create your child’s study profile and send a private invitation, or connect with a child
+          who already uses FocusLens.
+        </p>
+        <button type="button" onClick={onAction}>Add your child</button>
+        <small>Your child chooses what to share. Study reports appear only after you connect.</small>
+      </section>
+    </main>
+  );
 }
 
 export default function Children() {
   const navigate = useNavigate();
-
-  const [child, setChild] = useState(emptyChild);
+  const [childInfo, setChildInfo] = useState(() => findConnectedChild(getCachedParentChildren()));
+  const [pendingChild, setPendingChild] = useState(() => findPendingChild(getCachedParentChildren()));
+  const [studentDetails, setStudentDetails] = useState(null);
+  const [dashboard, setDashboard] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const feedbackTimer = useRef(null);
 
   useEffect(() => {
-    let isCancelled = false;
-
-    async function loadStudents() {
-      try {
-        const data = await getStudents();
-        const list = Array.isArray(data) ? data : data?.items ?? [];
-
-        if (isCancelled) return;
-
-        if (list.length === 0) {
-          const invitations = await getChildSetupInvitations();
-          if (isCancelled) return;
-          const pending = (invitations ?? []).find(
-            (item) => item.status?.toLowerCase() === "pending"
-          );
-
-          if (!pending) {
-            setChild(emptyChild);
-            return;
+    let active = true;
+    api("/api/parents/overview/children")
+      .then(async (children) => {
+        if (!active) return;
+        cacheParentChildren(children);
+        const connectedChild = findConnectedChild(children);
+        setChildInfo(connectedChild);
+        setPendingChild(findPendingChild(children));
+        if (connectedChild?.studentId) {
+          const [details, dashboardData] = await Promise.all([
+            api(`/api/access/students/${connectedChild.studentId}`).catch(() => null),
+            api(`/api/parents/students/${connectedChild.studentId}/dashboard`).catch(() => null),
+          ]);
+          if (active) {
+            setStudentDetails(details);
+            setDashboard(dashboardData);
           }
-
-          sessionStorage.setItem("childSetupDraftId", pending.draftId);
-          setChild({
-            ...emptyChild,
-            fullName: [pending.firstName, pending.lastName].filter(Boolean).join(" "),
-            preferredName: pending.firstName || "Student",
-            grade: pending.grade ?? "Not provided",
-            email: pending.targetEmail ?? "",
-            connectionStatus: "pending",
-            invitation: {
-              sentAt: "Sent",
-              expiresAt: pending.expiresAtUtc
-                ? new Date(pending.expiresAtUtc).toLocaleString()
-                : "Not available",
-            },
-          });
-          return;
         }
-
-        const details = await getStudent(list[0].id);
-        const dashboard = await getParentDashboard(list[0].id).catch(() => null);
-        const normalized = normalizeStudent(details, dashboard);
-        if (normalized) {
-          setChild(normalized);
-        }
-      } catch (err) {
-        console.error("Failed to load connected students:", err);
-      }
-    }
-
-    loadStudents();
-
-    return () => {
-      isCancelled = true;
-    };
+      })
+      .catch(() => {});
+    return () => { active = false; };
   }, []);
 
-  const isConnected = child.connectionStatus === "connected";
-  const isPending = child.connectionStatus === "pending";
+  const isConnected = Boolean(childInfo?.studentId);
+  const isPending = !isConnected && Boolean(pendingChild);
+  const child = buildChildView(studentDetails, childInfo, pendingChild, dashboard);
 
   function showFeedback(type) {
     window.clearTimeout(feedbackTimer.current);
@@ -136,36 +95,18 @@ export default function Children() {
   }
 
   async function resendInvitation() {
-    const draftId = sessionStorage.getItem("childSetupDraftId");
-
     try {
-      if (draftId) {
-        await resendChildSetupInvite(draftId);
-      }
-    } catch (err) {
-      console.error("Failed to resend invitation:", err);
+      await api(`/api/parents/child-setups/${pendingChild.childSetupDraftId || pendingChild.id}/invite/resend`, { method: "POST" });
+      showFeedback("resent");
+    } catch {
+      showFeedback("error");
     }
-
-    showFeedback("resent");
   }
 
   async function copyInvitationLink() {
-    const draftId = sessionStorage.getItem("childSetupDraftId");
-    let link = "focuslens.example/invite/youssef-demo";
-
-    if (draftId) {
-      try {
-        const data = await inviteChildSetupByLink(draftId);
-        const realLink =
-          data?.invitationUrl ?? data?.link ?? data?.url ?? data?.inviteLink;
-        if (realLink) link = realLink;
-      } catch (err) {
-        console.error("Failed to create invitation link:", err);
-      }
-    }
-
     try {
-      await navigator.clipboard.writeText(link);
+      const response = await api(`/api/parents/child-setups/${pendingChild.childSetupDraftId || pendingChild.id}/invite/link`, { method: "POST" });
+      await navigator.clipboard.writeText(response.invitationUrl);
     } catch {
       // Mock UI
     }
@@ -174,34 +115,34 @@ export default function Children() {
   }
 
   async function cancelInvitation() {
-    const draftId = sessionStorage.getItem("childSetupDraftId");
-
     try {
-      if (draftId) {
-        await cancelChildSetupInvite(draftId);
-      }
-    } catch (err) {
-      console.error("Failed to cancel invitation:", err);
+      await api(`/api/parents/child-setups/${pendingChild.childSetupDraftId || pendingChild.id}/invite/cancel`, { method: "POST" });
+      setPendingChild(null);
+      setShowCancel(false);
+      showFeedback("cancelled");
+    } catch {
+      showFeedback("error");
     }
-
-    setChild((current) => ({
-      ...current,
-      connectionStatus: "not_connected",
-    }));
-
-    setShowCancel(false);
-
-    showFeedback("cancelled");
   }
 
   const goalPercentage = child.currentGoal
-    && child.currentGoal.targetMinutes > 0
     ? Math.round(
         (child.currentGoal.completedMinutes /
           child.currentGoal.targetMinutes) *
           100
       )
     : 0;
+
+  if (!childInfo && !pendingChild) {
+    return (
+      <div className="children-page-shell">
+        <DashboardHeader activePage="children" />
+        <ParentLayout>
+          <ChildrenUnavailable onAction={() => navigate("/choose-start")} />
+        </ParentLayout>
+      </div>
+    );
+  }
 
   return (
     <div className="children-page-shell">
@@ -218,14 +159,7 @@ export default function Children() {
               </p>
             </div>
 
-            <span className="children-heading-avatar">
-              {child.fullName
-                .split(" ")
-                .map((part) => part[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase() || "FL"}
-            </span>
+            <span className="children-heading-avatar">{child.preferredName?.[0]?.toUpperCase() || "C"}</span>
           </header>
 
           {/* =====================================================
@@ -289,7 +223,7 @@ export default function Children() {
 
                 <div className="children-hero-image">
                   <img
-                    src="/src/assets/people.png"
+                    src={peopleImage}
                     alt=""
                   />
                 </div>
@@ -301,7 +235,7 @@ export default function Children() {
                     <div className="children-panel-title">
                       <span className="children-panel-icon">
                         <img
-                          src="/src/assets/book.jpg"
+                          src={bookImage}
                           alt=""
                         />
                       </span>
@@ -337,11 +271,11 @@ export default function Children() {
                     </div>
                   </section>
 
-                  <section className="children-panel current-goal-panel">
+                  <section className={`children-panel current-goal-panel ${!child.currentGoal ? "children-panel-compact" : ""}`}>
                     <div className="children-panel-title">
                       <span className="children-panel-icon">
                         <img
-                          src="/src/assets/arrow.jpg"
+                          src={arrowImage}
                           alt=""
                         />
                       </span>
@@ -349,6 +283,7 @@ export default function Children() {
                       <h2>Current study goal</h2>
                     </div>
 
+                    {child.currentGoal ? <>
                     <div className="children-goal-values">
                       <div>
                         <span>Weekly target</span>
@@ -407,16 +342,22 @@ export default function Children() {
                     >
                       View study goal →
                     </button>
+                    </> : (
+                      <div className="children-goal-empty">
+                        <p>No active goal shared yet.</p>
+                        <button className="children-text-button children-goal-button" onClick={() => navigate("/study-goals")} type="button">Suggest a study goal →</button>
+                      </div>
+                    )}
                   </section>
                 </div>
 
                 <div className="children-right-column">
-                  <section className="children-panel privacy-panel">
+                  <section className={`children-panel privacy-panel ${child.availableData.length === 0 ? "children-panel-compact" : ""}`}>
                     <div className="children-panel-title privacy-title">
                       <div className="privacy-title-row">
                         <span className="children-panel-icon">
                           <img
-                            src="/src/assets/secure.png"
+                            src={secureImage}
                             alt=""
                           />
                         </span>
@@ -440,22 +381,25 @@ export default function Children() {
 
                       <div className="privacy-divider" />
 
-                      <small>Available data</small>
-
-                      {child.availableData.map((item) => (
-                        <p
-                          className="children-data-item"
-                          key={item}
-                        >
-                          <span>✓</span>
-                          {item}
+                      {child.availableData.length > 0 ? (
+                        <>
+                          <small>Available data</small>
+                          {child.availableData.map((item) => (
+                            <p className="children-data-item" key={item}>
+                              <span>✓</span>
+                              {item}
+                            </p>
+                          ))}
+                          <p className="children-permission-text">
+                            You can view shared session summaries,
+                            progress trends and study goals.
+                          </p>
+                        </>
+                      ) : (
+                        <p className="children-data-empty">
+                          No study data has been shared yet. It will appear here when your child chooses to share it.
                         </p>
-                      ))}
-
-                      <p className="children-permission-text">
-                        You can view shared session summaries,
-                        progress trends and study goals.
-                      </p>
+                      )}
                     </div>
                   </section>
 
@@ -469,7 +413,7 @@ export default function Children() {
                       type="button"
                     >
                       <span className="quick-link-icon">
-                        <img src="/src/assets/paper.png" alt="" />
+                        <img src={paperImage} alt="" />
                       </span>
 
                       <span>View Reports</span>
@@ -481,7 +425,7 @@ export default function Children() {
                       type="button"
                     >
                       <span className="quick-link-icon">
-                        <img src="/src/assets/colum.png" alt="" />
+                        <img src={columnImage} alt="" />
                       </span>
 
                       <span>View Progress</span>
@@ -493,7 +437,7 @@ export default function Children() {
                       type="button"
                     >
                       <span className="quick-link-icon">
-                        <img src="/src/assets/flash.png" alt="" />
+                        <img src={flashImage} alt="" />
                       </span>
 
                       <span>View Study Goals</span>
@@ -518,7 +462,7 @@ export default function Children() {
                   <div className="pending-child-header">
                     <span className="pending-message-icon">
                       <img
-                        src="/src/assets/message.png"
+                        src={messageImage}
                         alt=""
                       />
                     </span>
@@ -568,7 +512,7 @@ export default function Children() {
   type="button"
 >
   <img
-    src="/src/assets/double.png"
+    src={doubleImage}
     alt=""
     className="copy-invitation-icon"
   />
@@ -598,6 +542,7 @@ export default function Children() {
                         {feedback === "resent" && "Invitation resent"}
                         {feedback === "copied" && "Link copied"}
                         {feedback === "cancelled" && "Invitation cancelled"}
+                        {feedback === "error" && "We couldn’t complete that action"}
                       </span>
 
                       <button
@@ -626,10 +571,7 @@ export default function Children() {
 
                       <h2>Cancel invitation?</h2>
 
-                      <p>
-                        {child.preferredName} will no longer be able to use this
-                        invitation link.
-                      </p>
+                      <p>{child.preferredName} will no longer be able to use this invitation link.</p>
 
                       <div className="cancel-actions">
                         <button
@@ -659,7 +601,7 @@ export default function Children() {
                 <section className="children-panel pending-empty-card">
                   <div className="pending-empty-image">
                     <img
-                      src="/src/assets/seclock.png"
+                      src={sessionClockImage}
                       alt=""
                     />
                   </div>
@@ -684,7 +626,7 @@ export default function Children() {
                 <section className="children-panel pending-empty-card">
                   <div className="pending-empty-image">
                     <img
-                      src="/src/assets/people.png"
+                      src={peopleImage}
                       alt=""
                     />
                   </div>
@@ -761,4 +703,41 @@ export default function Children() {
       </ParentLayout>
     </div>
   );
+}
+
+function buildChildView(details, connectedChild, pendingChild, dashboard) {
+  const source = connectedChild || pendingChild || {};
+  const firstName = details?.preferredName || details?.firstName || source.firstName || "your child";
+  const lastName = details?.lastName || source.lastName || "";
+  const goal = dashboard?.currentStudyGoal;
+  const progress = dashboard?.currentStudyGoalProgress;
+  return {
+    fullName: `${firstName} ${lastName}`.trim(),
+    preferredName: firstName,
+    grade: formatLabel(details?.grade) || "Grade not shared",
+    email: details?.email || "Not shared",
+    subjects: (details?.subjects || []).map((subject) => subject.customName || formatLabel(subject.type)).filter(Boolean),
+    priorities: (details?.studyPriorities || []).map(formatLabel).filter(Boolean),
+    connectionStatus: connectedChild?.studentId ? "connected" : pendingChild ? "pending" : "not_connected",
+    relationship: "Parent",
+    availableData: [
+      details?.shareSessionSummariesWithParents && "Session summaries",
+      details?.shareSubjectTrendsWithParents && "Progress trends",
+      dashboard?.currentStudyGoal && "Study goals",
+    ].filter(Boolean),
+    currentGoal: goal ? {
+      targetMinutes: goal.targetMinutes,
+      completedMinutes: progress?.completedMinutes || 0,
+    } : null,
+    invitation: {
+      sentAt: pendingChild ? "Sent" : "",
+      expiresAt: pendingChild?.childSetupInvitationExpiresAtUtc
+        ? new Date(pendingChild.childSetupInvitationExpiresAtUtc).toLocaleDateString()
+        : "",
+    },
+  };
+}
+
+function formatLabel(value) {
+  return value ? String(value).replace(/([a-z])([A-Z])/g, "$1 $2") : "";
 }

@@ -3,15 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { CheckCircle2, X } from "lucide-react";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
 import { parent } from "../../data/mockData";
-import { forgotPassword } from "../../services/auth";
-import { ApiError } from "../../services/apiClient";
 import "../../css/auth/ForgotPasswordEmailSent.css";
 
 export default function ForgotPasswordEmailSent() {
   const navigate = useNavigate();
 
   const [toast, setToast] = useState("");
-  const [toastMessage, setToastMessage] = useState("");
   const [isOpeningEmail, setIsOpeningEmail] = useState(false);
 
   const email =
@@ -21,7 +18,6 @@ export default function ForgotPasswordEmailSent() {
     if (isOpeningEmail) return;
 
     setIsOpeningEmail(true);
-    setToastMessage("Check your inbox and spam folder.");
     setToast("Verification link sent");
 
     setTimeout(() => {
@@ -29,19 +25,8 @@ export default function ForgotPasswordEmailSent() {
     }, 3000);
   }
 
-  async function handleResend() {
-    try {
-      await forgotPassword({ email });
-      setToastMessage("Check your inbox and spam folder.");
-      setToast("Reset email sent");
-    } catch (err) {
-      setToastMessage(
-        err instanceof ApiError
-          ? err.message
-          : "We couldn't resend the email. Please try again."
-      );
-      setToast("Resend failed");
-    }
+  function handleResend() {
+    setToast("Reset email sent");
 
     setTimeout(() => {
       setToast("");
@@ -63,7 +48,7 @@ export default function ForgotPasswordEmailSent() {
 
             <div className="toast-text">
               <b>{toast}</b>
-              <p>{toastMessage || "Check your inbox and spam folder."}</p>
+              <p>Check your inbox and spam folder.</p>
             </div>
 
             <button

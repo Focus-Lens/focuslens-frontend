@@ -10,7 +10,7 @@ export default function ResetPasswordSuccess() {
 
             <div className="reset-password-success-logo">
               <img
-                src="/public/images/Focuslens logo animation - success 2.png"
+                src="/images/Focuslens logo animation - success 2.png"
                 alt="FocusLens"
               />
             </div>

@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
-import { resetPassword } from "../../services/auth";
-import { ApiError } from "../../services/apiClient";
+import { api } from "../../services/api";
 
 import {
   RiEyeLine,
@@ -15,23 +14,17 @@ import "../../css/auth/ResetPassword.css";
 
 export default function ResetPassword() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const isAccountPasswordChange = location.pathname === "/change-password";
 
-  // الإيميل والكود (otp) بييجوا تلقائيًا من رابط الإيميل نفسه (query params)
-  // بدون أي حقل إدخال إضافي في الواجهة.
-  const emailFromUrl =
-    searchParams.get("email") ||
-    sessionStorage.getItem("pendingResetEmail") ||
-    "";
-  const otpFromUrl =
-    searchParams.get("otp") || searchParams.get("code") || "";
-
+  const [currentPassword, setCurrentPassword] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [submitError, setSubmitError] = useState("");
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
 
   const checks = [
     {
@@ -62,45 +55,61 @@ export default function ResetPassword() {
     confirmPassword.length > 0 &&
     password === confirmPassword;
 
-  const canReset = score === 4 && passwordsMatch;
+  const canReset = score === 4 && passwordsMatch && (!isAccountPasswordChange || currentPassword.length > 0);
 
   async function handleReset() {
-    setSubmitError("");
-
-    if (!emailFromUrl || !otpFromUrl) {
-      navigate("/reset-password/expired");
-      return;
-    }
-
     try {
-      await resetPassword({
-        email: emailFromUrl,
-        otp: otpFromUrl,
-        newPassword: password,
-      });
-
-      sessionStorage.removeItem("pendingResetEmail");
-      navigate("/reset-password/success");
-    } catch (err) {
-      if (err instanceof ApiError && (err.status === 400 || err.status === 404)) {
-        navigate("/reset-password/expired");
+      if (isAccountPasswordChange) {
+        await api("/api/users/change-password", {
+          method: "POST",
+          body: { currentPassword, newPassword: password, confirmPassword },
+        });
+        navigate("/profile", { replace: true });
         return;
       }
-
-      setSubmitError(
-        err instanceof ApiError
-          ? err.message
-          : "Something went wrong. Please try again."
-      );
-    }
+      const email = sessionStorage.getItem("pendingResetEmail");
+      if (!email) throw new Error("Please request a password-reset code first.");
+      await api("/api/auth/reset-password", { method: "POST", auth: false, body: { email, otp, newPassword: password } });
+      sessionStorage.removeItem("pendingResetEmail");
+      navigate("/reset-password/success");
+    } catch (requestError) { setError(requestError.message); }
   }
 
   return (
     <AuthLayout hideFooter>
       <Card title="Create a new password">
         <p className="auth-subtitle">
-          Choose a password you haven’t used for this account before.
+          {isAccountPasswordChange
+            ? "Enter your current password, then choose a secure new one."
+            : "Choose a password you haven’t used for this account before."}
         </p>
+        {isAccountPasswordChange && (
+          <label className="password-field">
+            <span>Current password</span>
+            <div className="password-input-wrap">
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+                placeholder="Enter your current password"
+              />
+            </div>
+          </label>
+        )}
+        {!isAccountPasswordChange && <label className="password-field">
+          <span>Verification code</span>
+          <div className={`password-input-wrap ${otp.length === 6 ? "password-valid" : ""}`}>
+            <input
+              className="verification-code-input"
+              value={otp}
+              inputMode="numeric"
+              maxLength="6"
+              onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
+              placeholder="6-digit code"
+            />
+          </div>
+          {otp.length === 6 && <p className="password-good">Code entered</p>}
+        </label>}
 
         <label className="password-field">
           <span>New password</span>
@@ -165,8 +174,7 @@ export default function ResetPassword() {
         {confirmPassword && !passwordsMatch && (
           <p className="password-error">Passwords do not match.</p>
         )}
-
-        {submitError && <p className="password-error">{submitError}</p>}
+        {error && <p className="password-error">{error}</p>}
 
         <div className="password-strength-card">
           <div className="strength-heading">
@@ -213,11 +221,13 @@ export default function ResetPassword() {
             <RiArrowLeftLine />
           </button>
 
-          {canReset ? (
-            <Button onClick={handleReset}>Reset password</Button>
+          {canReset && (isAccountPasswordChange || otp.length === 6) ? (
+            <Button onClick={handleReset}>
+              {isAccountPasswordChange ? "Save new password" : "Reset password"}
+            </Button>
           ) : (
             <button type="button" className="verify-disabled" disabled>
-              Reset password
+              {isAccountPasswordChange ? "Save new password" : "Reset password"}
             </button>
           )}
         </div>

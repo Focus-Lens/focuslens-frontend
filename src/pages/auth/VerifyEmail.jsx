@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "../../components/ui/CommonUI";
-import { parent } from "../../data/mockData";
-import { verifyEmail, resendVerification } from "../../services/auth";
-import { ApiError } from "../../services/apiClient";
+import { api } from "../../services/api";
 import { Mail, CheckCircle2, X, Clock3 } from "lucide-react";
 import "../../css/auth/VerifyEmail.css";
 
@@ -17,82 +15,33 @@ function maskEmail(email) {
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   const [toast, setToast] = useState("");
-  const [toastDescription, setToastDescription] = useState("");
   const [isOpening, setIsOpening] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
 
   const email =
-    searchParams.get("email") ||
-    sessionStorage.getItem("pendingParentEmail") ||
-    parent.email;
+    sessionStorage.getItem("pendingParentEmail") || "";
 
-  // لو اللينك اللي جه من الإيميل يحتوي على otp داخل الـ URL، نتحقق تلقائيًا
-  // بدون أي ضغط من المستخدم — بنفس الشكل اللي كان موجود (toast ثم انتقال).
-  useEffect(() => {
-    const otpFromUrl = searchParams.get("otp") || searchParams.get("code");
-
-    if (!otpFromUrl) return;
-
-    let isCancelled = false;
-
-    async function autoVerify() {
-      setIsOpening(true);
-
-      try {
-        await verifyEmail({ email, otp: otpFromUrl });
-
-        if (isCancelled) return;
-
-        setToastDescription("Your parent account is ready.");
-        setToast("Email verified");
-
-        setTimeout(() => {
-          if (!isCancelled) navigate("/account-created");
-        }, 3000);
-      } catch (err) {
-        if (isCancelled) return;
-
-        setIsOpening(false);
-        setToastDescription(
-          err instanceof ApiError
-            ? err.message
-            : "We couldn't verify this link. Please try again."
-        );
-        setToast("Verification failed");
-      }
-    }
-
-    autoVerify();
-
-    return () => {
-      isCancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  function openEmailApp() {
+  async function verifyCode() {
     if (isOpening) return;
-
     setIsOpening(true);
-    window.location.href = "mailto:";
-    window.setTimeout(() => setIsOpening(false), 1000);
+    try {
+      await api("/api/auth/verify-email", { method: "POST", auth: false, body: { email, otp } });
+      setToast("Email verified");
+      navigate("/choose-start");
+    } catch (requestError) {
+      setError(requestError.message);
+      setIsOpening(false);
+    }
   }
 
-  async function resendLink() {
+  async function resendCode() {
     try {
-      await resendVerification({ email });
-      setToastDescription("Check your inbox and spam folder.");
-      setToast("Verification link sent");
-    } catch (err) {
-      setToastDescription(
-        err instanceof ApiError
-          ? err.message
-          : "We couldn't resend the link. Please try again."
-      );
-      setToast("Verification failed");
-    }
+      await api("/api/auth/resend-verification", { method: "POST", auth: false, body: { email } });
+      setToast("Verification code sent");
+    } catch (requestError) { setError(requestError.message); }
   }
 
   function useDifferentEmail() {
@@ -111,10 +60,9 @@ export default function VerifyEmail() {
             <div className="toast-title">{toast}</div>
 
             <div className="toast-description">
-              {toastDescription ||
-                (toast === "Email verified"
-                  ? "Your parent account is ready."
-                  : "Check your inbox and spam folder.")}
+              {toast === "Email verified"
+                ? "Your parent account is ready."
+                : "Check your inbox and spam folder."}
             </div>
           </div>
 
@@ -138,28 +86,25 @@ export default function VerifyEmail() {
           <h1>Check your email</h1>
 
           <p className="verification-text">
-            We sent a secure verification link to{" "}
+            We sent a 6-digit verification code to{" "}
             <b>{maskEmail(email)}</b>
           </p>
 
           <div className="verify-email-actions">
-            <button
-              type="button"
-              className="open-email-button"
-              onClick={openEmailApp}
-              disabled={isOpening}
-            >
-              {isOpening ? "Opening email app…" : "Open email app"}
+            <input className="verify-code-input" inputMode="numeric" maxLength="6" value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))} placeholder="6-digit code" aria-label="Verification code" />
+            <button type="button" className="open-email-button" onClick={verifyCode} disabled={isOpening || otp.length !== 6}>
+              {isOpening ? "Verifying..." : "Verify email"}
             </button>
 
             <button
               type="button"
               className="resend-email-button"
-              onClick={resendLink}
+              onClick={resendCode}
             >
-              Resend link
+              Resend code
             </button>
           </div>
+          {error && <p className="password-error">{error}</p>}
 
           <button
             type="button"
@@ -176,7 +121,7 @@ export default function VerifyEmail() {
 
           <div className="expiry-message">
             <Clock3 size={15} strokeWidth={1.8} />
-            <span>The link expires in 15 minutes</span>
+            <span>The code expires in 10 minutes</span>
           </div>
         </section>
       </main>

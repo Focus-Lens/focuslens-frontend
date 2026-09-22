@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -6,13 +6,13 @@ import {
   ArrowUp,
   Check,
   Pause,
+  TrendingUp,
   LockKeyhole,
 } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
+import { dashboardMockData } from "../../data/mockData";
 import DashboardHeader from "../../components/ui/DashboardHeader";
-import { useAuth } from "../../context/AuthContext";
-import { getSessionDetail } from "../../services/reports";
 
 import arabicImage from "../../assets/arabic.jpg";
 import clockImage from "../../assets/clock.jpg";
@@ -29,48 +29,23 @@ import "../../css/dashboard/SessionInsight.css";
 export default function SessionInsight() {
   const navigate = useNavigate();
   const { sessionId } = useParams();
-  const { child } = useAuth();
 
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const session = useMemo(
+    () =>
+      dashboardMockData.reports.sessions.find(
+        (item) => item.id === sessionId
+      ),
+    [sessionId]
+  );
 
-  // ------------------------------------------------------------
-  // جلب تفاصيل الجلسة من GET /api/reports/sessions/{sessionId}.
-  // The backend returns a stable report contract. AI-only fields are nullable.
-  // ------------------------------------------------------------
-  useEffect(() => {
-    let isCancelled = false;
-
-    async function loadSessionDetail() {
-      try {
-        const data = await getSessionDetail(sessionId, {
-          studentId: child?.id,
-        });
-        if (isCancelled) return;
-        setSession(data ?? null);
-      } catch (err) {
-        console.error("Failed to load session detail:", err);
-        if (!isCancelled) setSession(null);
-      } finally {
-        if (!isCancelled) setLoading(false);
-      }
-    }
-
-    loadSessionDetail();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [sessionId, child]);
-
-  if (loading || !session) {
+  if (!session) {
     return (
       <div className="session-insight-shell">
         <DashboardHeader activePage="reports" />
 
         <ParentLayout>
           <main className="session-not-found">
-            <h1>{loading ? "Loading session…" : "Session not found"}</h1>
+            <h1>Session not found</h1>
 
             <button
               onClick={() => navigate("/reports")}
@@ -254,7 +229,7 @@ export default function SessionInsight() {
               </div>
 
               <p>
-                {new Date(session.date).toLocaleString()} · {session.format}
+                {session.date} · {session.format}
               </p>
             </div>
           </section>
@@ -514,7 +489,7 @@ export default function SessionInsight() {
 
                   <span>
                     This session stayed close to
-                    {child?.preferredName ?? "the student's"} recent focus range.
+                    Youssef&apos;s recent focus range.
                   </span>
                 </div>
               </section>
@@ -658,7 +633,7 @@ export default function SessionInsight() {
                   </div>
 
                   <p>
-                    {child?.preferredName ?? "The student"} completed every question
+                    Youssef completed every question
                     in this session.
                   </p>
                 </div>
