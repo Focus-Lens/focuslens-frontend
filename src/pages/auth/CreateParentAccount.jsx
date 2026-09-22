@@ -42,11 +42,17 @@ export default function CreateParentAccount() {
 
   function validateRegistration() {
     const nextErrors = {};
+
     if (!firstName.trim()) nextErrors.firstName = "First name is required.";
     if (!lastName.trim()) nextErrors.lastName = "Last name is required.";
+
     if (!email.trim()) nextErrors.email = "Email address is required.";
     else if (!emailIsValid) nextErrors.email = "Please enter a valid email address.";
-    if (!acceptedTerms) nextErrors.terms = "Please agree to the Terms and Privacy Policy to continue.";
+
+    if (!acceptedTerms) {
+      nextErrors.terms = "Please agree to the Terms and Privacy Policy to continue.";
+    }
+
     setFieldErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   }
@@ -54,10 +60,15 @@ export default function CreateParentAccount() {
   async function loginWithGoogle(credentialResponse) {
     try {
       setGoogleError("");
+
       const response = await api("/api/auth/google/parent", {
-        method: "POST", auth: false, body: { idToken: credentialResponse.credential },
+        method: "POST",
+        auth: false,
+        body: { idToken: credentialResponse.credential },
       });
+
       const account = login(response);
+
       navigate(
         sessionStorage.getItem("pendingInvitationToken") || account.requiresOnboarding
           ? "/choose-start"
@@ -79,6 +90,7 @@ export default function CreateParentAccount() {
     try {
       setIsCheckingEmail(true);
       setEmailError("");
+
       const result = await api("/api/auth/check-email", {
         method: "POST",
         auth: false,
@@ -92,17 +104,28 @@ export default function CreateParentAccount() {
         result?.available === false;
 
       if (emailAlreadyExists) {
-        setEmailError("This email is already associated with an account. Sign in or use another email.");
+        setEmailError(
+          "This email is already associated with an account. Sign in or use another email.",
+        );
         return;
       }
 
-      sessionStorage.setItem("pendingParentRegistration", JSON.stringify({
-        firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(), acceptTerms: true,
-      }));
+      sessionStorage.setItem(
+        "pendingParentRegistration",
+        JSON.stringify({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
+          acceptTerms: true,
+        }),
+      );
+
       navigate("/create-password");
     } catch (error) {
       if (error.status === 409) {
-        setEmailError("This email is already associated with an account. Sign in or use another email.");
+        setEmailError(
+          "This email is already associated with an account. Sign in or use another email.",
+        );
       } else {
         setEmailError(error.message || "We couldn’t check this email. Please try again.");
       }
@@ -119,7 +142,6 @@ export default function CreateParentAccount() {
             Add your details first. You’ll create your password next.
           </p>
 
-
           <div className="name-fields">
             <div className="name-field-wrapper">
               <Field
@@ -132,7 +154,9 @@ export default function CreateParentAccount() {
                   setFieldErrors((current) => ({ ...current, firstName: "" }));
                 }}
               />
-              {fieldErrors.firstName && <p className="field-error-message">{fieldErrors.firstName}</p>}
+              {fieldErrors.firstName && (
+                <p className="field-error-message">{fieldErrors.firstName}</p>
+              )}
             </div>
 
             <div className="name-field-wrapper">
@@ -146,7 +170,9 @@ export default function CreateParentAccount() {
                   setFieldErrors((current) => ({ ...current, lastName: "" }));
                 }}
               />
-              {fieldErrors.lastName && <p className="field-error-message">{fieldErrors.lastName}</p>}
+              {fieldErrors.lastName && (
+                <p className="field-error-message">{fieldErrors.lastName}</p>
+              )}
             </div>
           </div>
 
@@ -193,7 +219,10 @@ export default function CreateParentAccount() {
               I agree to the Terms and Privacy Policy
             </button>
           </label>
-          {fieldErrors.terms && <p className="terms-error">{fieldErrors.terms}</p>}
+
+          {fieldErrors.terms && (
+            <p className="terms-error">{fieldErrors.terms}</p>
+          )}
 
           <div className="register-actions">
             <Button onClick={handleContinue} disabled={isCheckingEmail}>
@@ -201,7 +230,17 @@ export default function CreateParentAccount() {
             </Button>
           </div>
 
-          <div className="google-button-wrap"><GoogleLogin onSuccess={loginWithGoogle} onError={() => setGoogleError("Google sign-in failed. Please try again.")} /></div>
+          <div className="google-button-wrap">
+            <GoogleLogin
+              onSuccess={loginWithGoogle}
+              onError={() => setGoogleError("Google sign-in failed. Please try again.")}
+              text="continue_with"
+              theme="outline"
+              size="large"
+              shape="pill"
+              width="400"
+            />
+          </div>
 
           {googleError && <p className="email-error">{googleError}</p>}
 
