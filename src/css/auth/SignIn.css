@@ -500,3 +500,21 @@
     margin-top: 18px !important;
   }
 }
+
+.google-button-wrap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.google-button-wrap > div {
+  width: min(400px, 100%) !important;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.google-button-wrap iframe {
+  max-width: 100% !important;
+}
