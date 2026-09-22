@@ -157,6 +157,7 @@ export default function SignIn({ restoreAccount = false }) {
     onSuccess={signInWithGoogle}
     onError={() => setError("Google sign-in failed. Please try again.")}
     text="continue_with"
+    locale="en"
     theme="outline"
     size="medium"
     shape="pill"
