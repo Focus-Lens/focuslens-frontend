@@ -16,7 +16,7 @@
   padding: 48px 48px 42px;
 }
 
-/* ==========================
+/* =========================
    Main
 ========================= */
 
@@ -31,7 +31,6 @@
 
 .choose-start-title {
   margin: 0;
-
   color: #202020;
   font-family: "Nunito";
   font-size: 32px;
@@ -46,7 +45,6 @@
 
 .choose-start-subtitle {
   margin: 10px 0 33px;
-
   color: #646470;
   font-family: "Nunito";
   font-size: 14px;
@@ -68,35 +66,39 @@
 
 .choose-start-option {
   position: relative;
-
   width: 100%;
   min-height: 96px;
-
   display: flex;
   align-items: center;
-
   box-sizing: border-box;
-
   margin: 0 0 16px;
   padding: 17px 54px 17px 15px;
-
   border: 1px solid #dedee5;
   border-radius: 18px;
-
   background: #ffffff;
-
   text-align: left;
-
   cursor: pointer;
-
   transition:
     border-color 0.2s ease,
     background 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .choose-start-option:hover {
   border-color: #bfa5f8;
+}
+
+/* الخيار ظاهر لكنه غير متاح للاختيار */
+.choose-start-option:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.choose-start-option:disabled:hover {
+  border-color: #dedee5;
+  background: #ffffff;
+  box-shadow: none;
 }
 
 /* =========================
@@ -117,15 +119,11 @@
   width: 48px;
   height: 48px;
   flex: 0 0 48px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   margin-right: 15px;
-
   border-radius: 14px;
-
   background: #eee3ff;
   color: #7d39eb;
 }
@@ -145,18 +143,14 @@
 
 .choose-start-option-text {
   min-width: 0;
-
   display: flex;
   flex-direction: column;
-
   text-align: left;
 }
 
 .choose-start-option-text b {
   margin: 0 0 5px;
-
   color: #242428;
-
   font-family: "Nunito";
   font-size: 15px;
   font-weight: 500;
@@ -165,7 +159,6 @@
 
 .choose-start-option-text small {
   color: #686874;
-
   font-family: "Nunito";
   font-size: 13px;
   font-weight: 400;
@@ -180,16 +173,12 @@
   position: absolute;
   top: 16px;
   right: 23px;
-
   width: 22px;
   height: 22px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   border-radius: 50%;
-
   background: #7d39eb;
   color: #ffffff;
 }
@@ -205,7 +194,6 @@
 .choose-start-actions {
   width: 100%;
   margin-top: 31px;
-
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -219,26 +207,19 @@
 .choose-start-actions > button:first-child {
   width: 100%;
   height: 53px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   box-sizing: border-box;
-
   border: none;
   border-radius: 28px;
-
   background: #7d39eb;
   color: #ffffff;
-
   font-family: "Nunito";
   font-size: 16px;
   font-weight: 400;
-
   text-decoration: none;
   cursor: pointer;
-
   transition:
     background 0.2s ease,
     transform 0.1s ease;
@@ -260,18 +241,13 @@
 
 .choose-start-later {
   margin-top: 17px;
-
   padding: 0;
-
   border: none;
   background: transparent;
-
   color: #7d39eb;
-
   font-family: "Nunito";
   font-size: 16px;
   font-weight: 400;
-
   cursor: pointer;
 }
 
