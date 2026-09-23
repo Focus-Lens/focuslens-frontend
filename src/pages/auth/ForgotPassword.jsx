@@ -9,19 +9,39 @@ export default function ForgotPassword() {
 
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSend() {
-    if (!email.trim()) {
+    const trimmedEmail = email.trim();
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!trimmedEmail) {
       setError("Please enter your email.");
       return;
     }
 
+    if (!emailPattern.test(trimmedEmail)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+
     try {
+      setIsSubmitting(true);
       setError("");
-      await api("/api/auth/forgot-password", { method: "POST", auth: false, body: { email: email.trim() } });
-      sessionStorage.setItem("pendingResetEmail", email.trim());
+
+      await api("/api/auth/forgot-password", {
+        method: "POST",
+        auth: false,
+        body: { email: trimmedEmail },
+      });
+
+      sessionStorage.setItem("pendingResetEmail", trimmedEmail);
       navigate("/reset-password");
-    } catch (requestError) { setError(requestError.message); }
+    } catch (requestError) {
+      setError(requestError.message || "Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -35,13 +55,23 @@ export default function ForgotPassword() {
           </p>
 
           <Field
+            name="email"
             label="Email address"
             type="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+            required
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError("");
+            }}
           />
 
-          {error && <p className="password-error">{error}</p>}
+          {error && (
+            <p className="forgot-email-error" role="alert">
+              {error}
+            </p>
+          )}
 
           <div className="password-actions">
             <button
@@ -53,8 +83,12 @@ export default function ForgotPassword() {
               ←
             </button>
 
-            <Button onClick={handleSend}>
-              Send reset instructions
+            <Button
+              type="button"
+              onClick={handleSend}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Sending..." : "Send reset instructions"}
             </Button>
           </div>
         </Card>
