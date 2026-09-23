@@ -246,15 +246,11 @@
   border-color: #cfcfd8;
 }
 
-/* Google G */
-
 .google-button span {
   font-size: 21px;
   font-weight: 700;
   color: #4285f4;
 }
-
-/* لو مستخدمة FcGoogle */
 
 .google-button .google-icon {
   width: 22px;
@@ -373,7 +369,7 @@
     font-size: 14px;
   }
 
-  /* ارتفاع أكبر عشان الـlabel والكتابة مايركبوش على بعض */
+  /* ارتفاع كافٍ للفصل بين الكتابة والـlabel */
   .auth-main:has(.signin-actions) .field {
     height: 49px;
     margin-bottom: 12px;
@@ -397,6 +393,31 @@
   }
 }
 
+/* توسيط نص البريد وكلمة المرور داخل الحقل */
+.auth-main:has(.signin-actions) .field input {
+  position: absolute;
+  top: calc(50% + 4px);
+  left: 14px;
+  right: 14px;
+  width: calc(100% - 28px);
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  line-height: 24px;
+  transform: translateY(-50%);
+}
+
+.auth-main:has(.signin-actions) .field input:-webkit-autofill,
+.auth-main:has(.signin-actions) .field input:-webkit-autofill:hover,
+.auth-main:has(.signin-actions) .field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #29292e;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+  caret-color: #29292e;
+  transition: background-color 9999s ease-out 0s;
+}
+
+/* Google sign-in */
 .google-button-wrap {
   width: 100%;
   display: flex;
