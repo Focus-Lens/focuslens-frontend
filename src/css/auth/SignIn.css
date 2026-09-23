@@ -1,6 +1,6 @@
 /* ==========================================
    SIGN IN CARD
-========================================== */
+========================================= */
 
 .signin-form {
   display: contents;
@@ -9,23 +9,16 @@
 .page-card {
   width: 700px;
   min-height: 596px;
-
   padding: 50px 48px 40px;
-
   box-sizing: border-box;
-
   background: #ffffff;
-
   border: 1px solid #e1e4ed;
   border-radius: 42px;
-
   box-shadow:
     0 25px 55px rgba(91, 42, 170, 0.08),
     0 8px 25px rgba(91, 42, 170, 0.035);
-
   text-align: center;
 }
-
 
 /* =========================================
    TITLE
@@ -33,17 +26,12 @@
 
 .page-card h1 {
   margin: 0;
-
   color: #242428;
-
   font-size: 32px;
   line-height: 1.25;
-
   font-weight: 700;
-
   letter-spacing: -0.7px;
 }
-
 
 /* =========================================
    SUBTITLE
@@ -51,15 +39,11 @@
 
 .page-card > p {
   margin: 14px 0 25px;
-
   color: #626270;
-
   font-size: 16px;
   line-height: 1.5;
-
   font-weight: 400;
 }
-
 
 /* =========================================
    FIELD
@@ -67,53 +51,33 @@
 
 .field {
   position: relative;
-
   width: 100%;
   height: 49px;
-
   margin: 0 0 24px;
-
   padding: 0 14px;
-
   box-sizing: border-box;
-
   border: 1px solid #9293a0;
-
   border-radius: 28px;
-
   background: #ffffff;
 }
 
-
 /* =========================================
    FIELD LABEL
-   الكلمة اللي فوق الـ border
 ========================================= */
 
 .field legend {
   width: auto;
-
   margin-left: 0;
-
   padding: 0 5px;
-
   border: 0;
-
   background: #ffffff;
-
   color: #606170;
-
   font-family: "Nunito", sans-serif;
-
   font-size: 12px;
-
   line-height: 16px;
-
   font-weight: 400;
-
   text-align: left;
 }
-
 
 /* =========================================
    INPUT
@@ -122,23 +86,15 @@
 .field input {
   width: 100%;
   height: 32px;
-
   margin: -2px 0 0;
   padding: 0;
-
   border: none;
   outline: none;
-
   background: transparent;
-
   color: #29292e;
-
   font-family: "Nunito", sans-serif;
-
   font-size: 15px;
-
   font-weight: 400;
-
   box-sizing: border-box;
 }
 
@@ -147,14 +103,12 @@
   outline: none;
 }
 
-
 /* =========================================
    FIELD FOCUS
 ========================================= */
 
 .field:focus-within {
   border-color: #8a3df0;
-
   box-shadow: none;
 }
 
@@ -162,23 +116,17 @@
   color: #606170;
 }
 
-
 /* =========================================
    FORM ROW
 ========================================= */
 
 .form-row {
   width: 100%;
-
   display: flex;
-
   align-items: center;
-
   justify-content: space-between;
-
   margin-top: 1px;
 }
-
 
 /* =========================================
    REMEMBER ME
@@ -186,35 +134,23 @@
 
 .check {
   display: flex;
-
   align-items: center;
-
   gap: 9px;
-
   color: #606170;
-
   font-family: "Nunito", sans-serif;
-
   font-size: 14px;
-
   cursor: pointer;
 }
 
 .check input {
   width: 20px;
   height: 20px;
-
   margin: 0;
-
   border: 1px solid #d8d9df;
-
   border-radius: 5px;
-
   accent-color: #7c35e9;
-
   cursor: pointer;
 }
-
 
 /* =========================================
    FORGOT PASSWORD
@@ -222,15 +158,10 @@
 
 .form-row a {
   color: #7130df;
-
   font-family: "Nunito", sans-serif;
-
   font-size: 14px;
-
   font-weight: 400;
-
   text-decoration: underline;
-
   text-underline-offset: 2px;
 }
 
@@ -238,23 +169,17 @@
   color: #5e20c9;
 }
 
-
 /* =========================================
    ACTIONS
 ========================================= */
 
 .actions {
   width: 100%;
-
   margin-top: 27px;
-
   display: flex;
-
   flex-direction: column;
-
   gap: 16px;
 }
-
 
 /* =========================================
    SIGN IN BUTTON
@@ -263,32 +188,19 @@
 .actions .button {
   width: 100%;
   height: 52px;
-
   display: flex;
-
   align-items: center;
   justify-content: center;
-
   box-sizing: border-box;
-
   border: none;
-
   border-radius: 999px;
-
   background: #7c35e9;
-
   color: #ffffff;
-
   font-family: "Nunito", sans-serif;
-
   font-size: 17px;
-
   font-weight: 500;
-
   text-decoration: none;
-
   cursor: pointer;
-
   transition:
     background-color 0.2s ease,
     transform 0.15s ease;
@@ -302,7 +214,6 @@
   transform: scale(0.99);
 }
 
-
 /* =========================================
    GOOGLE BUTTON
 ========================================= */
@@ -310,32 +221,19 @@
 .google-button {
   width: 100%;
   height: 54px;
-
   display: flex;
-
   align-items: center;
   justify-content: center;
-
   gap: 12px;
-
   box-sizing: border-box;
-
   border: 1px solid #dedee5;
-
   border-radius: 999px;
-
   background: #ffffff;
-
   color: #202026;
-
   font-family: "Nunito", sans-serif;
-
   font-size: 16px;
-
   font-weight: 500;
-
   cursor: pointer;
-
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease;
@@ -343,31 +241,24 @@
 
 .google-button:hover {
   background: #fafafa;
-
   border-color: #cfcfd8;
 }
-
 
 /* Google G */
 
 .google-button span {
   font-size: 21px;
-
   font-weight: 700;
-
   color: #4285f4;
 }
-
 
 /* لو مستخدمة FcGoogle */
 
 .google-button .google-icon {
   width: 22px;
   height: 22px;
-
   flex-shrink: 0;
 }
-
 
 /* =========================================
    ERROR
@@ -375,14 +266,10 @@
 
 .password-error {
   margin: -10px 0 15px;
-
   color: #dc2626;
-
   font-size: 13px;
-
   text-align: left;
 }
-
 
 /* =========================================
    CREATE ACCOUNT
@@ -390,27 +277,18 @@
 
 .already-account {
   margin: 26px 0 0 !important;
-
   color: #7130df !important;
-
   font-family: "Nunito", sans-serif;
-
   font-size: 14px !important;
-
   line-height: 1.5;
-
   text-align: center;
 }
 
 .already-account a {
   margin-left: 6px;
-
   color: #7130df;
-
   font-weight: 500;
-
   text-decoration: underline;
-
   text-underline-offset: 2px;
 }
 
@@ -422,11 +300,11 @@
   transform: translateY(14px);
 }
 
-/* The shared field rule offsets inputs upward; keep sign-in text centered. */
-.auth-main:has(.signin-actions) .field > input {
-  top: -1px;
-}
+/* رفع نص حقلي البريد وكلمة المرور قليلًا */
 
+.auth-main:has(.signin-actions) .field > input {
+  transform: translateY(-2px);
+}
 
 /* =========================================
    RESPONSIVE
@@ -435,11 +313,8 @@
 @media (max-width: 750px) {
   .page-card {
     width: calc(100% - 40px);
-
     min-height: auto;
-
     padding: 45px 30px 35px;
-
     border-radius: 32px;
   }
 
@@ -448,13 +323,10 @@
   }
 }
 
-
 @media (max-width: 500px) {
   .page-card {
     width: calc(100% - 24px);
-
     padding: 38px 20px 30px;
-
     border-radius: 28px;
   }
 
