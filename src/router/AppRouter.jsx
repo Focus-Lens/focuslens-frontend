@@ -17,7 +17,6 @@ import ResetPasswordSuccess from "../pages/auth/ResetPasswordSuccess";
 import ResetLinkExpired from "../pages/auth/ResetLinkExpired";
 
 import ChooseStart from "../pages/onboarding/ChooseStart";
-import ConnectChild from "../pages/onboarding/ConnectChild";
 import ProfileSetupChoice from "../pages/onboarding/ProfileSetupChoice";
 import SendSetupLink from "../pages/onboarding/SendSetupLink";
 import SetupIntro from "../pages/onboarding/SetupIntro";
@@ -91,7 +90,7 @@ export default function AppRouter() {
         />
 
         <Route path="/choose-start" element={<ChooseStart />} />
-        <Route path="/connect-child" element={<ConnectChild />} />
+        <Route path="/connect-child" element={<Navigate replace to="/choose-start" />} />
         <Route
           path="/profile-setup-choice"
           element={<ProfileSetupChoice />}

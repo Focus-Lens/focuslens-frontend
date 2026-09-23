@@ -52,7 +52,14 @@ async function parseResponse(response) {
     const message =
       validationMessages ||
       payload?.detail ||
+      payload?.message ||
+      payload?.Message ||
       payload?.title ||
+      (typeof payload?.error === "string"
+        ? payload.error
+        : typeof payload?.Error === "string"
+          ? payload.Error
+          : "") ||
       payload?.errors?.[0]?.description ||
       (typeof payload === "string" && payload) ||
       "Something went wrong. Please try again.";
@@ -114,6 +121,9 @@ export function getAccessInvitationId(invitation) {
 }
 
 export async function resolveAccessInvitation(token) {
+  // Never let an older invitation ID be reused if the new token cannot be
+  // resolved to an ID by the backend.
+  sessionStorage.removeItem(accessInvitationIdKey);
   const invitation = await api(
     `/api/access/invitations/resolve?token=${encodeURIComponent(token)}`,
     { auth: false },
@@ -126,7 +136,7 @@ export async function resolveAccessInvitation(token) {
 export const acceptAccessInvitation = (invitationId) =>
   api(`/api/access/invitations/${invitationId}/accept`, { method: "POST" });
 export const declineAccessInvitation = (invitationId) =>
-  api(`/api/access/invitations/${invitationId}/decline`, { method: "POST" });
+  api(`/api/access/invitations/${encodeURIComponent(invitationId)}/decline`, { method: "POST" });
 
 // Sender-side endpoints, used by the Student app rather than Parent Web's
 // child-setup invitation flow.

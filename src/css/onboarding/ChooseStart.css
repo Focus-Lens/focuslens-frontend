@@ -54,6 +54,14 @@
   line-height: 1.5;
 }
 
+.choose-start-error {
+  margin: 14px 0 0;
+  color: #dc2626;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
+}
+
 /* =========================
    Choice
 ========================= */

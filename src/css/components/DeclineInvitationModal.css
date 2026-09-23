@@ -68,6 +68,18 @@
   line-height: 1.65;
 }
 
+.confirm-modal .confirm-modal-error {
+  margin-top: 14px;
+  color: #dc2626;
+  font-size: 12px;
+  text-align: left;
+}
+
+.confirm-modal-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 /* =========================
    Actions
 ========================= */

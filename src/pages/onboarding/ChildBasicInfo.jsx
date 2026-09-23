@@ -19,6 +19,7 @@ export default function ChildBasicInfo() {
   const [name, setName] = useState(child.preferredName || "");
   const [lastName, setLastName] = useState(child.lastName || "");
   const [dateOfBirth, setDateOfBirth] = useState(child.dateOfBirth || "");
+  const [errors, setErrors] = useState({});
 
   const steps = [
     "Basic info",
@@ -30,6 +31,14 @@ export default function ChildBasicInfo() {
   ];
 
   function handleContinue() {
+    const nextErrors = {
+      name: name.trim() ? "" : "First name is required.",
+      lastName: lastName.trim() ? "" : "Last name is required.",
+      dateOfBirth: dateOfBirth ? "" : "Date of birth is required.",
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) return;
+
     updateChild({
       preferredName: name.trim(),
       lastName: lastName.trim(),
@@ -44,6 +53,13 @@ export default function ChildBasicInfo() {
     }
 
     navigate(returnTo === "review" ? "/setup/review" : "/setup/studies");
+  }
+
+  function handleBack() {
+    const returnTo = searchParams.get("returnTo");
+    if (returnTo === "review") navigate("/setup/review");
+    else if (returnTo === "waiting") navigate("/setup/review?returnTo=waiting");
+    else navigate("/setup-intro");
   }
 
   return (
@@ -105,35 +121,44 @@ export default function ChildBasicInfo() {
               </div>
 
               <Field
+                className={errors.name ? "setup-field-error" : ""}
                 label="First name"
                 value={name}
                 onChange={(event) => {
                   const nextName = event.target.value;
                   setName(nextName);
+                  if (nextName.trim()) setErrors((current) => ({ ...current, name: "" }));
                   updateChild({ preferredName: nextName.trim() });
                 }}
               />
+              {errors.name && <p className="setup-required-error">{errors.name}</p>}
 
               <Field
+                className={errors.lastName ? "setup-field-error" : ""}
                 label="Last name"
                 value={lastName}
                 onChange={(event) => {
                   const nextLastName = event.target.value;
                   setLastName(nextLastName);
+                  if (nextLastName.trim()) setErrors((current) => ({ ...current, lastName: "" }));
                   updateChild({ lastName: nextLastName.trim() });
                 }}
               />
+              {errors.lastName && <p className="setup-required-error">{errors.lastName}</p>}
 
               <Field
+                className={errors.dateOfBirth ? "setup-field-error" : ""}
                 label="Date of birth"
                 type="date"
                 value={dateOfBirth}
                 onChange={(event) => {
                   const nextDateOfBirth = event.target.value;
                   setDateOfBirth(nextDateOfBirth);
+                  if (nextDateOfBirth) setErrors((current) => ({ ...current, dateOfBirth: "" }));
                   updateChild({ dateOfBirth: nextDateOfBirth });
                 }}
               />
+              {errors.dateOfBirth && <p className="setup-required-error">{errors.dateOfBirth}</p>}
 
               <div className="child-basic-info">
                 <Info size={18} strokeWidth={1.8} />
@@ -147,7 +172,7 @@ export default function ChildBasicInfo() {
                 <button
                   type="button"
                   className="child-basic-back"
-                  onClick={() => navigate(-1)}
+                  onClick={handleBack}
                   aria-label="Go back"
                 >
                   <ArrowLeft size={20} strokeWidth={1.8} />

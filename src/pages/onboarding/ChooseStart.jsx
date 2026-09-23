@@ -1,15 +1,19 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
 import { api } from "../../services/api";
+import { useChildProfile } from "../../context/ChildProfileContext";
+import { clearChildInvitationDraft } from "../../services/childInvitationDraft";
 import { Users, UserRoundPlus, Check } from "lucide-react";
 import "../../css/onboarding/ChooseStart.css";
 
 export default function ChooseStart() {
   const [choice, setChoice] = useState("connect");
-  const [error, setError] = useState("");
+  const location = useLocation();
+  const [error, setError] = useState(() => location.state?.invitationError || "");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
+  const { resetChild } = useChildProfile();
 
   function handleDoThisLater() {
     navigate("/overview");
@@ -17,13 +21,21 @@ export default function ChooseStart() {
 
   async function handleContinue() {
     if (choice === "connect") {
-      // A review can only be shown when the parent arrived through a real
-      // child invitation link, which stores its token for this session.
-      navigate(sessionStorage.getItem("pendingInvitationToken") ? "/review-invitation" : "/connect-child");
+      if (!sessionStorage.getItem("pendingInvitationToken")) {
+        setError("Open the invitation link sent to your email to review and confirm your child’s invitation.");
+        return;
+      }
+      setError("");
+      navigate("/review-invitation");
       return;
     }
     try {
       setSubmitting(true); setError("");
+      resetChild();
+      clearChildInvitationDraft();
+      ["childSetupDraftId", "childSetupInvitation"].forEach((key) =>
+        sessionStorage.removeItem(key),
+      );
       const draft = await api("/api/parents/child-setups", { method: "POST" });
       sessionStorage.setItem("childSetupDraftId", draft.id);
       navigate("/profile-setup-choice");
@@ -109,7 +121,7 @@ export default function ChooseStart() {
                 I’ll do this later
               </button>
             </div>
-            {error && <p className="password-error">{error}</p>}
+            {error && <p className="choose-start-error" role="alert">{error}</p>}
 
           </div>
         </Card>

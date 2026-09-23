@@ -1,9 +1,16 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { GoogleLogin } from "@react-oauth/google";
+import GoogleAuthButton from "../../components/ui/GoogleAuthButton";
+import EmailStatusAlert from "../../components/ui/EmailStatusAlert";
 import { AuthLayout, Button, Card, Field } from "../../components/ui/CommonUI";
 import { api } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
+import { getGoogleProfile } from "../../services/googleIdentity";
+import {
+  getEmailAvailability,
+  isStudentEmailError,
+  isStudentEmailResult,
+} from "../../services/emailAccountStatus";
 import TermsPrivacyModal from "../../components/ui/TermsPrivacyModal";
 import "../../css/auth/CreateParentAccount.css";
 
@@ -33,6 +40,7 @@ export default function CreateParentAccount() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [googleError, setGoogleError] = useState("");
+  const [pendingGoogleIdToken, setPendingGoogleIdToken] = useState("");
 
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
@@ -57,26 +65,36 @@ export default function CreateParentAccount() {
     return Object.keys(nextErrors).length === 0;
   }
 
-  async function loginWithGoogle(credentialResponse) {
+  function selectGoogleAccount(credentialResponse) {
     try {
+      const profile = getGoogleProfile(credentialResponse.credential);
+      if (!profile.email) throw new Error("Google did not provide an email address.");
+      setFirstName(profile.firstName);
+      setLastName(profile.lastName);
+      setEmail(profile.email);
+      setEmailTouched(false);
+      setPendingGoogleIdToken(credentialResponse.credential);
+      setFieldErrors({});
+      setEmailError("");
       setGoogleError("");
-
-      const response = await api("/api/auth/google/parent", {
-        method: "POST",
-        auth: false,
-        body: { idToken: credentialResponse.credential },
-      });
-
-      const account = login(response);
-
-      navigate(
-        sessionStorage.getItem("pendingInvitationToken") || account.requiresOnboarding
-          ? "/choose-start"
-          : "/overview",
-      );
-    } catch {
-      setGoogleError("Google sign-in failed. Please try again.");
+    } catch (error) {
+      setGoogleError(error.message || "Google sign-in failed. Please try again.");
     }
+  }
+
+  async function finishGoogleRegistration(idToken) {
+    const response = await api("/api/auth/google/parent", {
+      method: "POST",
+      auth: false,
+      body: { idToken },
+    });
+
+    const account = login(response);
+    navigate(
+      sessionStorage.getItem("pendingInvitationToken") || account.requiresOnboarding
+        ? "/choose-start"
+        : "/overview",
+    );
   }
 
   function agreeToTerms() {
@@ -97,16 +115,20 @@ export default function CreateParentAccount() {
         body: { email: email.trim() },
       });
 
-      const emailAlreadyExists =
-        result?.exists === true ||
-        result?.emailExists === true ||
-        result?.isAvailable === false ||
-        result?.available === false;
+      if (isStudentEmailResult(result)) {
+        setEmailError("This email belongs to a student account. Please use the student sign-in page.");
+        return;
+      }
 
-      if (emailAlreadyExists) {
+      if (getEmailAvailability(result) === false) {
         setEmailError(
-          "This email is already associated with an account. Sign in or use another email.",
+          "This email is already associated with a parent account. Sign in or use another email.",
         );
+        return;
+      }
+
+      if (pendingGoogleIdToken) {
+        await finishGoogleRegistration(pendingGoogleIdToken);
         return;
       }
 
@@ -122,9 +144,11 @@ export default function CreateParentAccount() {
 
       navigate("/create-password");
     } catch (error) {
-      if (error.status === 409) {
+      if (isStudentEmailError(error)) {
+        setEmailError("This email belongs to a student account. Please use the student sign-in page.");
+      } else if (error.status === 409) {
         setEmailError(
-          "This email is already associated with an account. Sign in or use another email.",
+          "This email is already associated with a parent account. Sign in or use another email.",
         );
       } else {
         setEmailError(error.message || "We couldn’t check this email. Please try again.");
@@ -184,6 +208,8 @@ export default function CreateParentAccount() {
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
+                setPendingGoogleIdToken("");
+                setEmailTouched(true);
                 setEmailError("");
                 setFieldErrors((current) => ({ ...current, email: "" }));
               }}
@@ -195,9 +221,17 @@ export default function CreateParentAccount() {
                 {fieldErrors.email || "Please enter a valid email address."}
               </p>
             ) : emailError ? (
-              <p className="email-error">
-                {emailError} <Link to="/sign-in">Sign in</Link>
-              </p>
+              emailError.includes("parent account") ? (
+                <EmailStatusAlert
+                  actionText="Sign in"
+                  actionTo="/sign-in"
+                  message={emailError}
+                />
+              ) : emailError.toLowerCase().includes("student account") ? (
+                <EmailStatusAlert message={emailError} />
+              ) : (
+                <p className="email-error">{emailError}</p>
+              )
             ) : null}
           </div>
 
@@ -231,17 +265,10 @@ export default function CreateParentAccount() {
           </div>
 
           <div className="google-button-wrap">
-            <GoogleLogin
-  onSuccess={loginWithGoogle} // في CreateParentAccount
-  // onSuccess={signInWithGoogle} // في SignIn
-  onError={() => setGoogleError("Google sign-in failed. Please try again.")}
-  text="continue_with"
-  locale="en"
-  theme="outline"
-  size="medium"
-  shape="pill"
-  width="400"
-/>
+            <GoogleAuthButton
+              onSuccess={selectGoogleAccount}
+              onError={() => setGoogleError("Google sign-in failed. Please try again.")}
+            />
           </div>
 
           {googleError && <p className="email-error">{googleError}</p>}

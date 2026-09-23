@@ -228,6 +228,22 @@
   line-height: normal;
 }
 
+.child-basic-page .field.setup-field-error {
+  border-color: #dc2626;
+}
+
+.child-basic-page .field.setup-field-error legend {
+  color: #dc2626;
+}
+
+.child-basic-page > .setup-required-error {
+  margin: -10px 0 10px !important;
+  color: #c81e1e !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  text-align: left;
+}
+
 /* =========================
    Info box
 ========================= */

@@ -24,8 +24,8 @@ import { api } from "../../services/api";
 import {
   cacheParentChildren,
   findConnectedChild,
-  findPendingChild,
   getCachedParentChildren,
+  findPendingChild,
 } from "../../services/parentChildrenCache";
 import {
   cachePendingInvitation,
@@ -41,11 +41,10 @@ import "../../css/dashboard/Overview.css";
 export default function Overview() {
   const [sessionFilter, setSessionFilter] = useState("all");
   const { user } = useAuth();
-  const [childInfo, setChildInfo] = useState(() => findConnectedChild(getCachedParentChildren()));
+  const cachedChildren = getCachedParentChildren();
+  const [childInfo, setChildInfo] = useState(() => findConnectedChild(cachedChildren));
   const [pendingChildInfo, setPendingChildInfo] = useState(
-    () =>
-      findPendingChild(getCachedParentChildren()) ||
-      getPendingInvitationForUser(user?.email)
+    () => findPendingChild(cachedChildren) || getPendingInvitationForUser(user?.email),
   );
   const [dashboard, setDashboard] = useState(null);
   const [sessionHistory, setSessionHistory] = useState([]);
@@ -58,9 +57,7 @@ export default function Overview() {
       cacheParentChildren(children);
       const firstChild = findConnectedChild(children);
       const pendingChild = findPendingChild(children);
-      setPendingChildInfo(
-        pendingChild || getPendingInvitationForUser(user?.email)
-      );
+      setPendingChildInfo(pendingChild);
       setChildInfo(firstChild);
       if (firstChild) {
         clearPendingInvitation();
@@ -69,6 +66,8 @@ export default function Overview() {
           firstName: pendingChild.firstName,
           parentEmail: user?.email,
         });
+      } else {
+        clearPendingInvitation();
       }
       if (!firstChild) {
         setDashboard(null);
@@ -89,7 +88,9 @@ export default function Overview() {
       setDashboard(data.dashboardData);
       setSessionHistory(data.history?.sessions || data.dashboardData.recentStudySessions || []);
       setSessionPagination(data.history?.pagination || null);
-    }).catch(() => {});
+    }).catch(() => {
+      // Keep the last locally cached invitation visible if the request fails.
+    });
     return () => { active = false; };
   }, [user?.email]);
 

@@ -2,6 +2,10 @@
    SIGN IN CARD
 ========================================= */
 
+.signin-form {
+  display: contents;
+}
+
 .page-card {
   width: 700px;
   min-height: 596px;
@@ -418,6 +422,11 @@
   transform: translateY(14px);
 }
 
+/* The shared field rule offsets inputs upward; keep sign-in text centered. */
+.auth-main:has(.signin-actions) .field > input {
+  top: -1px;
+}
+
 
 /* =========================================
    RESPONSIVE
@@ -479,25 +488,43 @@
   }
 
   .auth-main:has(.signin-actions) .page-card {
-    min-height: 0;
+    width: 560px;
+    max-width: 100%;
+    min-height: 460px;
     height: auto;
-    padding: 38px 48px 28px;
+    padding: 36px 36px 30px;
+    border-radius: 30px;
+  }
+
+  .auth-main:has(.signin-actions) .page-card h1 {
+    font-size: 27px;
   }
 
   .auth-main:has(.signin-actions) .page-card > p {
-    margin: 10px 0 20px;
+    margin: 8px 0 14px;
+    font-size: 14px;
   }
 
   .auth-main:has(.signin-actions) .field {
-    margin-bottom: 18px;
+    height: 37px;
+    margin-bottom: 12px;
   }
 
   .auth-main:has(.signin-actions) .actions {
-    margin-top: 20px;
+    margin-top: 17px;
+  }
+
+  .auth-main:has(.signin-actions) .actions .button {
+    height: 39px;
+    font-size: 13px;
   }
 
   .auth-main:has(.signin-actions) .already-account {
-    margin-top: 18px !important;
+    margin-top: 13px !important;
+  }
+
+  .auth-main:has(.signin-actions) .page-card.restore-account-card {
+    min-height: 0;
   }
 }
 
@@ -509,7 +536,7 @@
 }
 
 .google-button-wrap > div {
-  width: min(400px, 100%) !important;
+  width: 100% !important;
   max-width: 100%;
   display: flex;
   justify-content: center;

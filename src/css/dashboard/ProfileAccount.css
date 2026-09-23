@@ -832,11 +832,49 @@
   }
 }
 
+/* Password change confirmation: top-left placement across screen sizes. */
+.profile-success-toast {
+  top: 16px;
+  left: clamp(16px, 4vw, 48px);
+  right: auto;
+  bottom: auto;
+  width: min(498px, calc(100vw - 32px));
+}
+
+@media (max-width: 550px) {
+  .profile-success-toast {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    bottom: auto;
+    width: auto;
+  }
+}
+
+/* Keep the password change confirmation at the top left on every screen. */
+.profile-success-toast {
+  top: 16px;
+  left: clamp(16px, 4vw, 48px);
+  right: auto;
+  bottom: auto;
+  width: min(498px, calc(100vw - 32px));
+}
+
+@media (max-width: 550px) {
+  .profile-success-toast {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    bottom: auto;
+    width: auto;
+  }
+}
+
 /* Keep the success notification clear of content at every breakpoint. */
 .profile-success-toast {
   top: 110px;
-  right: clamp(24px, 4vw, 48px);
-  left: auto;
+  left: clamp(16px, 4vw, 48px);
+  right: auto;
   bottom: auto;
   width: min(498px, calc(100vw - 48px));
   min-height: 66px;
@@ -846,18 +884,18 @@
 @media (max-width: 1050px) {
   .profile-success-toast {
     top: auto;
-    right: 24px;
+    left: 24px;
     bottom: 24px;
-    left: auto;
+    right: auto;
     width: min(432px, calc(100vw - 48px));
   }
 }
 
 @media (max-width: 550px) {
   .profile-success-toast {
-    right: 16px;
-    bottom: 16px;
     left: 16px;
+    bottom: 16px;
+    right: 16px;
     width: auto;
     min-height: 64px;
     padding: 12px 14px;
@@ -986,5 +1024,24 @@
     width: auto;
     min-height: 64px;
     padding: 12px 14px;
+  }
+}
+
+/* Final placement for the password change confirmation on every screen. */
+.profile-success-toast {
+  top: 16px;
+  left: clamp(16px, 4vw, 48px);
+  right: auto;
+  bottom: auto;
+  width: min(498px, calc(100vw - 32px));
+}
+
+@media (max-width: 550px) {
+  .profile-success-toast {
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    bottom: auto;
+    width: auto;
   }
 }

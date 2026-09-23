@@ -6,6 +6,9 @@ import ChildProfileModal from "../../components/ui/ChildProfileModal";
 import DashboardHeader from "../../components/ui/DashboardHeader";
 import { api } from "../../services/api";
 import { cacheParentChildren, findConnectedChild, findPendingChild, getCachedParentChildren } from "../../services/parentChildrenCache";
+import { useChildProfile } from "../../context/ChildProfileContext";
+import { clearChildInvitationDraft } from "../../services/childInvitationDraft";
+import { clearPendingInvitation } from "../../services/pendingInvitationCache";
 import logo from "../../assets/logo.png";
 import peopleImage from "../../assets/people.png";
 import bookImage from "../../assets/book.jpg";
@@ -47,6 +50,7 @@ function ChildrenUnavailable({ onAction }) {
 
 export default function Children() {
   const navigate = useNavigate();
+  const { resetChild } = useChildProfile();
   const [childInfo, setChildInfo] = useState(() => findConnectedChild(getCachedParentChildren()));
   const [pendingChild, setPendingChild] = useState(() => findPendingChild(getCachedParentChildren()));
   const [studentDetails, setStudentDetails] = useState(null);
@@ -117,6 +121,16 @@ export default function Children() {
   async function cancelInvitation() {
     try {
       await api(`/api/parents/child-setups/${pendingChild.childSetupDraftId || pendingChild.id}/invite/cancel`, { method: "POST" });
+      const cancelledId = pendingChild.childSetupDraftId || pendingChild.id;
+      cacheParentChildren((getCachedParentChildren() || []).filter((item) =>
+        (item.childSetupDraftId || item.id) !== cancelledId,
+      ));
+      clearPendingInvitation();
+      clearChildInvitationDraft();
+      resetChild();
+      ["childSetupDraftId", "childSetupInvitation"].forEach((key) =>
+        sessionStorage.removeItem(key),
+      );
       setPendingChild(null);
       setShowCancel(false);
       showFeedback("cancelled");

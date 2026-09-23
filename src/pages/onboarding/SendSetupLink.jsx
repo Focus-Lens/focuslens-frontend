@@ -30,7 +30,9 @@ export default function SendSetupLink() {
     if (!draftId) return undefined;
 
     let active = true;
-    api(`/api/parents/child-setups/${draftId}/invite/link/create`, { method: "POST" })
+    // The setup invitation is created earlier in the flow. Retrieve its
+    // existing share link here instead of trying to create a duplicate.
+    api(`/api/parents/child-setups/${draftId}/invite/link`, { method: "POST" })
       .then((response) => {
         const invitationUrl = response?.invitationUrl || response?.setupUrl || response?.url;
         if (!invitationUrl) throw new Error("The setup link was not returned by the server.");
@@ -44,8 +46,15 @@ export default function SendSetupLink() {
 
   async function handleCopy() {
     if (!link) return;
-    await navigator.clipboard?.writeText(link).catch(() => {});
-    navigate(nextStep);
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard access is unavailable. Copy the link from the field instead.");
+      }
+      await navigator.clipboard.writeText(link);
+      navigate(nextStep);
+    } catch {
+      setError("We couldn’t copy the setup link. You can copy it directly from the field.");
+    }
   }
 
   return (
@@ -96,14 +105,14 @@ export default function SendSetupLink() {
               <button
                 type="button"
                 className="send-setup-link-back"
-                onClick={() => navigate(-1)}
+                onClick={() => navigate("/profile-setup-choice")}
                 aria-label="Go back"
               >
                 <RiArrowLeftLine />
               </button>
 
               <Button onClick={handleCopy} disabled={isLoadingLink || !link}>
-                {isLoadingLink ? "Creating link..." : "Copy setup link"}
+                {isLoadingLink ? "Loading link..." : "Copy setup link"}
               </Button>
 
             </div>

@@ -16,6 +16,7 @@ import {
   getChildInvitationDraft,
   saveChildInvitationDraft,
 } from "../../services/childInvitationDraft";
+import { cachePendingInvitation } from "../../services/pendingInvitationCache";
 import { api } from "../../services/api";
 import logo from "../../assets/logo.png";
 
@@ -137,7 +138,6 @@ export default function InviteChild() {
     saveChildInvitationDraft({ email: cleanEmail });
     setStatus("sending");
     setErrorMessage("");
-
     try {
       const draftId = sessionStorage.getItem("childSetupDraftId");
       if (!draftId) {
@@ -186,6 +186,7 @@ export default function InviteChild() {
       const missingSteps = [
         !child.preferredName?.trim() && "preferred name",
         !child.lastName?.trim() && "last name",
+        !child.dateOfBirth && "date of birth",
         !child.grade && "grade",
         selectedSubjects.length === 0 && "at least one subject",
         selectedPriorities.length === 0 && "at least one study priority",
@@ -216,6 +217,7 @@ export default function InviteChild() {
       const completed =
         updatedDraft.firstName &&
         updatedDraft.lastName &&
+        updatedDraft.dateOfBirth &&
         updatedDraft.grade &&
         updatedDraft.subjects?.length &&
         updatedDraft.studyPriorities?.length &&
@@ -229,11 +231,33 @@ export default function InviteChild() {
         body: { childEmail: cleanEmail },
       });
       sessionStorage.setItem("childSetupInvitation", JSON.stringify(invitation));
+      cachePendingInvitation({
+        type: "ChildSetup",
+        childSetupInvitationStatus: "Pending",
+        childSetupDraftId: draftId,
+        firstName: child.preferredName,
+        lastName: child.lastName,
+        email: cleanEmail,
+        grade: child.grade,
+        parentEmail: user?.email,
+        childSetupInvitationExpiresAtUtc: invitation?.expiresAtUtc,
+      });
       navigate("/setup/invitation-sent");
     } catch (requestError) {
-      showSendingError(
-        requestError.message || "We couldn’t send the invitation. Please try again.",
-      );
+      const message = requestError.message || "Something went wrong. Please try again.";
+      if (/already.*invited|invitation.*already exists/i.test(message)) {
+        showSendingError("This child already has an invitation. Manage it from your dashboard.");
+      } else if (requestError.status === 401) {
+        showSendingError("Your session expired. Please sign in again.");
+      } else if (requestError.status === 403) {
+        showSendingError("You can’t send this invitation with this account.");
+      } else if (/failed to fetch|network/i.test(message)) {
+        showSendingError("Check your internet connection and try again.");
+      } else if (/complete .* before sending|start the child setup again/i.test(message)) {
+        showSendingError("Finish your child’s profile before sending the invitation.");
+      } else {
+        showSendingError("We couldn’t send the invitation. Please try again.");
+      }
     }
   }
 
@@ -306,7 +330,7 @@ export default function InviteChild() {
             </span>
 
             <div>
-              <b>We couldn&apos;t send the link</b>
+              <b>{method === "email" ? "We couldn’t send the invitation" : "We couldn’t send the link"}</b>
               <small>
                 {errorMessage || "Please try again in a moment."}
               </small>

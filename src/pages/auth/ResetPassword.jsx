@@ -25,6 +25,7 @@ export default function ResetPassword() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
 
   const checks = [
     {
@@ -59,12 +60,22 @@ export default function ResetPassword() {
 
   async function handleReset() {
     try {
+      setError("");
+      setCurrentPasswordError("");
       if (isAccountPasswordChange) {
         await api("/api/users/change-password", {
           method: "POST",
           body: { currentPassword, newPassword: password, confirmPassword },
         });
-        navigate("/profile", { replace: true });
+        navigate("/profile", {
+          replace: true,
+          state: {
+            successToast: {
+              title: "Password changed",
+              description: "Your password has been updated successfully.",
+            },
+          },
+        });
         return;
       }
       const email = sessionStorage.getItem("pendingResetEmail");
@@ -72,7 +83,22 @@ export default function ResetPassword() {
       await api("/api/auth/reset-password", { method: "POST", auth: false, body: { email, otp, newPassword: password } });
       sessionStorage.removeItem("pendingResetEmail");
       navigate("/reset-password/success");
-    } catch (requestError) { setError(requestError.message); }
+    } catch (requestError) {
+      const message = requestError.message || "Something went wrong. Please try again.";
+      const normalizedMessage = message.toLowerCase();
+      const isCurrentPasswordError =
+        isAccountPasswordChange &&
+        (requestError.status === 401 ||
+          normalizedMessage.includes("current password") ||
+          normalizedMessage.includes("invalid email or password") ||
+          normalizedMessage.includes("incorrect password"));
+
+      if (isCurrentPasswordError) {
+        setCurrentPasswordError("Current password is incorrect. Please try again.");
+      } else {
+        setError(message);
+      }
+    }
   }
 
   return (
@@ -90,10 +116,20 @@ export default function ResetPassword() {
               <input
                 type="password"
                 value={currentPassword}
-                onChange={(event) => setCurrentPassword(event.target.value)}
+                aria-invalid={Boolean(currentPasswordError)}
+                aria-describedby={currentPasswordError ? "current-password-error" : undefined}
+                onChange={(event) => {
+                  setCurrentPassword(event.target.value);
+                  if (currentPasswordError) setCurrentPasswordError("");
+                }}
                 placeholder="Enter your current password"
               />
             </div>
+            {currentPasswordError && (
+              <p id="current-password-error" className="password-error current-password-error" role="alert">
+                {currentPasswordError}
+              </p>
+            )}
           </label>
         )}
         {!isAccountPasswordChange && <label className="password-field">

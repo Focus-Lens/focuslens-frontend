@@ -348,13 +348,14 @@
 
 .invite-error-toast {
   position: fixed;
-  top: 106px;
+  top: 112px;
   right: 24px;
   z-index: 200;
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 290px;
+  width: min(430px, calc(100vw - 32px));
+  box-sizing: border-box;
   padding: 12px 16px;
   border: 1px solid #ff5c57;
   border-radius: 16px;
@@ -384,6 +385,8 @@
   margin-top: 4px;
   color: #66606b;
   font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .invite-error-toast button {
@@ -547,6 +550,7 @@
     top: 78px;
     right: 16px;
     left: 16px;
+    width: auto;
     min-width: 0;
   }
 }

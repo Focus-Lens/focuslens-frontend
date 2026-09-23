@@ -15,3 +15,7 @@ export function saveChildInvitationDraft(update) {
     JSON.stringify({ ...getChildInvitationDraft(), ...update })
   );
 }
+
+export function clearChildInvitationDraft() {
+  localStorage.removeItem(cacheKey);
+}

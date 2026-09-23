@@ -62,16 +62,22 @@ export default function ChildStudyContext() {
   const [selectedSupport, setSelectedSupport] = useState(
     child.studyPriorities ?? []
   );
+  const [error, setError] = useState("");
 
   function toggleSupport(option) {
-    setSelectedSupport((current) =>
-      current.includes(option)
-        ? current.filter((item) => item !== option)
-        : [...current, option]
-    );
+    const nextSupport = selectedSupport.includes(option)
+      ? selectedSupport.filter((item) => item !== option)
+      : [...selectedSupport, option];
+    setSelectedSupport(nextSupport);
+    updateChild({ studyPriorities: nextSupport });
+    setError("");
   }
 
   function handleContinue() {
+    if (!selectedSupport.length) {
+      setError("At least one support option is required.");
+      return;
+    }
     updateChild({ studyPriorities: selectedSupport });
 
     const returnTo = searchParams.get("returnTo");
@@ -82,6 +88,11 @@ export default function ChildStudyContext() {
     }
 
     navigate(returnTo === "review" ? "/setup/review" : "/setup/goal");
+  }
+
+  function handleBack() {
+    const returnTo = searchParams.get("returnTo");
+    navigate(returnTo ? `/setup/studies?returnTo=${encodeURIComponent(returnTo)}` : "/setup/studies");
   }
 
   return (
@@ -133,7 +144,7 @@ export default function ChildStudyContext() {
               </p>
 
               {/* Options */}
-              <div className="child-context-options">
+              <div className={`child-context-options ${error ? "invalid" : ""}`}>
                 {supportOptions.map((option) => {
                   const Icon = option.icon;
                   const isSelected = selectedSupport.includes(option.name);
@@ -164,13 +175,14 @@ export default function ChildStudyContext() {
                   );
                 })}
               </div>
+              {error && <p className="setup-required-error">{error}</p>}
 
               {/* Actions */}
               <div className="child-context-actions">
                 <button
                   type="button"
                   className="child-context-back"
-                  onClick={() => navigate(-1)}
+                  onClick={handleBack}
                   aria-label="Go back"
                 >
                   <ChevronLeft size={21} strokeWidth={1.8} />

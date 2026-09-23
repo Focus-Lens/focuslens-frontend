@@ -45,6 +45,13 @@ export default function ChildStudyGoal() {
     navigate("/setup/review");
   }
 
+  function handleBack() {
+    const returnTo = searchParams.get("returnTo");
+    if (returnTo === "review") navigate("/setup/review");
+    else if (returnTo === "waiting") navigate("/setup/review?returnTo=waiting");
+    else navigate("/setup/context");
+  }
+
   return (
     <AuthLayout hideFooter>
       <ParentLayout>
@@ -111,7 +118,7 @@ export default function ChildStudyGoal() {
                 <button
                   type="button"
                   className="child-goal-back"
-                  onClick={() => navigate("/setup/context")}
+                  onClick={handleBack}
                 >
                   Back
                 </button>

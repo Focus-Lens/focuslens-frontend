@@ -53,16 +53,37 @@ export default function ChildStudies() {
 
   const [grade, setGrade] = useState(child.grade);
   const [selectedSubjects, setSelectedSubjects] = useState(child.subjects);
+  const [errors, setErrors] = useState({});
 
   function toggleSubject(subject) {
-    setSelectedSubjects((current) =>
-      current.includes(subject)
-        ? current.filter((item) => item !== subject)
-        : [...current, subject]
-    );
+    const nextSubjects = selectedSubjects.includes(subject)
+      ? selectedSubjects.filter((item) => item !== subject)
+      : [...selectedSubjects, subject];
+    setSelectedSubjects(nextSubjects);
+    updateChild({ subjects: nextSubjects });
+    setErrors((current) => ({ ...current, subjects: "" }));
+  }
+
+  function handleGradeSelect(nextGrade) {
+    setGrade(nextGrade);
+    updateChild({ grade: nextGrade });
+    setErrors((current) => ({ ...current, grade: "" }));
+  }
+
+  function handleBack() {
+    const returnTo = searchParams.get("returnTo");
+    const path = "/setup/basic-info";
+    navigate(returnTo ? `${path}?returnTo=${encodeURIComponent(returnTo)}` : path);
   }
 
   function handleContinue() {
+    const nextErrors = {
+      grade: grade ? "" : "Grade is required.",
+      subjects: selectedSubjects.length ? "" : "At least one subject is required.",
+    };
+    setErrors(nextErrors);
+    if (Object.values(nextErrors).some(Boolean)) return;
+
     updateChild({ grade, subjects: selectedSubjects });
 
     const returnTo = searchParams.get("returnTo");
@@ -132,22 +153,21 @@ export default function ChildStudies() {
                 <button
                   key={item}
                   type="button"
-                  className={`grade-chip ${
-                    grade === item ? "selected" : ""
-                  }`}
-                  onClick={() => setGrade(item)}
+                  className={`grade-chip ${grade === item ? "selected" : ""} ${errors.grade ? "invalid" : ""}`}
+                  onClick={() => handleGradeSelect(item)}
                 >
                   {item}
                 </button>
               ))}
             </div>
+            {errors.grade && <p className="setup-required-error">{errors.grade}</p>}
 
             {/* Subjects */}
             <h3 className="child-studies-section-title subjects-title">
               Subjects
             </h3>
 
-            <div className="subject-options">
+            <div className={`subject-options ${errors.subjects ? "invalid" : ""}`}>
               {subjectsList.map((subject) => {
                 const Icon = subject.icon;
                 const isSelected = selectedSubjects.includes(subject.name);
@@ -170,13 +190,14 @@ export default function ChildStudies() {
                 );
               })}
             </div>
+            {errors.subjects && <p className="setup-required-error">{errors.subjects}</p>}
 
             {/* Actions */}
             <div className="child-studies-actions">
               <button
                 type="button"
                 className="child-studies-back"
-                onClick={() => navigate(-1)}
+                onClick={handleBack}
                 aria-label="Go back"
               >
                 <ChevronLeft size={21} strokeWidth={1.8} />

@@ -132,6 +132,10 @@
   color: #2563eb;
 }
 
+.create-parent-account .field > input {
+  top: -4px;
+}
+
 .create-parent-account .field input {
   width: 100%;
   height: 23px;
@@ -375,12 +379,13 @@
 }
 
 .create-parent-account .google-button-wrap > div {
-  width: min(400px, 100%) !important;
+  width: 100% !important;
   max-width: 100%;
   display: flex;
   justify-content: center;
 }
 
 .create-parent-account .google-button-wrap iframe {
+  width: 100% !important;
   max-width: 100% !important;
 }

@@ -166,7 +166,7 @@ export default function ReviewChildProfile() {
                 <button
                   type="button"
                   className="review-child-back"
-                  onClick={() => navigate("/setup/goal")}
+                  onClick={() => navigate(returnTo === "waiting" ? "/setup/goal?returnTo=waiting" : "/setup/goal")}
                   aria-label="Go back"
                 >
                   <ChevronLeft size={21} strokeWidth={1.8} />

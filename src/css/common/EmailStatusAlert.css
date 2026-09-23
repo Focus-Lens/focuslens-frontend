@@ -1,0 +1,53 @@
+.email-status-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 10px 0 16px;
+  padding: 11px 13px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fff5f5;
+  color: #b42318;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.email-status-alert-icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: #dc2626;
+}
+
+.email-status-alert-content {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px 10px;
+}
+
+.email-status-alert-action {
+  display: inline-flex;
+  align-items: center;
+  min-height: 27px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: #7d39eb;
+  color: #ffffff !important;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none !important;
+  transition: background-color 140ms ease, transform 140ms ease;
+}
+
+.email-status-alert-action:hover {
+  background: #6728cf;
+  transform: translateY(-1px);
+}
+
+.email-status-alert-action:focus-visible {
+  outline: 2px solid #5b21b6;
+  outline-offset: 2px;
+}

@@ -207,9 +207,9 @@ export function ParentLayout({ children, step }) {
   );
 }
 
-export function Card({ title, eyebrow, children, stepper }) {
+export function Card({ title, eyebrow, children, stepper, className = "" }) {
   return (
-    <section className="page-card">
+    <section className={`page-card ${className}`.trim()}>
       {stepper}
 
       {eyebrow && <p className="eyebrow">{eyebrow}</p>}

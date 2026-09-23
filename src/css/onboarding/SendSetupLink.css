@@ -74,6 +74,11 @@
   width: 100%;
 }
 
+/* The shared input rule offsets text upward; center the read-only link here. */
+.send-setup-link-page .field.setup-link-field > input {
+  top: -1px;
+}
+
 /* =========================
    Hint
 ========================= */

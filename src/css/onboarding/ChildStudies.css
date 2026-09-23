@@ -158,6 +158,22 @@
   box-shadow: inset 0 0 0 3px #f5ffd0;
 }
 
+.grade-chip.invalid {
+  border-color: #dc2626;
+}
+
+.subject-options.invalid .subject-chip:not(.selected) {
+  border-color: #dc2626;
+}
+
+.child-studies-page > .setup-required-error {
+  margin: -12px 0 18px !important;
+  color: #c81e1e !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  text-align: left;
+}
+
 /* =========================
    Subjects title
 ========================= */

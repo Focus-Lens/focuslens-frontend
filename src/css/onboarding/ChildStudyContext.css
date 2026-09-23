@@ -152,6 +152,18 @@ font-family: "Nunito";
   border-color: #cdb7f5;
 }
 
+.child-context-options.invalid .child-context-option {
+  border-color: #dc2626;
+}
+
+.child-context-page > .setup-required-error {
+  margin: 10px 0 0 !important;
+  color: #c81e1e !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  text-align: left;
+}
+
 .child-context-option.selected {
   border-color: #7d39eb;
   background: #f5efff;
@@ -392,5 +404,4 @@ font-family: "Nunito";
     height: 38px;
   }
 }
-
 

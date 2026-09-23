@@ -28,28 +28,38 @@ export default function ReviewChildInvitation() {
   useEffect(() => {
     if (invitation) return;
     if (!token) {
-      navigate("/connect-child", {
+      clearAccessInvitation();
+      navigate("/choose-start", {
         replace: true,
-        state: { invitationError: "This private invitation code is invalid or has expired." },
+        state: { invitationError: "Open the invitation link sent to your email. This invitation link is missing or expired." },
       });
       return;
     }
     resolveAccessInvitation(token)
       .then(setInvitation)
       .catch(() => {
-        navigate("/connect-child", {
+        clearAccessInvitation();
+        navigate("/choose-start", {
           replace: true,
-          state: { invitationError: "This private invitation code is invalid or has expired." },
+          state: { invitationError: "This invitation link is invalid or has expired. Please open the latest invitation email." },
         });
       });
   }, [invitation, navigate, token]);
 
-  const childName = invitation?.studentPreferredName || sessionStorage.getItem("pendingInvitationName") || "student";
+  const childName = invitation?.studentPreferredName || sessionStorage.getItem("pendingInvitationName") || "your child";
+  const ageRange = invitation?.studentAgeRange ?? invitation?.ageRange;
+  const childDetails = [
+    typeof ageRange === "string" || typeof ageRange === "number"
+      ? `Age range ${ageRange}`
+      : null,
+    "Preferred name only",
+  ].filter(Boolean).join(" · ");
   const sharedItems = ["Study schedule", "Goals & routines", "Focus-session summaries"];
 
   async function handleConfirmConnection() {
     try {
       setSubmitting(true);
+      setError("");
       const invitationId = getAccessInvitationId(invitation);
       if (!invitationId) throw new Error("This invitation could not be identified. Please reopen the invitation link.");
       await acceptAccessInvitation(invitationId);
@@ -62,6 +72,7 @@ export default function ReviewChildInvitation() {
   async function handleDecline() {
     try {
       setSubmitting(true);
+      setError("");
       const invitationId = getAccessInvitationId(invitation);
       if (!invitationId) throw new Error("This invitation could not be identified. Please reopen the invitation link.");
       await declineAccessInvitation(invitationId);
@@ -77,7 +88,7 @@ export default function ReviewChildInvitation() {
         <Card>
           <div className="review-invitation-page">
 
-            {error ? <p className="password-error">{error}</p> : !invitation ? <p>Loading invitation…</p> : <>
+            {!invitation ? (error ? <p className="password-error">{error}</p> : <p>Loading invitation…</p>) : <>
             <div className="review-invitation-icon">
               <UserRoundPlus size={27} strokeWidth={1.6} />
             </div>
@@ -97,9 +108,7 @@ export default function ReviewChildInvitation() {
 
               <div className="review-invitation-identity-text">
                 <b>{childName}</b>
-                <small>
-                  Private invitation · Preferred name only
-                </small>
+                <small>{childDetails}</small>
               </div>
             </div>
 
@@ -126,6 +135,8 @@ export default function ReviewChildInvitation() {
               </span>
             </div>
 
+            {error && !showDecline && <p className="password-error">{error}</p>}
+
             <div className="review-invitation-actions">
               <Button onClick={handleConfirmConnection} disabled={submitting}>
                 {submitting ? "Updating…" : "Confirm connection"}
@@ -135,7 +146,10 @@ export default function ReviewChildInvitation() {
                 type="button"
                 className="review-invitation-decline"
                 disabled={submitting}
-                onClick={() => setShowDecline(true)}
+                onClick={() => {
+                  setError("");
+                  setShowDecline(true);
+                }}
               >
                 Decline invitation
               </button>
@@ -148,6 +162,8 @@ export default function ReviewChildInvitation() {
       {showDecline && (
         <DeclineInvitationModal
           childName={childName}
+          error={error}
+          submitting={submitting}
           onCancel={() => setShowDecline(false)}
           onConfirm={handleDecline}
         />

@@ -6,13 +6,15 @@ import { ParentLayout, Button } from "../../components/ui/CommonUI";
 import { parent } from "../../data/mockData";
 
 import DashboardHeader from "../../components/ui/DashboardHeader";
-import { useAuth } from "../../context/AuthContext";
 import { useChildProfile } from "../../context/ChildProfileContext";
 import {
-  cachePendingInvitation,
   clearPendingInvitation,
 } from "../../services/pendingInvitationCache";
-import { getChildInvitationDraft } from "../../services/childInvitationDraft";
+import { cacheParentChildren, getCachedParentChildren } from "../../services/parentChildrenCache";
+import {
+  clearChildInvitationDraft,
+  getChildInvitationDraft,
+} from "../../services/childInvitationDraft";
 import { api } from "../../services/api";
 
 import "../../css/onboarding/WaitingForChild.css";
@@ -24,8 +26,7 @@ export default function WaitingForChild({
   onInvitationCancelled,
 }) {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { child } = useChildProfile();
+  const { child, resetChild } = useChildProfile();
 
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -45,14 +46,6 @@ export default function WaitingForChild({
   const displayedGrade = serverInvitation?.grade
     ? serverInvitation.grade.replace(/(\D)(\d)/, "$1 $2")
     : child.grade;
-
-  useEffect(() => {
-    cachePendingInvitation({
-      firstName: displayedName,
-      email: displayedEmail,
-      parentEmail: user?.email,
-    });
-  }, [displayedName, displayedEmail, user?.email]);
 
   useEffect(() => {
     let active = true;
@@ -160,7 +153,16 @@ export default function WaitingForChild({
         method: "POST",
       });
       parent.hasChild = false;
+      const cancelledId = invitation?.draftId || invitation?.childSetupDraftId || draftId;
+      cacheParentChildren((getCachedParentChildren() || []).filter((item) =>
+        (item.childSetupDraftId || item.id) !== cancelledId,
+      ));
       clearPendingInvitation();
+      clearChildInvitationDraft();
+      resetChild();
+      ["childSetupDraftId", "childSetupInvitation"].forEach((key) =>
+        sessionStorage.removeItem(key),
+      );
       setShowCancelModal(false);
       onInvitationCancelled?.(invitation);
       navigate("/overview", { replace: true });

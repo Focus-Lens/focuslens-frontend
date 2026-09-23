@@ -8,7 +8,7 @@ import { ChildProfileProvider } from "./context/ChildProfileContext.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID} locale="en">
       <AuthProvider>
         <ChildProfileProvider>
           <App />

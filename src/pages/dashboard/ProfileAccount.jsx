@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { ShieldCheck } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
@@ -23,13 +22,18 @@ function toProfile(user) {
 export default function ProfileAccount() {
   const { logout, refreshUser, user: signedInUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const routeToast = location.state?.successToast;
   // The signed-in user is already stored in the session, so render it at once
   // and refresh the full profile in the background.
   const [profile, setProfile] = useState(() => toProfile(signedInUser));
   const [draft, setDraft] = useState(() => toProfile(signedInUser));
   const [accountStatus, setAccountStatus] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [message, setMessage] = useState(null);
+  const [message, setMessage] = useState(() => routeToast?.title || null);
+  const [messageDescription, setMessageDescription] = useState(
+    () => routeToast?.description || "Your personal information has been saved.",
+  );
   const [saveError, setSaveError] = useState("");
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -54,6 +58,11 @@ export default function ProfileAccount() {
     const timeoutId = window.setTimeout(() => setMessage(null), 3000);
     return () => window.clearTimeout(timeoutId);
   }, [message]);
+
+  useEffect(() => {
+    if (!routeToast) return;
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, navigate, routeToast]);
 
   function updateDraft(event) {
     const { name, value } = event.target;
@@ -90,6 +99,7 @@ export default function ProfileAccount() {
       setProfile(nextProfile); setDraft(nextProfile); setIsEditing(false); setSaveError("");
       await refreshUser();
       setMessage("Profile updated successfully");
+      setMessageDescription("Your personal information has been saved.");
     } catch (requestError) { setSaveError(requestError.message); }
   }
 
@@ -145,9 +155,7 @@ export default function ProfileAccount() {
 
               <div>
                 <b>{message}</b>
-                <span>
-                  Your personal information has been saved.
-                </span>
+                <span>{messageDescription}</span>
               </div>
 
               <button
