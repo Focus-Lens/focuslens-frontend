@@ -8,39 +8,57 @@ import { Users, UserRoundPlus, Check } from "lucide-react";
 import "../../css/onboarding/ChooseStart.css";
 
 export default function ChooseStart() {
-  const [choice, setChoice] = useState("connect");
   const location = useLocation();
-  const [error, setError] = useState(() => location.state?.invitationError || "");
-  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const { resetChild } = useChildProfile();
+
+  const hasInvitation = Boolean(
+    sessionStorage.getItem("pendingInvitationToken"),
+  );
+
+  const [choice, setChoice] = useState(hasInvitation ? "connect" : "setup");
+  const [error, setError] = useState(
+    () => location.state?.invitationError || "",
+  );
+  const [submitting, setSubmitting] = useState(false);
 
   function handleDoThisLater() {
     navigate("/overview");
   }
 
   async function handleContinue() {
-    if (choice === "connect") {
-      if (!sessionStorage.getItem("pendingInvitationToken")) {
-        setError("Open the invitation link sent to your email to review and confirm your child’s invitation.");
-        return;
-      }
+    if (hasInvitation) {
+      if (choice !== "connect") return;
+
       setError("");
       navigate("/review-invitation");
       return;
     }
+
+    if (choice !== "setup") return;
+
     try {
-      setSubmitting(true); setError("");
+      setSubmitting(true);
+      setError("");
+
       resetChild();
       clearChildInvitationDraft();
-      ["childSetupDraftId", "childSetupInvitation"].forEach((key) =>
-        sessionStorage.removeItem(key),
-      );
-      const draft = await api("/api/parents/child-setups", { method: "POST" });
+
+      ["childSetupDraftId", "childSetupInvitation"].forEach((key) => {
+        sessionStorage.removeItem(key);
+      });
+
+      const draft = await api("/api/parents/child-setups", {
+        method: "POST",
+      });
+
       sessionStorage.setItem("childSetupDraftId", draft.id);
       navigate("/profile-setup-choice");
-    } catch (requestError) { setError(requestError.message); }
-    finally { setSubmitting(false); }
+    } catch (requestError) {
+      setError(requestError.message || "Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -48,7 +66,6 @@ export default function ChooseStart() {
       <div className="choose-start-wrapper">
         <Card>
           <div className="choose-start-page">
-
             <h1 className="choose-start-title">
               How would you like to begin?
             </h1>
@@ -57,13 +74,18 @@ export default function ChooseStart() {
               Choose the option that matches your family.
             </p>
 
-            {/* Connect existing child */}
             <button
               type="button"
               className={`choose-start-option ${
                 choice === "connect" ? "selected" : ""
               }`}
-              onClick={() => setChoice("connect")}
+              disabled={!hasInvitation}
+              aria-disabled={!hasInvitation}
+              onClick={() => {
+                if (!hasInvitation) return;
+                setChoice("connect");
+                setError("");
+              }}
             >
               <span className="choose-start-icon">
                 <Users size={23} strokeWidth={2} />
@@ -83,13 +105,18 @@ export default function ChooseStart() {
               )}
             </button>
 
-            {/* Setup child */}
             <button
               type="button"
               className={`choose-start-option ${
                 choice === "setup" ? "selected" : ""
               }`}
-              onClick={() => setChoice("setup")}
+              disabled={hasInvitation}
+              aria-disabled={hasInvitation}
+              onClick={() => {
+                if (hasInvitation) return;
+                setChoice("setup");
+                setError("");
+              }}
             >
               <span className="choose-start-icon">
                 <UserRoundPlus size={22} strokeWidth={1.8} />
@@ -109,9 +136,10 @@ export default function ChooseStart() {
               )}
             </button>
 
-            {/* Continue */}
             <div className="choose-start-actions">
-              <Button onClick={handleContinue} disabled={submitting}>{submitting ? "Creating..." : "Continue"}</Button>
+              <Button onClick={handleContinue} disabled={submitting}>
+                {submitting ? "Creating..." : "Continue"}
+              </Button>
 
               <button
                 type="button"
@@ -121,8 +149,12 @@ export default function ChooseStart() {
                 I’ll do this later
               </button>
             </div>
-            {error && <p className="choose-start-error" role="alert">{error}</p>}
 
+            {error && (
+              <p className="choose-start-error" role="alert">
+                {error}
+              </p>
+            )}
           </div>
         </Card>
       </div>
