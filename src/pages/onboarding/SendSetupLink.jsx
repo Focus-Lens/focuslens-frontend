@@ -20,6 +20,7 @@ export default function SendSetupLink() {
       : "/overview";
 
   const draftId = sessionStorage.getItem("childSetupDraftId");
+
   const [link, setLink] = useState("");
   const [error, setError] = useState(() =>
     draftId ? "" : "Your child setup draft is missing. Please start setup again.",
@@ -30,30 +31,53 @@ export default function SendSetupLink() {
     if (!draftId) return undefined;
 
     let active = true;
-    // The setup invitation is created earlier in the flow. Retrieve its
-    // existing share link here instead of trying to create a duplicate.
-    api(`/api/parents/child-setups/${draftId}/invite/link`, { method: "POST" })
-      .then((response) => {
-        const invitationUrl = response?.invitationUrl || response?.setupUrl || response?.url;
-        if (!invitationUrl) throw new Error("The setup link was not returned by the server.");
-        if (active) setLink(invitationUrl);
-      })
-      .catch((requestError) => active && setError(requestError.message))
-      .finally(() => active && setIsLoadingLink(false));
 
-    return () => { active = false; };
+    api(`/api/parents/child-setups/${draftId}/invite/link/create`, {
+      method: "POST",
+    })
+      .then((response) => {
+        const invitationUrl =
+          response?.invitationUrl || response?.setupUrl || response?.url;
+
+        if (!invitationUrl) {
+          throw new Error("The setup link was not returned by the server.");
+        }
+
+        if (active) {
+          setLink(invitationUrl);
+          setError("");
+        }
+      })
+      .catch((requestError) => {
+        if (active) {
+          setError(requestError.message || "Could not create the setup link.");
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingLink(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, [draftId]);
 
   async function handleCopy() {
     if (!link) return;
+
     try {
       if (!navigator.clipboard?.writeText) {
-        throw new Error("Clipboard access is unavailable. Copy the link from the field instead.");
+        throw new Error("Clipboard access is unavailable.");
       }
+
       await navigator.clipboard.writeText(link);
       navigate(nextStep);
     } catch {
-      setError("We couldn’t copy the setup link. You can copy it directly from the field.");
+      setError(
+        "We couldn’t copy the setup link. You can copy it directly from the field.",
+      );
     }
   }
 
@@ -62,7 +86,6 @@ export default function SendSetupLink() {
       <div className="send-setup-link-wrapper">
         <Card>
           <div className="send-setup-link-page">
-
             <h1 className="send-setup-link-title">
               Send your child a setup link
             </h1>
@@ -81,6 +104,7 @@ export default function SendSetupLink() {
               readOnly
               className="setup-link-field"
             />
+
             {error && <p className="password-error">{error}</p>}
 
             <p className="send-setup-link-hint">
@@ -101,7 +125,6 @@ export default function SendSetupLink() {
             </div>
 
             <div className="send-setup-link-actions">
-
               <button
                 type="button"
                 className="send-setup-link-back"
@@ -111,16 +134,18 @@ export default function SendSetupLink() {
                 <RiArrowLeftLine />
               </button>
 
-              <Button onClick={handleCopy} disabled={isLoadingLink || !link}>
-                {isLoadingLink ? "Loading link..." : "Copy setup link"}
+              <Button
+                onClick={handleCopy}
+                disabled={isLoadingLink || !link}
+              >
+                {isLoadingLink ? "Creating link..." : "Copy setup link"}
               </Button>
-
             </div>
 
             <p className="send-setup-link-expiry">
-              Expires 7 days after creation. You can cancel it from the dashboard.
+              Expires 7 days after creation. You can cancel it from the
+              dashboard.
             </p>
-
           </div>
         </Card>
       </div>
