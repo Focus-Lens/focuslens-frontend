@@ -74,37 +74,58 @@
   gap: 12px;
 }
 
+.verify-code-field {
+  position: relative;
+  display: block;
+  margin-top: 2px;
+  text-align: left;
+}
+
+.verify-code-field > span {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: fit-content;
+  margin: 0 0 -7px 14px;
+  padding: 0 5px;
+  background: #ffffff;
+  color: #5f6070;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
+}
+
 .verify-code-input {
   width: 100%;
-  height: 44px;
+  height: 52px;
   box-sizing: border-box;
-  padding: 0 20px;
+  padding: 0 16px;
 
-  border: 1px solid #7d35e8;
-  border-radius: 999px;
+  border: 1px solid #8c8c98;
+  border-radius: 28px;
   outline: none;
   background: #ffffff;
   color: #242424;
 
-  font-family: "Nunito", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 0.34em;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.32em;
   text-align: center;
 
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .verify-code-input::placeholder {
-  color: #7130df;
+  color: #a5a5af;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: normal;
 }
 
 .verify-code-input:focus {
-  border-color: #6b24d4;
-  box-shadow: 0 0 0 3px rgba(125, 53, 232, 0.14);
+  border-color: #7d39eb;
+  box-shadow: 0 0 0 2px rgba(125, 57, 235, 0.08);
 }
 
 .open-email-button,
@@ -205,6 +226,15 @@
   background: #dcfce7;
 
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.email-error-toast {
+  border-color: #fecaca;
+  background: #fee2e2;
+}
+
+.email-error-toast .toast-icon {
+  background: #dc2626;
 }
 
 .toast-icon {

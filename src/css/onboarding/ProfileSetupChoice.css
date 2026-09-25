@@ -251,6 +251,19 @@
   transform: scale(0.99);
 }
 
+.profile-setup-actions > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.profile-setup-error {
+  margin: 14px 0 0;
+  color: #c81e1e;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: left;
+}
+
 /* =========================
    I'll do this later
 ========================= */

@@ -1,17 +1,25 @@
 import { useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
-import { parent } from "../../data/mockData";
+import { useAuth } from "../../context/AuthContext";
+import { markSetupDeferred } from "../../services/setupDeferral";
 import "../../css/auth/AccountCreated.css"
 export default function AccountCreated() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  function handleContinue() {
+    // ChooseStart enables the invitation path when an invitation is present,
+    // otherwise it enables the new child setup path and disables the other.
+    navigate("/choose-start");
+  }
 
   function handleDoThisLater() {
-    parent.hasChild = false;
-    navigate("/overview");
+    markSetupDeferred(user);
+    navigate("/overview", { replace: true });
   }
 
   return (
-    <AuthLayout hideFooter>
+    <AuthLayout hideFooter headerVariant="onboarding">
   <div className="account-created-wrapper">
     <Card>
       <div className="account-created-page">
@@ -32,7 +40,7 @@ export default function AccountCreated() {
         </p>
 
         <div className="account-created-actions">
-          <Button to="/choose-start">
+          <Button onClick={handleContinue}>
             Continue
           </Button>
 
@@ -43,7 +51,6 @@ export default function AccountCreated() {
             Do this later
           </Button>
         </div>
-
       </div>
     </Card>
   </div>

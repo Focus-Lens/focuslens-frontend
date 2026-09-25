@@ -1,5 +1,6 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { isSetupDeferred } from "../services/setupDeferral";
 
 import InvitationLanding from "../pages/invitation/InvitationLanding";
 import ContinueInvitation from "../pages/invitation/ContinueInvitation";
@@ -15,6 +16,7 @@ import ForgotPasswordEmailSent from "../pages/auth/ForgotPasswordEmailSent";
 import ResetPassword from "../pages/auth/ResetPassword";
 import ResetPasswordSuccess from "../pages/auth/ResetPasswordSuccess";
 import ResetLinkExpired from "../pages/auth/ResetLinkExpired";
+import VerificationCodeExpired from "../pages/auth/VerificationCodeExpired";
 
 import ChooseStart from "../pages/onboarding/ChooseStart";
 import ProfileSetupChoice from "../pages/onboarding/ProfileSetupChoice";
@@ -41,18 +43,36 @@ import LegalDocument from "../pages/legal/LegalDocument";
 
 function RequireAuth({ children }) {
   const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+  const deferredEmptyOverview =
+    location.pathname === "/overview" && isSetupDeferred(null);
   // The stored session is available synchronously. Keep the current route on
   // screen while the background session check completes instead of replacing it
   // with a loading state on every protected-route transition.
   if (loading && isAuthenticated) return children;
-  return isAuthenticated ? children : <Navigate replace to="/sign-in" />;
+  return isAuthenticated || deferredEmptyOverview
+    ? children
+    : <Navigate replace to="/sign-in" />;
+}
+
+function EntryRoute() {
+  const invitationToken = sessionStorage.getItem("pendingInvitationToken");
+
+  return (
+    <Navigate
+      replace
+      to={invitationToken
+        ? `/invite/${encodeURIComponent(invitationToken)}`
+        : "/invite/continue"}
+    />
+  );
 }
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate replace to="/sign-in" />} />
+        <Route path="/" element={<EntryRoute />} />
 
         <Route path="/invite/:token" element={<InvitationLanding />} />
         <Route
@@ -64,6 +84,10 @@ export default function AppRouter() {
         <Route path="/register" element={<CreateParentAccount />} />
         <Route path="/create-password" element={<CreatePassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route
+          path="/verify-email/expired"
+          element={<VerificationCodeExpired />}
+        />
         <Route path="/account-created" element={<AccountCreated />} />
 
         <Route path="/sign-in" element={<SignIn />} />

@@ -6,6 +6,14 @@ import "../../css/common/CommonUI.css";
 import logo from "../../assets/logo.png";
 import React from "react";
 
+function pendingParentRegistration() {
+  try {
+    return JSON.parse(sessionStorage.getItem("pendingParentRegistration") || "null");
+  } catch {
+    return null;
+  }
+}
+
 export function Button({ children, to, secondary = false, ...props }) {
   const className = secondary ? "button button-secondary" : "button";
 
@@ -41,7 +49,16 @@ export function AuthLayout({
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const { user } = useAuth();
-  const parentName = user?.firstName || "Account";
+  const pendingRegistration = pendingParentRegistration();
+  const parentName = [
+    user?.firstName,
+    pendingRegistration?.firstName,
+    user?.displayName,
+    user?.parentName,
+    user?.name,
+    user?.fullName?.split(/\s+/)[0],
+    user?.email?.split("@")[0],
+  ].find((value) => typeof value === "string" && value.trim())?.trim() || "Account";
   const isOnboardingHeader =
     headerVariant === "onboarding" ||
     location.pathname === "/setup-intro" ||

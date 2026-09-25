@@ -359,7 +359,6 @@ font-family: "Nunito";
     height: 26px;
     font-size: 11px;
   }
-}
 
   .review-child-title {
     font-size: 24px;
@@ -423,6 +422,7 @@ font-family: "Nunito";
     height: 48px;
     font-size: 15px;
   }
+}
 
 
 @media (max-width: 380px) {
@@ -445,5 +445,89 @@ font-family: "Nunito";
 
   .review-child-item-content {
     padding: 12px 10px;
+  }
+}
+
+/* Prevent the review page and its nested layout from overflowing narrow viewports. */
+.auth-main:has(.review-child-wrapper) > .app-shell,
+.auth-main:has(.review-child-wrapper) .parent-main,
+.review-child-wrapper,
+.review-child-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.review-child-wrapper {
+  max-width: 700px;
+}
+
+.review-child-stepper {
+  max-width: 100%;
+  flex-wrap: wrap;
+  white-space: normal;
+  row-gap: 10px;
+}
+
+.review-child-item {
+  grid-template-columns: minmax(0, 1fr) 60px;
+}
+
+.review-child-item-content,
+.review-child-item-content p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.review-child-actions {
+  min-width: 0;
+}
+
+.review-child-confirm {
+  min-width: 0;
+}
+
+@media (min-width: 901px) {
+  .auth-main:has(.review-child-wrapper) {
+    overflow: visible;
+  }
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+  .auth-main:has(.review-child-wrapper) {
+    padding: 30px 20px;
+  }
+
+  .review-child-wrapper {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .review-child-wrapper .page-card {
+    padding: 34px clamp(22px, 4vw, 38px);
+  }
+
+  .review-child-stepper {
+    justify-content: center;
+    column-gap: clamp(12px, 2vw, 20px);
+  }
+}
+
+@media (max-width: 600px) {
+  .auth-main:has(.review-child-wrapper) > .app-shell,
+  .auth-main:has(.review-child-wrapper) .parent-main {
+    min-width: 0;
+  }
+
+  .review-child-wrapper {
+    max-width: none;
+  }
+
+  .review-child-stepper {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+
+  .review-child-item {
+    grid-template-columns: minmax(0, 1fr) 44px;
   }
 }

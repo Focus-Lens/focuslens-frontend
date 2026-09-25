@@ -3,10 +3,17 @@
 ========================================= */
 
 .child-studies-wrapper {
-  width: 700px;
+  width: min(700px, 100%);
   max-width: 100%;
+  min-width: 0;
   margin: 0 auto;
   font-family: "Nunito", sans-serif;
+}
+
+.auth-main:has(.child-studies-wrapper) > .app-shell,
+.auth-main:has(.child-studies-wrapper) .parent-main {
+  width: 100%;
+  min-width: 0;
 }
 
 .child-studies-wrapper .page-card {
@@ -23,6 +30,7 @@
 
 .child-studies-page {
   width: 100%;
+  min-width: 0;
   text-align: center;
 }
 
@@ -32,9 +40,13 @@
 
 .child-studies-stepper {
   width: 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  column-gap: 10px;
+  row-gap: 10px;
   margin-bottom: 26px;
 }
 
@@ -127,6 +139,7 @@
 .grade-options {
   display: flex;
   flex-wrap: wrap;
+  min-width: 0;
   gap: 12px;
   margin-bottom: 25px;
 }
@@ -174,6 +187,86 @@
   text-align: left;
 }
 
+.other-subject-input {
+  width: 100%;
+  margin: -8px 0 20px;
+  text-align: left;
+}
+
+.other-subject-input .field {
+  width: 100%;
+  height: 52px;
+  margin-bottom: 0;
+}
+
+.other-subject-input .field input {
+  position: absolute;
+  top: calc(50% - 2px);
+  left: 14px;
+  width: calc(100% - 28px);
+  height: 28px;
+  margin: 0;
+  line-height: 28px;
+  transform: translateY(-50%);
+}
+
+.add-custom-subject {
+  min-height: 36px;
+  margin-top: 12px;
+  padding: 0 16px;
+  border: 1px solid #7d39eb;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #7130dc;
+  font: inherit;
+  cursor: pointer;
+}
+
+.add-custom-subject:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.custom-subject-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.custom-subject-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 8px 4px 12px;
+  border: 1px solid #d8c7f5;
+  border-radius: 18px;
+  background: #f4ebff;
+  color: #303038;
+  font-size: 13px;
+}
+
+.custom-subject-chip button {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #7130dc;
+  cursor: pointer;
+}
+
+.other-subject-input .setup-required-error {
+  margin: 8px 0 0;
+  color: #c81e1e;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 /* =========================
    Subjects title
 ========================= */
@@ -189,6 +282,7 @@
 .subject-options {
   display: flex;
   flex-wrap: wrap;
+  min-width: 0;
   gap: 11px 15px;
   margin-bottom: 24px;
 }
@@ -252,6 +346,7 @@
 
 .child-studies-actions {
   width: 100%;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -295,6 +390,7 @@
 .child-studies-actions > button:not(.child-studies-back),
 .child-studies-actions > a {
   flex: 1;
+  min-width: 0;
   width: auto;
   height: 53px;
   display: flex;
@@ -317,6 +413,29 @@
   background: #7130d8;
 }
 
+@media (min-width: 601px) and (max-width: 900px) {
+  .auth-main:has(.child-studies-wrapper) {
+    padding: 32px 20px;
+  }
+
+  .child-studies-wrapper .page-card {
+    padding: 34px clamp(22px, 5vw, 40px);
+  }
+
+  .child-studies-stepper {
+    justify-content: center;
+    column-gap: clamp(12px, 2.2vw, 22px);
+  }
+
+  .child-study-step {
+    gap: 6px;
+  }
+
+  .child-study-step-label {
+    font-size: 11px;
+  }
+}
+
 @media (max-width: 600px) {
   .auth-main:has(.child-studies-wrapper) {
     display: block;
@@ -327,7 +446,13 @@
   .child-studies-wrapper {
     width: 100%;
     max-width: none;
+    min-width: 0;
     margin: 0;
+  }
+
+  .auth-main:has(.child-studies-wrapper) > .app-shell,
+  .auth-main:has(.child-studies-wrapper) .parent-main {
+    min-width: 0;
   }
 
   .child-studies-wrapper .page-card {
@@ -338,6 +463,7 @@
 
   .child-studies-stepper {
     justify-content: space-between;
+    flex-wrap: nowrap;
     gap: 0;
     margin-bottom: 22px;
     overflow: visible;
@@ -379,6 +505,7 @@
   }
 
   .grade-chip {
+    max-width: 100%;
     height: 42px;
     padding: 0 13px;
     font-size: 12px;

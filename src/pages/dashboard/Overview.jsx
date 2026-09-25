@@ -56,17 +56,19 @@ export default function Overview() {
       if (!active) return null;
       cacheParentChildren(children);
       const firstChild = findConnectedChild(children);
-      const pendingChild = findPendingChild(children);
+      const localPending = getPendingInvitationForUser(user?.email);
+      const pendingChild = findPendingChild(children) || (!firstChild ? localPending : null);
       setPendingChildInfo(pendingChild);
       setChildInfo(firstChild);
       if (firstChild) {
         clearPendingInvitation();
-      } else if (pendingChild) {
+      } else if (findPendingChild(children)) {
         cachePendingInvitation({
+          ...localPending,
           firstName: pendingChild.firstName,
           parentEmail: user?.email,
         });
-      } else {
+      } else if (!localPending) {
         clearPendingInvitation();
       }
       if (!firstChild) {
@@ -92,7 +94,7 @@ export default function Overview() {
       // Keep the last locally cached invitation visible if the request fails.
     });
     return () => { active = false; };
-  }, [user?.email]);
+  }, [user?.email, user?.userId]);
 
   const childName = childInfo?.firstName || "your child";
 

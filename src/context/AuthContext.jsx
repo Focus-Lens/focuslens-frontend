@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { api, clearSession, saveTokens } from "../services/api";
+import { clearSetupDeferred } from "../services/setupDeferral";
 
 const AuthContext = createContext(null);
 
@@ -38,10 +39,12 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     const refreshToken = sessionStorage.getItem("refreshToken");
+    const currentUser = storedUser();
     try {
       if (refreshToken) await api("/api/auth/logout", { method: "POST", body: { refreshToken } });
     } finally {
       clearSession();
+      clearSetupDeferred(currentUser);
       setUser(null);
     }
   }, []);

@@ -21,7 +21,6 @@ import "../../css/onboarding/WaitingForChild.css";
 
 export default function WaitingForChild({
   childName,
-  childEmail,
   pendingChild,
   onInvitationCancelled,
 }) {
@@ -37,15 +36,29 @@ export default function WaitingForChild({
 
   const displayedName =
     serverInvitation?.firstName || pendingChild?.firstName || childName || child.preferredName || "your child";
-  const displayedEmail =
-    serverInvitation?.targetEmail ||
-    pendingChild?.email ||
-    childEmail ||
-    getChildInvitationDraft().email ||
-    child.email;
   const displayedGrade = serverInvitation?.grade
     ? serverInvitation.grade.replace(/(\D)(\d)/, "$1 $2")
-    : child.grade;
+    : child.grade === "Other"
+      ? child.otherGrade || "Other"
+      : child.grade;
+  const customSubjects = child.otherSubjects?.length
+    ? child.otherSubjects
+    : child.otherSubject?.trim()
+      ? [child.otherSubject.trim()]
+      : [];
+  const displayedSubjects = (child.subjects || [])
+    .flatMap((subject) => subject === "Other" ? customSubjects : [subject])
+    .filter(Boolean);
+  const childDetails = [
+    ["Name", [displayedName, child.lastName].filter(Boolean).join(" ")],
+    ["Date of birth", child.dateOfBirth],
+    ["Grade", displayedGrade],
+    ["Subjects", displayedSubjects.join(", ")],
+    ["Study priorities", child.studyPriorities?.join(" · ")],
+    ["Suggested goal", child.suggestedGoal || (child.studyTimeGoal?.value
+      ? `${child.studyTimeGoal.value} hours per week`
+      : "")],
+  ].filter(([, value]) => value);
 
   useEffect(() => {
     let active = true;
@@ -223,14 +236,17 @@ export default function WaitingForChild({
             </div>
 
             <div className="invitation-info">
-              <span>
-                {displayedName} · {displayedGrade}
-              </span>
-
-              <span className="info-dot">•</span>
-
-              <span>Email: {displayedEmail}</span>
+              <span>{displayedName}{displayedGrade ? ` · ${displayedGrade}` : ""}</span>
             </div>
+
+            <dl className="waiting-child-details">
+              {childDetails.map(([label, value]) => (
+                <div className="waiting-child-detail" key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
 
             <p className="invitation-expiry">
               Expires in {child.invitationExpiresIn} · Activation and sharing

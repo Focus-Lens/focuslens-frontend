@@ -97,6 +97,34 @@
   line-height: 1.5;
 }
 
+.waiting-child-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #faf8ff;
+}
+
+.waiting-child-detail {
+  min-width: 0;
+}
+
+.waiting-child-detail dt {
+  color: #777783;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.waiting-child-detail dd {
+  margin: 2px 0 0;
+  color: #302f35;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
 .info-dot {
   color: #29282e;
   font-size: 14px;
@@ -462,5 +490,11 @@
   .invitation-info,
   .setup-description {
     font-size: 12px;
+  }
+
+  .waiting-child-details {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 9px;
+    padding: 12px;
   }
 }

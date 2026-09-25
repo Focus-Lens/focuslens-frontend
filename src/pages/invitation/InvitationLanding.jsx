@@ -21,7 +21,11 @@ export default function InvitationLanding() {
         sessionStorage.setItem("pendingInvitationName", data.studentPreferredName);
         setInvitation(data);
       })
-      .catch((requestError) => setError(requestError.message));
+      .catch((requestError) => {
+        sessionStorage.removeItem("pendingInvitationToken");
+        sessionStorage.removeItem("pendingInvitationName");
+        setError(requestError.message);
+      });
   }, [token]);
 
   const childName = invitation?.studentPreferredName;

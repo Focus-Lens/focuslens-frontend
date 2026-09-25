@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import GoogleAuthButton from "../../components/ui/GoogleAuthButton";
 import EmailStatusAlert from "../../components/ui/EmailStatusAlert";
 import {
@@ -8,7 +8,6 @@ import {
   Card,
   Field,
 } from "../../components/ui/CommonUI";
-import { useChildProfile } from "../../context/ChildProfileContext";
 import { api } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { getGoogleProfile } from "../../services/googleIdentity";
@@ -24,8 +23,11 @@ const REMEMBERED_EMAIL_KEY = "focusLensRememberedSignInEmail";
 
 export default function SignIn({ restoreAccount = false }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
-  const { child } = useChildProfile();
+  const hasPendingInvitation = Boolean(
+    sessionStorage.getItem("pendingInvitationToken"),
+  );
 
   const [email, setEmail] = useState(() =>
     restoreAccount ? "" : localStorage.getItem(REMEMBERED_EMAIL_KEY) || "",
@@ -81,6 +83,7 @@ export default function SignIn({ restoreAccount = false }) {
           });
 
       login(response);
+      const pendingInvitationToken = sessionStorage.getItem("pendingInvitationToken");
 
       if (!restoreAccount) {
         if (rememberMe && email.trim()) {
@@ -91,9 +94,12 @@ export default function SignIn({ restoreAccount = false }) {
       }
 
       navigate(
-        sessionStorage.getItem("pendingInvitationToken")
-          ? "/choose-start"
-          : "/overview",
+        restoreAccount
+          ? "/overview"
+          : (location.state?.returnTo !== "/account-created" && location.state?.returnTo) ||
+            (pendingInvitationToken
+              ? "/choose-start"
+              : "/overview"),
       );
     } catch (requestError) {
       if (isStudentEmailError(requestError)) {
@@ -156,7 +162,9 @@ export default function SignIn({ restoreAccount = false }) {
         <p className="signin-subtitle">
           {restoreAccount
             ? "Enter the details for the account you want to restore."
-            : `Sign in to continue with ${child.preferredName || "your child"}’s invitation.`}
+            : hasPendingInvitation
+              ? "Sign in to continue with your child’s invitation."
+              : "Sign in to continue"}
         </p>
 
         <form

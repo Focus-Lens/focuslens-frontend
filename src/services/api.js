@@ -31,8 +31,9 @@ export function clearSession() {
   );
 }
 
-async function parseResponse(response) {
+async function parseResponse(response, responseType) {
   if (response.status === 204) return null;
+  if (response.ok && responseType === "blob") return response.blob();
   const contentType = response.headers.get("content-type") || "";
   const payload = contentType.includes("json")
     ? await response.json()
@@ -83,7 +84,7 @@ async function refreshAccessToken() {
 }
 
 export async function api(path, options = {}) {
-  const { auth = true, retry = true, headers, body, ...init } = options;
+  const { auth = true, retry = true, headers, body, responseType, ...init } = options;
   const requestHeaders = new Headers(headers);
   // ngrok's free tunnel can otherwise return its browser-warning HTML instead
   // of the API response.
@@ -109,7 +110,7 @@ export async function api(path, options = {}) {
     if (nextTokens) return api(path, { ...options, retry: false });
     clearSession();
   }
-  return parseResponse(response);
+  return parseResponse(response, responseType);
 }
 
 export const apiUrl = (path) => `${API_BASE_URL}${path}`;

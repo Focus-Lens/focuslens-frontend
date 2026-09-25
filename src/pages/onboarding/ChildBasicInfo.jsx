@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ParentLayout,
@@ -8,7 +8,8 @@ import {
   AuthLayout,
 } from "../../components/ui/CommonUI";
 import { useChildProfile } from "../../context/ChildProfileContext";
-import { Info, ArrowLeft, UserRound } from "lucide-react";
+import { api } from "../../services/api";
+import { Info, ChevronLeft, UserRound } from "lucide-react";
 import "../../css/onboarding/ChildBasicInfo.css";
 
 export default function ChildBasicInfo() {
@@ -20,6 +21,88 @@ export default function ChildBasicInfo() {
   const [lastName, setLastName] = useState(child.lastName || "");
   const [dateOfBirth, setDateOfBirth] = useState(child.dateOfBirth || "");
   const [errors, setErrors] = useState({});
+  const [profileImageUrl, setProfileImageUrl] = useState("");
+  const [isLoadingProfileImage, setIsLoadingProfileImage] = useState(false);
+  const [isSavingProfileImage, setIsSavingProfileImage] = useState(false);
+  const [profileImageError, setProfileImageError] = useState("");
+  const profileImageObjectUrl = useRef("");
+  const draftId = sessionStorage.getItem("childSetupDraftId");
+
+  function displayProfileImage(imageBlob) {
+    if (profileImageObjectUrl.current) {
+      URL.revokeObjectURL(profileImageObjectUrl.current);
+    }
+    const objectUrl = URL.createObjectURL(imageBlob);
+    profileImageObjectUrl.current = objectUrl;
+    setProfileImageUrl(objectUrl);
+  }
+
+  useEffect(() => {
+    if (!draftId) return undefined;
+    let active = true;
+    const imagePath = `/api/parents/child-setups/${encodeURIComponent(draftId)}/profile-image`;
+
+    async function loadProfileImage() {
+      setIsLoadingProfileImage(true);
+      setProfileImageError("");
+      try {
+        const imageBlob = await api(imagePath, { responseType: "blob" });
+        if (active && imageBlob?.size) displayProfileImage(imageBlob);
+      } catch (requestError) {
+        if (active && requestError.status !== 404) {
+          setProfileImageError(requestError.message || "Could not load the profile image.");
+        }
+      } finally {
+        if (active) setIsLoadingProfileImage(false);
+      }
+    }
+
+    void loadProfileImage();
+    return () => {
+      active = false;
+    };
+  // This page loads the image for the current child setup draft once on entry.
+  }, [draftId]);
+
+  useEffect(() => () => {
+    if (profileImageObjectUrl.current) {
+      URL.revokeObjectURL(profileImageObjectUrl.current);
+      profileImageObjectUrl.current = "";
+    }
+  }, []);
+
+  async function handleProfileImageChange(event) {
+    const imageFile = event.target.files?.[0];
+    event.target.value = "";
+    if (!imageFile || !draftId) return;
+    if (!imageFile.type.startsWith("image/")) {
+      setProfileImageError("Choose an image file to use as the profile picture.");
+      return;
+    }
+
+    setIsSavingProfileImage(true);
+    setProfileImageError("");
+    const imagePath = `/api/parents/child-setups/${encodeURIComponent(draftId)}/profile-image`;
+    try {
+      const imageForm = new FormData();
+      imageForm.append("file", imageFile);
+      await api(imagePath, { method: "PUT", body: imageForm });
+      displayProfileImage(imageFile);
+
+      try {
+        const savedImage = await api(imagePath, { responseType: "blob" });
+        if (savedImage?.size) displayProfileImage(savedImage);
+      } catch (requestError) {
+        if (requestError.status !== 404) {
+          setProfileImageError(requestError.message || "Image saved, but could not refresh it from the server.");
+        }
+      }
+    } catch (requestError) {
+      setProfileImageError(requestError.message || "Could not save the profile image.");
+    } finally {
+      setIsSavingProfileImage(false);
+    }
+  }
 
   const steps = [
     "Basic info",
@@ -101,9 +184,11 @@ export default function ChildBasicInfo() {
                 You can safely go back without losing entered information.
               </p>
 
-              <div className="child-basic-avatar-row">
+              <label className="child-basic-avatar-row" htmlFor="child-profile-image">
                 <span className="child-basic-avatar">
-                  {name.trim() ? (
+                  {profileImageUrl ? (
+                    <img src={profileImageUrl} alt={`${name || "Child"} profile`} />
+                  ) : name.trim() ? (
                     name.trim()[0].toUpperCase()
                   ) : (
                     <UserRound
@@ -116,9 +201,29 @@ export default function ChildBasicInfo() {
 
                 <div className="child-basic-avatar-text">
                   <b>Profile avatar or initial</b>
-                  <small>Optional · Change or upload later</small>
+                  <small>
+                    {isLoadingProfileImage
+                      ? "Loading profile image…"
+                      : isSavingProfileImage
+                        ? "Saving profile image…"
+                        : "Optional · Choose or change image"}
+                  </small>
                 </div>
-              </div>
+              </label>
+              <input
+                id="child-profile-image"
+                className="child-basic-avatar-input"
+                type="file"
+                accept="image/*"
+                onChange={handleProfileImageChange}
+                disabled={!draftId || isLoadingProfileImage || isSavingProfileImage}
+                aria-label="Upload child profile image"
+              />
+              {profileImageError && (
+                <p className="child-basic-image-error" role="alert">
+                  {profileImageError}
+                </p>
+              )}
 
               <Field
                 className={errors.name ? "setup-field-error" : ""}
@@ -172,13 +277,16 @@ export default function ChildBasicInfo() {
                 <button
                   type="button"
                   className="child-basic-back"
+                  disabled={isSavingProfileImage}
                   onClick={handleBack}
                   aria-label="Go back"
                 >
-                  <ArrowLeft size={20} strokeWidth={1.8} />
+                  <ChevronLeft size={21} strokeWidth={1.8} />
                 </button>
 
-                <Button onClick={handleContinue}>Continue</Button>
+                <Button onClick={handleContinue} disabled={isSavingProfileImage}>
+                  Continue
+                </Button>
               </div>
             </div>
           </Card>

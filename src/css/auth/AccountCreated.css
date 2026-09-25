@@ -81,6 +81,12 @@
   align-items: center;
 }
 
+.account-created-error {
+  margin: 12px 0 0;
+  color: #c81e1e;
+  font-size: 13px;
+}
+
 
 /* Continue */
 

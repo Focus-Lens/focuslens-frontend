@@ -104,6 +104,9 @@ export default function ResetPassword() {
   return (
     <AuthLayout hideFooter>
       <Card title="Create a new password">
+        {!isAccountPasswordChange && (
+          <h2 className="reset-email-prompt">Check your email</h2>
+        )}
         <p className="auth-subtitle">
           {isAccountPasswordChange
             ? "Enter your current password, then choose a secure new one."
@@ -133,7 +136,7 @@ export default function ResetPassword() {
           </label>
         )}
         {!isAccountPasswordChange && <label className="password-field">
-          <span>Verification code</span>
+          <span>6-digit code</span>
           <div className={`password-input-wrap ${otp.length === 6 ? "password-valid" : ""}`}>
             <input
               className="verification-code-input"
@@ -141,7 +144,7 @@ export default function ResetPassword() {
               inputMode="numeric"
               maxLength="6"
               onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
-              placeholder="6-digit code"
+              placeholder="Enter 6-digit code"
             />
           </div>
           {otp.length === 6 && <p className="password-good">Code entered</p>}

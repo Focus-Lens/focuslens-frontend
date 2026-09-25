@@ -49,6 +49,19 @@ export default function ReviewChildProfile() {
     child.studyPriorities?.length > 0
       ? child.studyPriorities.join(" · ")
       : "No priorities selected · Optional";
+  const otherSubjects = child.otherSubjects?.length
+    ? child.otherSubjects
+    : child.otherSubject?.trim()
+      ? [child.otherSubject.trim()]
+      : [];
+  const subjects = (child.subjects || [])
+    .flatMap((subject) =>
+      subject === "Other" ? otherSubjects.length ? otherSubjects : ["Other"] : [subject],
+    )
+    .filter(Boolean);
+  const displayGrade = child.grade === "Other"
+    ? child.otherGrade?.trim() || "Other"
+    : child.grade;
 
   function editPath(path) {
     return returnTo === "waiting"
@@ -66,7 +79,7 @@ export default function ReviewChildProfile() {
     },
     {
       title: "Grade & subjects",
-      value: `${child.grade || "No grade selected"} · ${(child.subjects || []).join(", ") || "No subjects selected"}`,
+      value: `${displayGrade || "No grade selected"} · ${subjects.join(", ") || "No subjects selected"}`,
       editPath: editPath("/setup/studies"),
     },
     {

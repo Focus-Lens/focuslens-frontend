@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AuthLayout } from "../../components/ui/CommonUI";
 import { api } from "../../services/api";
-import { Mail, CheckCircle2, X, Clock3 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { Mail, CheckCircle2, CircleAlert, X, Clock3 } from "lucide-react";
 import "../../css/auth/VerifyEmail.css";
 
 function maskEmail(email) {
@@ -15,11 +16,25 @@ function maskEmail(email) {
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
 
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState(() =>
+    location.state?.codeResent ? "Verification code sent" : "",
+  );
   const [isOpening, setIsOpening] = useState(false);
   const [otp, setOtp] = useState("");
-  const [error, setError] = useState("");
+  const [errorToast, setErrorToast] = useState("");
+  const errorToastTimer = useRef(null);
+
+  useEffect(() => () => window.clearTimeout(errorToastTimer.current), []);
+
+  function showError(message) {
+    setToast("");
+    setErrorToast(message);
+    window.clearTimeout(errorToastTimer.current);
+    errorToastTimer.current = window.setTimeout(() => setErrorToast(""), 3000);
+  }
 
   const email =
     sessionStorage.getItem("pendingParentEmail") || "";
@@ -28,11 +43,34 @@ export default function VerifyEmail() {
     if (isOpening) return;
     setIsOpening(true);
     try {
-      await api("/api/auth/verify-email", { method: "POST", auth: false, body: { email, otp } });
+      const verification = await api("/api/auth/verify-email", { method: "POST", auth: false, body: { email, otp } });
+      if (verification?.tokens?.accessToken) {
+        let registration = null;
+        try {
+          registration = JSON.parse(sessionStorage.getItem("pendingParentRegistration") || "null");
+        } catch {
+          registration = null;
+        }
+        login({
+          ...verification,
+          firstName: verification.firstName || verification.user?.firstName || registration?.firstName,
+          lastName: verification.lastName || verification.user?.lastName || registration?.lastName,
+          email: verification.email || registration?.email || email,
+        });
+        sessionStorage.removeItem("pendingParentRegistration");
+      }
       setToast("Email verified");
-      navigate("/choose-start");
+      navigate("/account-created");
     } catch (requestError) {
-      setError(requestError.message);
+      const message = requestError.message || "";
+      if (
+        /code|otp/i.test(message) &&
+        /invalid|expired|no longer valid|already used/i.test(message)
+      ) {
+        navigate("/verify-email/expired", { replace: true });
+        return;
+      }
+      showError(requestError.message || "We couldn’t verify your email. Please try again.");
       setIsOpening(false);
     }
   }
@@ -41,7 +79,9 @@ export default function VerifyEmail() {
     try {
       await api("/api/auth/resend-verification", { method: "POST", auth: false, body: { email } });
       setToast("Verification code sent");
-    } catch (requestError) { setError(requestError.message); }
+    } catch (requestError) {
+      showError(requestError.message || "Could not resend the code. Please try again.");
+    }
   }
 
   function useDifferentEmail() {
@@ -77,6 +117,31 @@ export default function VerifyEmail() {
         </div>
       )}
 
+      {errorToast && (
+        <div className="email-toast email-error-toast" role="alert" aria-live="assertive">
+          <div className="toast-icon">
+            <CircleAlert size={22} strokeWidth={2.5} />
+          </div>
+
+          <div className="toast-content">
+            <div className="toast-title">Couldn’t complete verification</div>
+            <div className="toast-description">{errorToast}</div>
+          </div>
+
+          <button
+            type="button"
+            className="toast-close"
+            onClick={() => {
+              window.clearTimeout(errorToastTimer.current);
+              setErrorToast("");
+            }}
+            aria-label="Close error message"
+          >
+            <X size={20} />
+          </button>
+        </div>
+      )}
+
       <main className="verify-email-page">
         <section className="verify-email-card">
           <div className="mail-icon">
@@ -91,7 +156,10 @@ export default function VerifyEmail() {
           </p>
 
           <div className="verify-email-actions">
-            <input className="verify-code-input" inputMode="numeric" maxLength="6" value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))} placeholder="6-digit code" aria-label="Verification code" />
+            <label className="verify-code-field">
+              <span>6-digit code</span>
+              <input className="verify-code-input" inputMode="numeric" maxLength="6" value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))} placeholder="Enter 6-digit code" aria-label="6-digit code" />
+            </label>
             <button type="button" className="open-email-button" onClick={verifyCode} disabled={isOpening || otp.length !== 6}>
               {isOpening ? "Verifying..." : "Verify email"}
             </button>
@@ -104,8 +172,6 @@ export default function VerifyEmail() {
               Resend code
             </button>
           </div>
-          {error && <p className="password-error">{error}</p>}
-
           <button
             type="button"
             className="different-email-button"

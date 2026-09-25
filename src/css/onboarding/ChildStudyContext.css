@@ -335,7 +335,6 @@ font-family: "Nunito";
     height: 26px;
     font-size: 11px;
   }
-}
 
   .child-context-title {
     font-size: 24px;
@@ -384,6 +383,7 @@ font-family: "Nunito";
     height: 48px;
     font-size: 15px;
   }
+}
 
 
 @media (max-width: 380px) {
@@ -402,6 +402,71 @@ font-family: "Nunito";
   .child-context-option-icon {
     width: 38px;
     height: 38px;
+  }
+}
+
+/* Keep the nested onboarding layout from sizing itself to the stepper. */
+.auth-main:has(.child-context-wrapper) > .app-shell,
+.auth-main:has(.child-context-wrapper) .parent-main,
+.child-context-wrapper,
+.child-context-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.child-context-wrapper {
+  max-width: 700px;
+}
+
+.child-context-stepper {
+  max-width: 100%;
+  flex-wrap: wrap;
+  white-space: normal;
+  row-gap: 10px;
+}
+
+.child-context-option,
+.child-context-option-text {
+  min-width: 0;
+}
+
+.child-context-actions > button:last-child {
+  min-width: 0;
+}
+
+@media (min-width: 601px) and (max-width: 900px) {
+  .auth-main:has(.child-context-wrapper) {
+    padding: 30px 20px;
+  }
+
+  .child-context-wrapper {
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .child-context-wrapper .page-card {
+    padding: 36px clamp(22px, 5vw, 40px);
+  }
+
+  .child-context-stepper {
+    justify-content: center;
+    column-gap: clamp(12px, 2vw, 20px);
+  }
+}
+
+@media (max-width: 600px) {
+  .auth-main:has(.child-context-wrapper) > .app-shell,
+  .auth-main:has(.child-context-wrapper) .parent-main {
+    min-width: 0;
+  }
+
+  .child-context-wrapper {
+    max-width: none;
+  }
+
+  .child-context-stepper {
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
 }
 

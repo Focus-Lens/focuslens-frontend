@@ -9,13 +9,18 @@ import {
 } from "lucide-react";
 
 import { Card } from "../../components/ui/CommonUI";
-import { parent } from "../../data/mockData";
 import { useAuth } from "../../context/AuthContext";
 import { useChildProfile } from "../../context/ChildProfileContext";
 import {
   getChildInvitationDraft,
   saveChildInvitationDraft,
 } from "../../services/childInvitationDraft";
+import {
+  createEmailChildSetupInvitation,
+  createLinkChildSetupInvitation,
+  getChildSetupValidationMessage,
+  getDraftProfileSetupMode,
+} from "../../services/childSetupFlow";
 import { cachePendingInvitation } from "../../services/pendingInvitationCache";
 import { api } from "../../services/api";
 import logo from "../../assets/logo.png";
@@ -31,22 +36,84 @@ const steps = [
   "Invite",
 ];
 
+const subjectTypes = {
+  Mathematics: "Math", Math: "Math", English: "English", History: "History",
+  Physics: "Physics", Chemistry: "Chemistry", Biology: "Biology",
+  Geography: "Geography", Languages: "Languages", "Computer Science": "ComputerScience",
+  ComputerScience: "ComputerScience", Other: "Other",
+};
+
+const priorities = {
+  "Help my child build a study routine": "BuildStudyRoutine",
+  "Help my child stay focused": "StayFocused",
+  "Help my child understand difficult topics": "UnderstandDifficultTopics",
+  "Support my child’s exam preparation": "ExamPreparation",
+  "Encourage my child to reach study goals": "ReachStudyGoals",
+  BuildStudyRoutine: "BuildStudyRoutine",
+  StayFocused: "StayFocused",
+  UnderstandDifficultTopics: "UnderstandDifficultTopics",
+  ExamPreparation: "ExamPreparation",
+  ReachStudyGoals: "ReachStudyGoals",
+};
+
+function buildChildSetupPayload(child) {
+  const customSubjects = child.otherSubjects?.length
+    ? child.otherSubjects
+    : child.otherSubject?.trim()
+      ? [child.otherSubject.trim()]
+      : [];
+  const subjects = (child.subjects || []).flatMap((subject) =>
+    subject === "Other"
+      ? customSubjects.map((customName) => ({ type: "Other", customName }))
+      : [{
+          type: subjectTypes[subject] || "Other",
+          customName: subjectTypes[subject] ? null : subject,
+        }],
+  );
+  const studyPriorities = (child.studyPriorities || [])
+    .map((item) => priorities[item])
+    .filter(Boolean);
+  const targetHours = Number(child.studyTimeGoal?.value);
+
+  return {
+    profileSetupMode: child.profileSetupMode,
+    firstName: child.preferredName?.trim(),
+    lastName: child.lastName?.trim(),
+    dateOfBirth: child.dateOfBirth || null,
+    grade: child.grade === "Other"
+      ? child.otherGrade?.trim() || null
+      : child.grade?.replace(/\s/g, "") || null,
+    subjects,
+    studyPriorities,
+    studyTimeGoal: {
+      period: "Weekly",
+      targetMinutes: Number.isFinite(targetHours) && targetHours > 0
+        ? Math.round(targetHours * 60)
+        : null,
+      days: null,
+      startDate: Number.isFinite(targetHours) && targetHours > 0
+        ? new Date().toISOString().slice(0, 10)
+        : null,
+    },
+  };
+}
+
 export default function InviteChild() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { child, updateChild } = useChildProfile();
-  const parentName = user?.firstName || parent.firstName || "Account";
+  const parentName = [
+    user?.firstName,
+    user?.displayName,
+    user?.parentName,
+    user?.name,
+    user?.fullName,
+    user?.email?.split("@")[0],
+  ].find((value) => typeof value === "string" && value.trim())?.trim() || "Parent";
 
-  function buildInviteLink() {
-    return `https://focuslens.app/invite/${encodeURIComponent(
-      child.preferredName || "demo"
-    )}`;
-  }
-
-  const [method, setMethod] = useState(
-    searchParams.get("method") === "link" ? "link" : "email"
-  );
+  const initialMethod = searchParams.get("method") === "email" ? "email" : "link";
+  const [method, setMethod] = useState(initialMethod);
 
   const [email, setEmail] = useState(
     () => getChildInvitationDraft().email || child.email
@@ -55,15 +122,18 @@ export default function InviteChild() {
   const [errorMessage, setErrorMessage] = useState("");
   const [showErrorToast, setShowErrorToast] = useState(false);
 
-  const [inviteLink, setInviteLink] = useState(() =>
-    searchParams.get("method") === "link" ? buildInviteLink() : ""
+  const [inviteLink, setInviteLink] = useState("");
+  const [isLoadingLink, setIsLoadingLink] = useState(false);
+  const [isDraftReady, setIsDraftReady] = useState(
+    () => !sessionStorage.getItem("childSetupDraftId"),
   );
   const [showCopiedModal, setShowCopiedModal] = useState(false);
   const [showEmailMessage, setShowEmailMessage] = useState(false);
-  const [showLinkMessage, setShowLinkMessage] = useState(false);
+  const [showLinkMessage, setShowLinkMessage] = useState(initialMethod === "link");
 
   const sendingTimer = useRef(null);
   const errorToastTimer = useRef(null);
+  const linkRequestInFlight = useRef(false);
 
   const isSending = status === "sending";
   const hasFailed = status === "failed";
@@ -75,6 +145,57 @@ export default function InviteChild() {
     };
   }, []);
 
+  async function loadInviteLink() {
+    if (inviteLink) return inviteLink;
+    if (linkRequestInFlight.current) return null;
+
+    const draftId = sessionStorage.getItem("childSetupDraftId");
+    if (!draftId) {
+      showSendingError("Your child setup draft is missing. Please start setup again.");
+      return null;
+    }
+
+    linkRequestInFlight.current = true;
+    setIsLoadingLink(true);
+    setShowErrorToast(false);
+    try {
+      await api(`/api/parents/child-setups/${encodeURIComponent(draftId)}`, {
+        method: "PUT",
+        body: buildChildSetupPayload(child),
+      });
+      const response = await createLinkChildSetupInvitation(draftId, api);
+      const url = response?.invitationUrl || response?.setupUrl || response?.url;
+      if (!url) throw new Error("The server did not return an invitation link.");
+      sessionStorage.setItem("childSetupInvitation", JSON.stringify(response));
+      setInviteLink(url);
+      return url;
+    } catch (requestError) {
+      showSendingError(
+        getChildSetupValidationMessage(requestError) ||
+          requestError.message ||
+          "Could not create the invitation link.",
+      );
+      return null;
+    } finally {
+      linkRequestInFlight.current = false;
+      setIsLoadingLink(false);
+    }
+  }
+
+  useEffect(() => {
+    if (method !== "link" || !isDraftReady) return;
+    let active = true;
+    queueMicrotask(() => {
+      // This request updates loading/error state after its asynchronous network response.
+      if (active) void loadInviteLink();
+    });
+    return () => {
+      active = false;
+    };
+    // Link creation is intentionally automatic when the link method is selected.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [method, isDraftReady]);
+
   useEffect(() => {
     const draftId = sessionStorage.getItem("childSetupDraftId");
     if (!draftId) return;
@@ -82,15 +203,35 @@ export default function InviteChild() {
     api(`/api/parents/child-setups/${draftId}`)
       .then((draft) => {
         if (!draft.firstName && !draft.lastName) return;
+        const draftGrade = draft.grade?.replace(/(\D)(\d)/, "$1 $2");
+        const isStandardGrade = /^Grade (7|8|9|10|11|12)$/i.test(draftGrade || "");
+        const draftOtherSubjects = draft.subjects
+          ?.filter((subject) => subject.type === "Other" && subject.customName?.trim())
+          .map((subject) => subject.customName.trim()) || [];
+        const draftSubjects = draft.subjects?.length
+          ? [...new Set(draft.subjects.map((subject) =>
+              subject.type === "Other"
+                ? "Other"
+                : subject.customName || subject.type,
+            ))]
+          : child.subjects;
 
         updateChild({
+          profileSetupMode: getDraftProfileSetupMode(draft),
           preferredName: draft.firstName || child.preferredName,
           lastName: draft.lastName || child.lastName,
           dateOfBirth: draft.dateOfBirth || child.dateOfBirth,
-          grade: draft.grade?.replace(/(\D)(\d)/, "$1 $2") || child.grade,
-          subjects: draft.subjects?.length
-            ? draft.subjects.map((subject) => subject.customName || subject.type)
-            : child.subjects,
+          grade: draftGrade
+            ? isStandardGrade ? draftGrade : "Other"
+            : child.grade,
+          otherGrade: draftGrade && !isStandardGrade
+            ? draftGrade
+            : child.otherGrade,
+          subjects: draftSubjects,
+          otherSubjects: draft.subjects?.length ? draftOtherSubjects : child.otherSubjects,
+          otherSubject: draft.subjects?.length
+            ? draftOtherSubjects[0] || ""
+            : child.otherSubject,
           studyPriorities: draft.studyPriorities?.length
             ? draft.studyPriorities
             : child.studyPriorities,
@@ -103,7 +244,8 @@ export default function InviteChild() {
             : child.studyTimeGoal,
         });
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setIsDraftReady(true));
   // This hydration only runs once when the page opens; user edits remain authoritative.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updateChild]);
@@ -112,9 +254,7 @@ export default function InviteChild() {
     setStatus("failed");
     setErrorMessage(message);
     setShowErrorToast(true);
-
     window.clearTimeout(errorToastTimer.current);
-
     errorToastTimer.current = window.setTimeout(() => {
       setShowErrorToast(false);
     }, 3000);
@@ -143,11 +283,6 @@ export default function InviteChild() {
       if (!draftId) {
         throw new Error("Start the child setup again before sending an invitation.");
       }
-      const targetHours = Number(child.studyTimeGoal?.value);
-      if (!Number.isFinite(targetHours) || targetHours <= 0) {
-        throw new Error("Add a weekly study goal before sending an invitation.");
-      }
-
       const settings = await api("/api/parents/me/settings");
       if (!settings.weekStartsOn) {
         await api("/api/parents/me/settings", {
@@ -156,80 +291,12 @@ export default function InviteChild() {
         });
       }
 
-      const subjectTypes = {
-        Mathematics: "Math", Math: "Math", English: "English", History: "History",
-        Physics: "Physics", Chemistry: "Chemistry", Biology: "Biology",
-        Geography: "Geography", Languages: "Languages", "Computer Science": "ComputerScience",
-        ComputerScience: "ComputerScience", Other: "Other",
-      };
-      const priorities = {
-        "Help my child build a study routine": "BuildStudyRoutine",
-        "Help my child stay focused": "StayFocused",
-        "Help my child understand difficult topics": "UnderstandDifficultTopics",
-        "Support my child’s exam preparation": "ExamPreparation",
-        "Encourage my child to reach study goals": "ReachStudyGoals",
-        BuildStudyRoutine: "BuildStudyRoutine",
-        StayFocused: "StayFocused",
-        UnderstandDifficultTopics: "UnderstandDifficultTopics",
-        ExamPreparation: "ExamPreparation",
-        ReachStudyGoals: "ReachStudyGoals",
-      };
-      const selectedSubjects = (child.subjects || [])
-        .map((subject) => ({
-          type: subjectTypes[subject] || "Other",
-          customName: subjectTypes[subject] ? null : subject,
-        }));
-      const selectedPriorities = (child.studyPriorities || [])
-        .map((item) => priorities[item])
-        .filter(Boolean);
-
-      const missingSteps = [
-        !child.preferredName?.trim() && "preferred name",
-        !child.lastName?.trim() && "last name",
-        !child.dateOfBirth && "date of birth",
-        !child.grade && "grade",
-        selectedSubjects.length === 0 && "at least one subject",
-        selectedPriorities.length === 0 && "at least one study priority",
-      ].filter(Boolean);
-      if (missingSteps.length) {
-        throw new Error(`Complete ${missingSteps.join(", ")} before sending an invitation.`);
-      }
-
       await api(`/api/parents/child-setups/${draftId}`, {
         method: "PUT",
-        body: {
-          firstName: child.preferredName?.trim(),
-          lastName: child.lastName?.trim(),
-          dateOfBirth: child.dateOfBirth || null,
-          grade: child.grade?.replace(/\s/g, "") || null,
-          subjects: selectedSubjects,
-          studyPriorities: selectedPriorities,
-          studyTimeGoal: {
-            period: "Weekly",
-            targetMinutes: Math.round(targetHours * 60),
-            days: null,
-            startDate: new Date().toISOString().slice(0, 10),
-          },
-        },
+        body: buildChildSetupPayload(child),
       });
 
-      const updatedDraft = await api(`/api/parents/child-setups/${draftId}`);
-      const completed =
-        updatedDraft.firstName &&
-        updatedDraft.lastName &&
-        updatedDraft.dateOfBirth &&
-        updatedDraft.grade &&
-        updatedDraft.subjects?.length &&
-        updatedDraft.studyPriorities?.length &&
-        updatedDraft.studyTimeGoal;
-      if (!completed) {
-        throw new Error("Complete the child setup before sending an invitation.");
-      }
-
-      const invitation = await api(`/api/parents/child-setups/${draftId}/invite`, {
-        method: "POST",
-        body: { childEmail: cleanEmail },
-      });
+      const invitation = await createEmailChildSetupInvitation(draftId, cleanEmail, api);
       sessionStorage.setItem("childSetupInvitation", JSON.stringify(invitation));
       cachePendingInvitation({
         type: "ChildSetup",
@@ -245,7 +312,10 @@ export default function InviteChild() {
       navigate("/setup/invitation-sent");
     } catch (requestError) {
       const message = requestError.message || "Something went wrong. Please try again.";
-      if (/already.*invited|invitation.*already exists/i.test(message)) {
+      const validationMessage = getChildSetupValidationMessage(requestError);
+      if (validationMessage) {
+        showSendingError(validationMessage);
+      } else if (/already.*invited|invitation.*already exists/i.test(message)) {
         showSendingError("This child already has an invitation. Manage it from your dashboard.");
       } else if (requestError.status === 401) {
         showSendingError("Your session expired. Please sign in again.");
@@ -256,7 +326,7 @@ export default function InviteChild() {
       } else if (/complete .* before sending|start the child setup again/i.test(message)) {
         showSendingError("Finish your child’s profile before sending the invitation.");
       } else {
-        showSendingError("We couldn’t send the invitation. Please try again.");
+        showSendingError(message.slice(0, 240) || "We couldn’t send the invitation. Please try again.");
       }
     }
   }
@@ -278,25 +348,51 @@ export default function InviteChild() {
     setStatus("idle");
     setShowErrorToast(false);
     setShowEmailMessage(false);
-    setInviteLink((currentLink) => currentLink || buildInviteLink());
     setShowLinkMessage(true);
   }
 
-  function handleCopyLink() {
-    const link = inviteLink || buildInviteLink();
+  async function handleCopyLink() {
+    if (isLoadingLink) return;
+    const link = inviteLink || await loadInviteLink();
+    if (!link) return;
 
-    setInviteLink(link);
     if (!navigator.clipboard) {
       showSendingError("Your browser could not copy the link. Please copy it manually.");
       return;
     }
 
-    navigator.clipboard.writeText(link).catch(() => {
+    try {
+      await navigator.clipboard.writeText(link);
+      const draftId = sessionStorage.getItem("childSetupDraftId");
+      let invitation = null;
+      try {
+        invitation = JSON.parse(sessionStorage.getItem("childSetupInvitation") || "null");
+      } catch {
+        invitation = null;
+      }
+      cachePendingInvitation({
+        type: "ChildSetup",
+        childSetupInvitationStatus: "Pending",
+        childSetupDraftId: draftId,
+        firstName: child.preferredName,
+        lastName: child.lastName,
+        dateOfBirth: child.dateOfBirth,
+        grade: child.grade,
+        otherGrade: child.otherGrade,
+        subjects: child.subjects,
+        otherSubjects: child.otherSubjects,
+        otherSubject: child.otherSubject,
+        studyPriorities: child.studyPriorities,
+        suggestedGoal: child.suggestedGoal,
+        studyTimeGoal: child.studyTimeGoal,
+        parentEmail: user?.email,
+        childSetupInvitationExpiresAtUtc: invitation?.expiresAtUtc,
+      });
+      setShowLinkMessage(true);
+      setShowCopiedModal(true);
+    } catch {
       showSendingError("Your browser could not copy the link. Please try again.");
-    });
-
-    setShowLinkMessage(true);
-    setShowCopiedModal(true);
+    }
   }
 
   return (
@@ -458,6 +554,7 @@ export default function InviteChild() {
                       type="text"
                       readOnly
                       value={inviteLink}
+                      placeholder={isLoadingLink ? "Creating invitation link…" : ""}
                     />
                   </div>
 
@@ -500,8 +597,9 @@ export default function InviteChild() {
                     type="button"
                     className="invite-primary-button"
                     onClick={handleCopyLink}
+                    disabled={isLoadingLink}
                   >
-                    Copy invitation
+                    {isLoadingLink ? "Creating link..." : "Copy invitation"}
                   </button>
                 ) : isSending ? (
                   <button
@@ -548,7 +646,7 @@ export default function InviteChild() {
               <p>
                 Share it privately with {child.preferredName}.
                 <br />
-                He&apos;ll review the setup before activating. The invitation
+                He/She will review the setup before activating. The invitation
                 expires in 7 days.
               </p>
 
@@ -556,7 +654,7 @@ export default function InviteChild() {
                 type="button"
                 onClick={() => {
                   setShowCopiedModal(false);
-                  navigate("/setup/invitation-sent");
+                  navigate("/overview", { replace: true });
                 }}
               >
                 Done

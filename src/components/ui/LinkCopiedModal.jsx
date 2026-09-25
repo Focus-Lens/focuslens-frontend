@@ -15,7 +15,7 @@ export default function LinkCopiedModal({
             <>
               Share it privately with {childName}.
               <br />
-              He’ll review the setup before activating. The invitation expires
+              He/She will review the setup before activating. The invitation expires
               in 7 days.
             </>
           )}

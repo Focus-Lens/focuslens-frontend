@@ -66,12 +66,47 @@
   text-align: left;
 }
 
+.setup-link-methods {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.setup-link-methods button {
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 1px solid #e2e2e8;
+  border-radius: 22px;
+  background: #f4f4f6;
+  color: #34343b;
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.setup-link-methods button.active {
+  border-color: #91cf00;
+  background: #91cf00;
+  color: #202020;
+}
+
 /* =========================
    Field
 ========================= */
 
 .send-setup-link-page .field {
   width: 100%;
+}
+
+.send-setup-link-page .field.setup-link-email-field,
+.send-setup-link-page .field.setup-link-email-field input {
+  background: #ffffff;
+}
+
+.send-setup-link-page .field.setup-link-email-field legend {
+  background: #ffffff;
 }
 
 /* The shared input rule offsets text upward; center the read-only link here. */
@@ -91,6 +126,22 @@
   font-weight: 400;
   line-height: 1.45;
   text-align: left;
+}
+
+.send-setup-link-error,
+.send-setup-link-success {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.send-setup-link-error {
+  color: #dc2626;
+}
+
+.send-setup-link-success {
+  color: #15803d;
 }
 
 /* =========================
@@ -255,6 +306,12 @@
   font-size: 12px;
 }
 
+.setup-link-readonly-field,
+.setup-link-readonly-field input,
+.setup-link-readonly-field legend {
+  background: #ffffff;
+}
+
 /* =========================
    Mobile
 ========================= */
@@ -279,6 +336,15 @@
   .send-setup-link-heading {
     font-size: 21px;
     margin-bottom: 22px;
+  }
+
+  .setup-link-methods {
+    gap: 8px;
+  }
+
+  .setup-link-methods button {
+    padding: 8px 10px;
+    font-size: 13px;
   }
 
   .send-setup-link-notice {

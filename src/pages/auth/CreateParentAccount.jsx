@@ -77,8 +77,55 @@ export default function CreateParentAccount() {
       setFieldErrors({});
       setEmailError("");
       setGoogleError("");
+
+      if (acceptedTerms) {
+        continueGoogleRegistration(profile, credentialResponse.credential);
+      } else {
+        setShowTerms(true);
+      }
     } catch (error) {
       setGoogleError(error.message || "Google sign-in failed. Please try again.");
+    }
+  }
+
+  async function continueGoogleRegistration(profile, idToken) {
+    if (isCheckingEmail) return;
+
+    try {
+      setIsCheckingEmail(true);
+      setEmailError("");
+
+      const result = await api("/api/auth/check-email", {
+        method: "POST",
+        auth: false,
+        body: { email: profile.email.trim() },
+      });
+
+      if (isStudentEmailResult(result)) {
+        setEmailError("This email belongs to a student account. Please use the student sign-in page.");
+        return;
+      }
+
+      if (getEmailAvailability(result) === false) {
+        setEmailError(
+          "This email is already associated with a parent account. Sign in or use another email.",
+        );
+        return;
+      }
+
+      await finishGoogleRegistration(idToken);
+    } catch (error) {
+      if (isStudentEmailError(error)) {
+        setEmailError("This email belongs to a student account. Please use the student sign-in page.");
+      } else if (error.status === 409) {
+        setEmailError(
+          "This email is already associated with a parent account. Sign in or use another email.",
+        );
+      } else {
+        setEmailError(error.message || "We couldn’t check this email. Please try again.");
+      }
+    } finally {
+      setIsCheckingEmail(false);
     }
   }
 
@@ -91,15 +138,25 @@ export default function CreateParentAccount() {
 
     const account = login(response);
     navigate(
-      sessionStorage.getItem("pendingInvitationToken") || account.requiresOnboarding
+      sessionStorage.getItem("pendingInvitationToken")
         ? "/choose-start"
-        : "/overview",
+        : account.requiresOnboarding
+          ? "/account-created"
+          : "/overview",
     );
   }
 
   function agreeToTerms() {
     setAcceptedTerms(true);
     setShowTerms(false);
+    if (pendingGoogleIdToken) {
+      try {
+        const profile = getGoogleProfile(pendingGoogleIdToken);
+        continueGoogleRegistration(profile, pendingGoogleIdToken);
+      } catch (error) {
+        setGoogleError(error.message || "Google sign-in failed. Please try again.");
+      }
+    }
   }
 
   async function handleContinue() {

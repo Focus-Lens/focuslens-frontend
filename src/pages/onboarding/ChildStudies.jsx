@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { ParentLayout, Button, Card, AuthLayout } from "../../components/ui/CommonUI";
+import { ParentLayout, Button, Card, AuthLayout, Field } from "../../components/ui/CommonUI";
 import { useChildProfile } from "../../context/ChildProfileContext";
 
 import {
@@ -13,6 +13,7 @@ import {
   CircleDashed,
   Check,
   ChevronLeft,
+  X,
 } from "lucide-react";
 
 import "../../css/onboarding/ChildStudies.css";
@@ -52,8 +53,39 @@ export default function ChildStudies() {
   const { child, updateChild } = useChildProfile();
 
   const [grade, setGrade] = useState(child.grade);
+  const [otherGrade, setOtherGrade] = useState(child.otherGrade || "");
   const [selectedSubjects, setSelectedSubjects] = useState(child.subjects);
+  const [otherSubjects, setOtherSubjects] = useState(
+    child.otherSubjects?.length
+      ? child.otherSubjects
+      : child.otherSubject?.trim()
+        ? [child.otherSubject.trim()]
+        : [],
+  );
+  const [otherSubjectInput, setOtherSubjectInput] = useState("");
   const [errors, setErrors] = useState({});
+
+  function addOtherSubject(value = otherSubjectInput) {
+    const cleanValue = value.trim();
+    if (!cleanValue) return otherSubjects;
+
+    const nextSubjects = otherSubjects.some(
+      (subject) => subject.toLowerCase() === cleanValue.toLowerCase(),
+    )
+      ? otherSubjects
+      : [...otherSubjects, cleanValue];
+    setOtherSubjects(nextSubjects);
+    updateChild({ otherSubjects: nextSubjects, otherSubject: nextSubjects[0] || "" });
+    setOtherSubjectInput("");
+    setErrors((current) => ({ ...current, otherSubject: "" }));
+    return nextSubjects;
+  }
+
+  function removeOtherSubject(subjectToRemove) {
+    const nextSubjects = otherSubjects.filter((subject) => subject !== subjectToRemove);
+    setOtherSubjects(nextSubjects);
+    updateChild({ otherSubjects: nextSubjects, otherSubject: nextSubjects[0] || "" });
+  }
 
   function toggleSubject(subject) {
     const nextSubjects = selectedSubjects.includes(subject)
@@ -67,7 +99,13 @@ export default function ChildStudies() {
   function handleGradeSelect(nextGrade) {
     setGrade(nextGrade);
     updateChild({ grade: nextGrade });
-    setErrors((current) => ({ ...current, grade: "" }));
+    setErrors((current) => ({
+      ...current,
+      grade: "",
+      otherGrade: nextGrade === "Other" && !otherGrade.trim()
+        ? current.otherGrade
+        : "",
+    }));
   }
 
   function handleBack() {
@@ -77,14 +115,31 @@ export default function ChildStudies() {
   }
 
   function handleContinue() {
+    const finalOtherSubjects = otherSubjectInput.trim()
+      ? addOtherSubject(otherSubjectInput)
+      : otherSubjects;
     const nextErrors = {
       grade: grade ? "" : "Grade is required.",
+      otherGrade:
+        grade === "Other" && !otherGrade.trim()
+          ? "Enter the grade name."
+          : "",
       subjects: selectedSubjects.length ? "" : "At least one subject is required.",
+      otherSubject:
+        selectedSubjects.includes("Other") && !finalOtherSubjects.length
+          ? "Enter at least one subject name."
+          : "",
     };
     setErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean)) return;
 
-    updateChild({ grade, subjects: selectedSubjects });
+    updateChild({
+      grade,
+      otherGrade: otherGrade.trim(),
+      subjects: selectedSubjects,
+      otherSubjects: finalOtherSubjects,
+      otherSubject: finalOtherSubjects[0] || "",
+    });
 
     const returnTo = searchParams.get("returnTo");
 
@@ -161,6 +216,27 @@ export default function ChildStudies() {
               ))}
             </div>
             {errors.grade && <p className="setup-required-error">{errors.grade}</p>}
+            {grade === "Other" && (
+              <div className="other-subject-input other-grade-input">
+                <Field
+                  label="Grade name"
+                  value={otherGrade}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setOtherGrade(value);
+                    updateChild({ otherGrade: value });
+                    if (value.trim()) {
+                      setErrors((current) => ({ ...current, otherGrade: "" }));
+                    }
+                  }}
+                  placeholder="Enter grade name"
+                  aria-invalid={Boolean(errors.otherGrade)}
+                />
+                {errors.otherGrade && (
+                  <p className="setup-required-error">{errors.otherGrade}</p>
+                )}
+              </div>
+            )}
 
             {/* Subjects */}
             <h3 className="child-studies-section-title subjects-title">
@@ -191,6 +267,52 @@ export default function ChildStudies() {
               })}
             </div>
             {errors.subjects && <p className="setup-required-error">{errors.subjects}</p>}
+            {selectedSubjects.includes("Other") && (
+              <div className="other-subject-input">
+                <Field
+                  label="Subject name"
+                  value={otherSubjectInput}
+                  onChange={(event) => {
+                    setOtherSubjectInput(event.target.value);
+                  }}
+                  placeholder="Enter subject name"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      addOtherSubject();
+                    }
+                  }}
+                  aria-invalid={Boolean(errors.otherSubject)}
+                />
+                <button
+                  type="button"
+                  className="add-custom-subject"
+                  onClick={() => addOtherSubject()}
+                  disabled={!otherSubjectInput.trim()}
+                >
+                  Add subject
+                </button>
+                {otherSubjects.length > 0 && (
+                  <div className="custom-subject-list" aria-label="Added subjects">
+                    {otherSubjects.map((subject) => (
+                      <span className="custom-subject-chip" key={subject}>
+                        {subject}
+                        <button
+                          type="button"
+                          aria-label={`Remove ${subject}`}
+                          onClick={() => removeOtherSubject(subject)}
+                        >
+                          <X size={14} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {errors.otherSubject && (
+                  <p className="setup-required-error">{errors.otherSubject}</p>
+                )}
+              </div>
+            )}
 
             {/* Actions */}
             <div className="child-studies-actions">

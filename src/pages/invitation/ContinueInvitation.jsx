@@ -5,9 +5,12 @@ import { resolveAccessInvitation } from "../../services/api";
 import "../../css/invitation/ContinueInvitation.css";
 
 export default function ContinueInvitation() {
-  const { token } = useParams();
+  const { token: routeToken } = useParams();
+  const token = routeToken || sessionStorage.getItem("pendingInvitationToken");
   const location = useLocation();
-  const [name, setName] = useState(() => location.state?.invitationName || sessionStorage.getItem("pendingInvitationName") || "");
+  const [name, setName] = useState(() => token
+    ? location.state?.invitationName || sessionStorage.getItem("pendingInvitationName") || ""
+    : "");
   useEffect(() => {
     if (!token) return;
     sessionStorage.setItem("pendingInvitationToken", token);
@@ -24,10 +27,10 @@ export default function ContinueInvitation() {
           <h1>How would you like to continue?</h1>
 
           <p>
-  {name || "This student"}’s invitation will stay attached while you create or
-  <br />
-  sign in to your parent account.
-</p>
+            {token
+              ? `${name || "Your child"}’s invitation will stay attached while you create or sign in to your parent account.`
+              : "Create or sign in to your parent account to get started."}
+          </p>
 
           <div className="continue-invitation-actions">
             <div className="continue-invitation-button1">

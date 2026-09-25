@@ -164,6 +164,18 @@
   color: #5f22c4;
 }
 
+.invitation-sent-secondary:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.invitation-link-error {
+  margin: 10px 0 0;
+  color: #cf2e2e;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .invitation-sent-card small {
   display: block;
   margin-top: 16px;
@@ -342,13 +354,28 @@
   }
 
   .sent-link-modal {
+    width: 500px;
     min-height: 0;
-    padding: 36px 22px;
-    border-radius: 22px;
+    padding: 24px 28px;
+    border-radius: 20px;
+  }
+
+  .sent-link-modal-icon {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 14px;
+  }
+
+  .sent-link-modal h2 {
+    font-size: 25px;
+  }
+
+  .sent-link-modal button {
+    height: 44px;
   }
 
   .sent-link-modal p {
-    margin: 18px 0 22px;
+    margin: 13px 0 17px;
     font-size: 13px;
   }
 }

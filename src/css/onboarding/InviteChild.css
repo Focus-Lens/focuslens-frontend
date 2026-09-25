@@ -263,6 +263,14 @@
   box-shadow: 0 0 0 2px rgba(125, 57, 235, 0.08);
 }
 
+.invite-email-content {
+  margin-bottom: 16px;
+}
+
+.invite-email-content .invite-hint {
+  margin-bottom: 0;
+}
+
 .invite-hint {
   margin: 12px 0 24px;
   color: #858595;

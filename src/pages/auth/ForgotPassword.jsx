@@ -88,7 +88,7 @@ export default function ForgotPassword() {
               onClick={handleSend}
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Sending..." : "Send reset instructions"}
+              {isSubmitting ? "Sending..." : "Send reset code"}
             </Button>
           </div>
         </Card>

@@ -17,16 +17,35 @@ export default function InvitationSent() {
   const navigate = useNavigate();
   const { child } = useChildProfile();
   const [showCopiedModal, setShowCopiedModal] = useState(false);
+  const [copyError, setCopyError] = useState("");
+  const [isCopying, setIsCopying] = useState(false);
 
   async function copyInvitationLink() {
-    try {
-      await navigator.clipboard.writeText(
-        "focuslens.example/invite/youssef-demo"
-      );
+    if (isCopying) return;
 
-      setShowCopiedModal(true);
+    let invitation;
+    try {
+      invitation = JSON.parse(sessionStorage.getItem("childSetupInvitation") || "null");
     } catch {
+      invitation = null;
+    }
+    const url = invitation?.invitationUrl || invitation?.setupUrl || invitation?.url;
+    if (!url) {
+      setCopyError(
+        "This email invitation can’t be converted to a link after sending. Choose “Copy invitation link” before sending, or ask the server team to return a link with the email invitation."
+      );
+      return;
+    }
+
+    setCopyError("");
+    setIsCopying(true);
+    try {
+      await navigator.clipboard.writeText(url);
       setShowCopiedModal(true);
+    } catch (error) {
+      setCopyError(error.message || "Could not copy the invitation link. Please try again.");
+    } finally {
+      setIsCopying(false);
     }
   }
 
@@ -76,10 +95,12 @@ export default function InvitationSent() {
               <button
                 className="invitation-sent-secondary"
                 onClick={copyInvitationLink}
+                disabled={isCopying}
                 type="button"
               >
-                Copy invitation link
+                {isCopying ? "Getting invitation link..." : "Copy invitation link"}
               </button>
+              {copyError && <p role="alert" className="invitation-link-error">{copyError}</p>}
 
               {/* FOOTNOTE */}
               <small>

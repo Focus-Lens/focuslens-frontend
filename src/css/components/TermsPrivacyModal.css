@@ -243,20 +243,122 @@
   border: none;
   border-radius: 28px;
 
-  background: #7d39eb;
+  background: #a1a1aa;
   color: #ffffff;
 
   font-family: "Nunito";
   font-size: 16px;
   font-weight: 400;
 
-  cursor: pointer;
+  cursor: not-allowed;
 
   transition: background 0.2s ease;
 }
 
+.terms-agree:not(:disabled) {
+  background: #2563eb;
+  cursor: pointer;
+}
+
 .terms-agree:hover {
-  background: #7131db;
+  background: #1d4ed8;
+}
+
+.terms-agree:disabled:hover {
+  background: #a1a1aa;
+}
+
+.terms-document {
+  position: relative;
+  margin: 24px 0 18px;
+  padding: 18px;
+  border: 1px solid #dedee5;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.terms-document-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #8b8b96;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.terms-document-close:hover {
+  color: #202026;
+}
+
+.terms-document h3 {
+  padding-right: 28px;
+  margin: 0 0 10px;
+  color: #29282f;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.terms-document-content,
+.terms-document-status {
+  margin: 0;
+  color: #555463;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.terms-document-status.error {
+  color: #c81e1e;
+}
+
+.terms-scroll-hint {
+  display: block;
+  width: 100%;
+  margin: 8px auto 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #8b8b96;
+  font-family: "Nunito";
+  font-size: 14px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.terms-scroll-hint:disabled {
+  cursor: wait;
+}
+
+.terms-scroll-hint:not(:disabled):hover {
+  color: #2563eb;
+}
+
+.terms-understood {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 18px;
+  color: #555463;
+  font-size: 14px;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.terms-understood input {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  margin: 0;
+  accent-color: #2563eb;
 }
 
 

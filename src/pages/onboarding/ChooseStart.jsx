@@ -2,15 +2,19 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
 import { api } from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import { useChildProfile } from "../../context/ChildProfileContext";
 import { clearChildInvitationDraft } from "../../services/childInvitationDraft";
+import { getDraftProfileSetupMode } from "../../services/childSetupFlow";
+import { markSetupDeferred } from "../../services/setupDeferral";
 import { Users, UserRoundPlus, Check } from "lucide-react";
 import "../../css/onboarding/ChooseStart.css";
 
 export default function ChooseStart() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { resetChild } = useChildProfile();
+  const { user } = useAuth();
+  const { resetChild, updateChild } = useChildProfile();
 
   const hasInvitation = Boolean(
     sessionStorage.getItem("pendingInvitationToken"),
@@ -23,6 +27,7 @@ export default function ChooseStart() {
   const [submitting, setSubmitting] = useState(false);
 
   function handleDoThisLater() {
+    markSetupDeferred(user);
     navigate("/overview");
   }
 
@@ -53,6 +58,7 @@ export default function ChooseStart() {
       });
 
       sessionStorage.setItem("childSetupDraftId", draft.id);
+      updateChild({ profileSetupMode: getDraftProfileSetupMode(draft) });
       navigate("/profile-setup-choice");
     } catch (requestError) {
       setError(requestError.message || "Something went wrong. Please try again.");
@@ -62,7 +68,7 @@ export default function ChooseStart() {
   }
 
   return (
-    <AuthLayout hideFooter>
+    <AuthLayout hideFooter headerVariant="onboarding">
       <div className="choose-start-wrapper">
         <Card>
           <div className="choose-start-page">
