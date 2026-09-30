@@ -8,9 +8,16 @@ import {
   Card,
   Field,
 } from "../../components/ui/CommonUI";
-import { api } from "../../services/api";
+import {
+  api,
+  forgetRememberedSession,
+  getRememberedSession,
+  rememberSession,
+  restoreRememberedSession,
+} from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { getGoogleProfile } from "../../services/googleIdentity";
+import { continueWithGoogleParent } from "../../services/googleParentAuth";
 import {
   getEmailAvailability,
   isEmailNotFoundError,
@@ -24,26 +31,90 @@ const REMEMBERED_EMAIL_KEY = "focusLensRememberedSignInEmail";
 export default function SignIn({ restoreAccount = false }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuth();
+  const { login, setUser } = useAuth();
   const hasPendingInvitation = Boolean(
     sessionStorage.getItem("pendingInvitationToken"),
   );
 
+  // A session saved by "Remember me": the form is filled in from it and
+  // Sign in continues it without asking for the password again.
+  const [rememberedSession, setRememberedSession] = useState(() =>
+    restoreAccount ? null : getRememberedSession(),
+  );
   const [email, setEmail] = useState(() =>
-    restoreAccount ? "" : localStorage.getItem(REMEMBERED_EMAIL_KEY) || "",
+    restoreAccount
+      ? ""
+      : rememberedSession?.user?.email || localStorage.getItem(REMEMBERED_EMAIL_KEY) || "",
   );
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(() =>
-    !restoreAccount && Boolean(localStorage.getItem(REMEMBERED_EMAIL_KEY)),
+    !restoreAccount &&
+      Boolean(rememberedSession || localStorage.getItem(REMEMBERED_EMAIL_KEY)),
   );
   const [error, setError] = useState("");
   const [errorLink, setErrorLink] = useState(null);
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingGoogleIdToken, setPendingGoogleIdToken] = useState("");
+  const [googleSigningIn, setGoogleSigningIn] = useState(false);
+
+  function nextPathAfterSignIn() {
+    if (restoreAccount) return "/overview";
+    return (location.state?.returnTo !== "/account-created" && location.state?.returnTo) ||
+      (sessionStorage.getItem("pendingInvitationToken") ? "/choose-start" : "/overview");
+  }
+
+  function saveRememberMe(account) {
+    if (restoreAccount) return;
+    if (rememberMe && account) {
+      if (account.email) localStorage.setItem(REMEMBERED_EMAIL_KEY, account.email);
+      rememberSession(account);
+    } else {
+      localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+      forgetRememberedSession();
+    }
+  }
+
+  async function continueRememberedSession() {
+    try {
+      setIsSubmitting(true);
+      setError("");
+      setErrorLink(null);
+
+      const account = await restoreRememberedSession();
+      if (!account) {
+        // The saved session is no longer valid: start over with an empty form.
+        setRememberedSession(null);
+        localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+        setEmail("");
+        setPassword("");
+        return;
+      }
+
+      setUser(account);
+      navigate(nextPathAfterSignIn());
+    } catch (requestError) {
+      setError(requestError.message || "We couldn’t sign you in. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function switchAccount() {
+    forgetRememberedSession();
+    setRememberedSession(null);
+    setEmail("");
+    setPassword("");
+    setError("");
+    setErrorLink(null);
+  }
 
   async function handleSignIn() {
-    if (!email.trim() || (!password.trim() && !pendingGoogleIdToken)) {
+    if (rememberedSession) {
+      await continueRememberedSession();
+      return;
+    }
+
+    if (!email.trim() || !password.trim()) {
       setError("Please enter your email and password.");
       return;
     }
@@ -70,37 +141,15 @@ export default function SignIn({ restoreAccount = false }) {
         return;
       }
 
-      const response = pendingGoogleIdToken
-        ? await api("/api/auth/google/parent", {
-            method: "POST",
-            auth: false,
-            body: { idToken: pendingGoogleIdToken },
-          })
-        : await api("/api/auth/login", {
-            method: "POST",
-            auth: false,
-            body: { email: email.trim(), password },
-          });
+      const response = await api("/api/auth/login", {
+        method: "POST",
+        auth: false,
+        body: { email: email.trim(), password },
+      });
 
-      login(response);
-      const pendingInvitationToken = sessionStorage.getItem("pendingInvitationToken");
-
-      if (!restoreAccount) {
-        if (rememberMe && email.trim()) {
-          localStorage.setItem(REMEMBERED_EMAIL_KEY, email.trim());
-        } else {
-          localStorage.removeItem(REMEMBERED_EMAIL_KEY);
-        }
-      }
-
-      navigate(
-        restoreAccount
-          ? "/overview"
-          : (location.state?.returnTo !== "/account-created" && location.state?.returnTo) ||
-            (pendingInvitationToken
-              ? "/choose-start"
-              : "/overview"),
-      );
+      const account = login(response);
+      saveRememberMe(account);
+      navigate(nextPathAfterSignIn());
     } catch (requestError) {
       if (isStudentEmailError(requestError)) {
         setError("This email belongs to a student account. Please use the student sign-in page.");
@@ -140,16 +189,29 @@ export default function SignIn({ restoreAccount = false }) {
   }
 
   async function signInWithGoogle(credentialResponse) {
+    if (isSubmitting) return;
+
     try {
       const profile = getGoogleProfile(credentialResponse.credential);
-      if (!profile.email) throw new Error("Google did not provide an email address.");
       setEmail(profile.email);
       setPassword("");
-      setPendingGoogleIdToken(credentialResponse.credential);
       setError("");
       setErrorLink(null);
+      setIsSubmitting(true);
+      setGoogleSigningIn(true);
+
+      const { nextPath, account } = await continueWithGoogleParent(
+        credentialResponse.credential,
+        login,
+      );
+      saveRememberMe(account);
+      navigate(
+        (location.state?.returnTo !== "/account-created" && location.state?.returnTo) || nextPath,
+      );
     } catch (requestError) {
       setError(requestError.message || "Google sign-in failed. Please try again.");
+      setIsSubmitting(false);
+      setGoogleSigningIn(false);
     }
   }
 
@@ -186,25 +248,52 @@ export default function SignIn({ restoreAccount = false }) {
           onChange={(event) => {
             const nextEmail = event.target.value;
             setEmail(nextEmail);
+            // Typing another email means signing in to a different account.
+            if (
+              rememberedSession &&
+              nextEmail.trim().toLowerCase() !==
+                rememberedSession.user.email?.trim().toLowerCase()
+            ) {
+              setRememberedSession(null);
+            }
             if (rememberMe && !restoreAccount) {
               if (nextEmail.trim()) localStorage.setItem(REMEMBERED_EMAIL_KEY, nextEmail.trim());
               else localStorage.removeItem(REMEMBERED_EMAIL_KEY);
             }
-            setPendingGoogleIdToken("");
             setError("");
             setErrorLink(null);
           }}
         />
 
-        <Field
-          name="password"
-          required={!pendingGoogleIdToken}
-          autoComplete="current-password"
-          label="Password"
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-        />
+        {rememberedSession ? (
+          <>
+            {/* The password itself is never stored; the saved session is used. */}
+            <Field
+              name="password"
+              label="Password"
+              type="password"
+              value="rememberedpw"
+              readOnly
+              aria-describedby="remembered-session-note"
+            />
+            <p className="signin-remembered-note" id="remembered-session-note">
+              You’re remembered on this device.{" "}
+              <button type="button" onClick={switchAccount}>
+                Use a different account
+              </button>
+            </p>
+          </>
+        ) : (
+          <Field
+            name="password"
+            required
+            autoComplete="current-password"
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+          />
+        )}
 
         {error && errorLink === "register" ? (
           <EmailStatusAlert
@@ -235,6 +324,10 @@ export default function SignIn({ restoreAccount = false }) {
                 onChange={(event) => {
                   const checked = event.target.checked;
                   setRememberMe(checked);
+                  if (!checked && rememberedSession) {
+                    forgetRememberedSession();
+                    setRememberedSession(null);
+                  }
                   if (checked && email.trim()) {
                     localStorage.setItem(REMEMBERED_EMAIL_KEY, email.trim());
                   } else {
@@ -255,7 +348,11 @@ export default function SignIn({ restoreAccount = false }) {
               ? isSubmitting
                 ? "Restoring..."
                 : "Restore account"
-              : "Sign in"}
+              : isSubmitting
+                ? "Signing in..."
+                : rememberedSession?.user?.firstName
+                  ? `Continue as ${rememberedSession.user.firstName}`
+                  : "Continue"}
           </Button>
         </div>
         </form>
@@ -267,6 +364,10 @@ export default function SignIn({ restoreAccount = false }) {
               onError={() => setError("Google sign-in failed. Please try again.")}
             />
           </div>
+        )}
+
+        {googleSigningIn && (
+          <p className="signin-subtitle" role="status">Signing you in with Google…</p>
         )}
 
         {!restoreAccount && (

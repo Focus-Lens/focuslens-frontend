@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { api, clearSession, saveTokens } from "../services/api";
+import { api, clearSession, forgetRememberedSession, saveTokens } from "../services/api";
 import { clearSetupDeferred } from "../services/setupDeferral";
 
 const AuthContext = createContext(null);
@@ -32,7 +32,10 @@ export function AuthProvider({ children }) {
   }, [persistUser]);
 
   const refreshUser = useCallback(async () => {
-    const nextUser = await api("/api/users/me");
+    const profile = await api("/api/users/me");
+    // /api/users/me returns `id`; sign-in returns `userId`. Keep both shapes
+    // so pages keyed on userId don't reload when the profile refreshes.
+    const nextUser = { ...storedUser(), ...profile, userId: profile?.userId || profile?.id };
     persistUser(nextUser);
     return nextUser;
   }, [persistUser]);
@@ -44,6 +47,9 @@ export function AuthProvider({ children }) {
       if (refreshToken) await api("/api/auth/logout", { method: "POST", body: { refreshToken } });
     } finally {
       clearSession();
+      // Signing out on purpose ends the remembered session too; the email
+      // stays remembered for the sign-in form.
+      forgetRememberedSession();
       clearSetupDeferred(currentUser);
       setUser(null);
     }

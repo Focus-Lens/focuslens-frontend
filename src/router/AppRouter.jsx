@@ -75,6 +75,8 @@ export default function AppRouter() {
         <Route path="/" element={<EntryRoute />} />
 
         <Route path="/invite/:token" element={<InvitationLanding />} />
+        {/* The backend's invitation email links to /invitations/parent/{token}. */}
+        <Route path="/invitations/parent/:token" element={<InvitationLanding />} />
         <Route
           path="/invite/:token/continue"
           element={<ContinueInvitation />}

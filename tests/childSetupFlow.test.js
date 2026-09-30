@@ -5,6 +5,7 @@ import {
   createLinkChildSetupInvitation,
   getChildSetupValidationMessage,
   getDraftProfileSetupMode,
+  reuseOrReleaseChildSetupInvitation,
   saveProfileSetupModeAndContinue,
 } from "../src/services/childSetupFlow.js";
 
@@ -133,4 +134,50 @@ test("backend setup validation codes get user-facing messages", () => {
     /Choose who will set up/,
   );
   assert.equal(getChildSetupValidationMessage({ message: "Other error" }), null);
+});
+
+function fakeRequest(responses) {
+  const calls = [];
+  const request = async (path, options) => {
+    calls.push({ path, method: options?.method || "GET" });
+    return responses[path];
+  };
+  return { calls, request };
+}
+
+test("a draft setup is left alone so a new link invitation can be created", async () => {
+  const { calls, request } = fakeRequest({
+    [`/api/parents/child-setups/${draftId}`]: { status: "Draft" },
+  });
+
+  assert.equal(await reuseOrReleaseChildSetupInvitation(draftId, request), null);
+  assert.deepEqual(calls, [{ path: `/api/parents/child-setups/${draftId}`, method: "GET" }]);
+});
+
+test("a pending link invitation is reissued instead of creating another", async () => {
+  const reissued = { invitationUrl: "https://example.test/invite/abc" };
+  const { calls, request } = fakeRequest({
+    [`/api/parents/child-setups/${draftId}`]: { status: "Invited" },
+    "/api/parents/child-setups/invitations": [{ draftId, type: "Link" }],
+    [`/api/parents/child-setups/${draftId}/invite/link`]: reissued,
+  });
+
+  assert.equal(await reuseOrReleaseChildSetupInvitation(draftId, request), reissued);
+  assert.deepEqual(calls.at(-1), {
+    path: `/api/parents/child-setups/${draftId}/invite/link`,
+    method: "POST",
+  });
+});
+
+test("a pending email invitation is cancelled so a link can replace it", async () => {
+  const { calls, request } = fakeRequest({
+    [`/api/parents/child-setups/${draftId}`]: { status: "Invited" },
+    "/api/parents/child-setups/invitations": [{ draftId, type: "Email" }],
+  });
+
+  assert.equal(await reuseOrReleaseChildSetupInvitation(draftId, request), null);
+  assert.deepEqual(calls.at(-1), {
+    path: `/api/parents/child-setups/${draftId}/invite/cancel`,
+    method: "POST",
+  });
 });

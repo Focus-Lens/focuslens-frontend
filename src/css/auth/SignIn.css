@@ -435,3 +435,26 @@
 .google-button-wrap iframe {
   max-width: 100% !important;
 }
+
+.signin-remembered-note {
+  margin: 4px 0 14px;
+
+  color: #686875;
+  font-size: 13px;
+}
+
+.signin-remembered-note button {
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+
+  background: none;
+  color: #7130dc;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.signin-remembered-note + .form-row {
+  margin-bottom: 10px;
+}

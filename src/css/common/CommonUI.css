@@ -554,3 +554,12 @@
     height: 23px;
   }
 }
+/* Any shared Button that is disabled (e.g. while waiting for an upload) looks
+   lighter and does not react to hover. */
+button.button:disabled,
+button.button:disabled:hover {
+  opacity: 0.55;
+  cursor: not-allowed !important;
+  transform: none;
+  box-shadow: none;
+}

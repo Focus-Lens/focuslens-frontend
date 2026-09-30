@@ -168,6 +168,108 @@
   font-size: 15px;
 }
 
+.child-goal-select-wrap {
+  margin-top: 14px;
+  z-index: 5;
+}
+
+.child-goal-select-trigger {
+  width: 100%;
+  height: 50px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 16px 0 14px;
+  box-sizing: border-box;
+
+  border: 1px solid #a9a9b4;
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+
+  background: #ffffff;
+  color: #303038;
+
+  font-family: "Nunito", sans-serif;
+  font-size: 15px;
+  text-align: left;
+}
+
+.child-goal-select-trigger:focus-visible,
+.child-goal-select-wrap.open .child-goal-select-trigger {
+  border-color: rgba(108, 47, 208, 1);
+  box-shadow: 0 0 0 2px rgba(125, 57, 235, 0.08);
+}
+
+.child-goal-select-icon {
+  color: #686875;
+  transition: transform 0.2s ease;
+}
+
+.child-goal-select-wrap.open .child-goal-select-icon {
+  transform: rotate(180deg);
+  color: rgba(108, 47, 208, 1);
+}
+
+.child-goal-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+
+  border: 1px solid #e4dcf7;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 12px 28px rgba(64, 32, 128, 0.12);
+}
+
+.child-goal-select-menu button {
+  width: 100%;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+
+  background: transparent;
+  color: #303038;
+
+  font-family: "Nunito", sans-serif;
+  font-size: 14px;
+  text-align: left;
+}
+
+.child-goal-select-menu button:hover,
+.child-goal-select-menu button:focus-visible {
+  outline: none;
+  background: #f5f0ff;
+}
+
+.child-goal-select-menu button.selected {
+  background: #eee2ff;
+  color: rgba(108, 47, 208, 1);
+  font-weight: 600;
+}
+
+.child-goal-error {
+  margin: 12px 0 0;
+
+  color: #d92d20;
+  font-size: 13px;
+  text-align: center;
+}
+
 .child-goal-input-wrap input:focus {
   border-color: rgba(108, 47, 208, 1);
   box-shadow: 0 0 0 2px rgba(125, 57, 235, 0.08);
@@ -317,11 +419,13 @@ border: rgba(108, 47, 208, 1);
 
   .child-goal-input-wrap,
   .child-goal-input-wrap input,
+  .child-goal-select-trigger,
   .child-goal-current-week {
     height: 44px;
   }
 
   .child-goal-input-wrap input,
+  .child-goal-select-trigger,
   .child-goal-current-week {
     font-size: 14px;
   }

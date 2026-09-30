@@ -6,6 +6,7 @@ import { AuthLayout, Button, Card, Field } from "../../components/ui/CommonUI";
 import { api } from "../../services/api";
 import { useAuth } from "../../context/AuthContext";
 import { getGoogleProfile } from "../../services/googleIdentity";
+import { STUDENT_EMAIL_MESSAGE, continueWithGoogleParent } from "../../services/googleParentAuth";
 import {
   getEmailAvailability,
   isStudentEmailError,
@@ -40,7 +41,7 @@ export default function CreateParentAccount() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [googleError, setGoogleError] = useState("");
-  const [pendingGoogleIdToken, setPendingGoogleIdToken] = useState("");
+  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
 
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
@@ -65,98 +66,33 @@ export default function CreateParentAccount() {
     return Object.keys(nextErrors).length === 0;
   }
 
-  function selectGoogleAccount(credentialResponse) {
+  async function selectGoogleAccount(credentialResponse) {
+    if (isGoogleSigningIn) return;
+
     try {
       const profile = getGoogleProfile(credentialResponse.credential);
-      if (!profile.email) throw new Error("Google did not provide an email address.");
       setFirstName(profile.firstName);
       setLastName(profile.lastName);
       setEmail(profile.email);
       setEmailTouched(false);
-      setPendingGoogleIdToken(credentialResponse.credential);
       setFieldErrors({});
       setEmailError("");
       setGoogleError("");
+      setIsGoogleSigningIn(true);
 
-      if (acceptedTerms) {
-        continueGoogleRegistration(profile, credentialResponse.credential);
-      } else {
-        setShowTerms(true);
-      }
+      const { nextPath } = await continueWithGoogleParent(credentialResponse.credential, login);
+      sessionStorage.removeItem("pendingParentRegistration");
+      navigate(nextPath);
     } catch (error) {
-      setGoogleError(error.message || "Google sign-in failed. Please try again.");
+      if (error.message === STUDENT_EMAIL_MESSAGE) setEmailError(error.message);
+      else setGoogleError(error.message || "Google sign-in failed. Please try again.");
+      setIsGoogleSigningIn(false);
     }
-  }
-
-  async function continueGoogleRegistration(profile, idToken) {
-    if (isCheckingEmail) return;
-
-    try {
-      setIsCheckingEmail(true);
-      setEmailError("");
-
-      const result = await api("/api/auth/check-email", {
-        method: "POST",
-        auth: false,
-        body: { email: profile.email.trim() },
-      });
-
-      if (isStudentEmailResult(result)) {
-        setEmailError("This email belongs to a student account. Please use the student sign-in page.");
-        return;
-      }
-
-      if (getEmailAvailability(result) === false) {
-        setEmailError(
-          "This email is already associated with a parent account. Sign in or use another email.",
-        );
-        return;
-      }
-
-      await finishGoogleRegistration(idToken);
-    } catch (error) {
-      if (isStudentEmailError(error)) {
-        setEmailError("This email belongs to a student account. Please use the student sign-in page.");
-      } else if (error.status === 409) {
-        setEmailError(
-          "This email is already associated with a parent account. Sign in or use another email.",
-        );
-      } else {
-        setEmailError(error.message || "We couldn’t check this email. Please try again.");
-      }
-    } finally {
-      setIsCheckingEmail(false);
-    }
-  }
-
-  async function finishGoogleRegistration(idToken) {
-    const response = await api("/api/auth/google/parent", {
-      method: "POST",
-      auth: false,
-      body: { idToken },
-    });
-
-    const account = login(response);
-    navigate(
-      sessionStorage.getItem("pendingInvitationToken")
-        ? "/choose-start"
-        : account.requiresOnboarding
-          ? "/account-created"
-          : "/overview",
-    );
   }
 
   function agreeToTerms() {
     setAcceptedTerms(true);
     setShowTerms(false);
-    if (pendingGoogleIdToken) {
-      try {
-        const profile = getGoogleProfile(pendingGoogleIdToken);
-        continueGoogleRegistration(profile, pendingGoogleIdToken);
-      } catch (error) {
-        setGoogleError(error.message || "Google sign-in failed. Please try again.");
-      }
-    }
   }
 
   async function handleContinue() {
@@ -181,11 +117,6 @@ export default function CreateParentAccount() {
         setEmailError(
           "This email is already associated with a parent account. Sign in or use another email.",
         );
-        return;
-      }
-
-      if (pendingGoogleIdToken) {
-        await finishGoogleRegistration(pendingGoogleIdToken);
         return;
       }
 
@@ -265,7 +196,6 @@ export default function CreateParentAccount() {
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
-                setPendingGoogleIdToken("");
                 setEmailTouched(true);
                 setEmailError("");
                 setFieldErrors((current) => ({ ...current, email: "" }));
@@ -327,6 +257,10 @@ export default function CreateParentAccount() {
               onError={() => setGoogleError("Google sign-in failed. Please try again.")}
             />
           </div>
+
+          {isGoogleSigningIn && (
+            <p className="auth-subtitle" role="status">Signing you in with Google…</p>
+          )}
 
           {googleError && <p className="email-error">{googleError}</p>}
 

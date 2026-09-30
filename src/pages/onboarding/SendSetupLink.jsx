@@ -12,8 +12,10 @@ import {
   createEmailChildSetupInvitation,
   createLinkChildSetupInvitation,
   getChildSetupValidationMessage,
+  reuseOrReleaseChildSetupInvitation,
 } from "../../services/childSetupFlow";
 import "../../css/onboarding/SendSetupLink.css";
+import { copyText } from "../../services/clipboard";
 
 export default function SendSetupLink() {
   const navigate = useNavigate();
@@ -40,7 +42,9 @@ export default function SendSetupLink() {
     setError("");
     setNotice("");
     try {
-      const response = await createLinkChildSetupInvitation(draftId, api);
+      const response =
+        (await reuseOrReleaseChildSetupInvitation(draftId, api)) ||
+        (await createLinkChildSetupInvitation(draftId, api));
       const invitationLink = response?.invitationUrl || response?.setupUrl || response?.url;
       if (!invitationLink) throw new Error("The setup link was not returned by the server.");
       sessionStorage.setItem("childSetupInvitation", JSON.stringify(response));
@@ -79,12 +83,18 @@ export default function SendSetupLink() {
     const invitationLink = await ensureInvitationLink();
     if (!invitationLink) return;
     try {
-      if (!navigator.clipboard?.writeText) {
-        throw new Error("Clipboard access is unavailable.");
+      await copyText(invitationLink);
+      let invitation = null;
+      try {
+        invitation = JSON.parse(sessionStorage.getItem("childSetupInvitation") || "null");
+      } catch {
+        invitation = null;
       }
-
-      await navigator.clipboard.writeText(invitationLink);
-      setNotice("Invitation link copied.");
+      sessionStorage.setItem(
+        "childSetupInvitation",
+        JSON.stringify({ ...invitation, delivery: "link" }),
+      );
+      navigate("/setup/invitation-sent");
     } catch (requestError) {
       setError(requestError.message === "Clipboard access is unavailable."
         ? "We couldn’t copy the setup link. You can copy it directly from the field."
@@ -107,13 +117,32 @@ export default function SendSetupLink() {
       setIsSending(true);
       setError("");
       setNotice("");
-      await createEmailChildSetupInvitation(draftId, cleanEmail, api);
-      setNotice(`Invitation sent to ${cleanEmail}.`);
+      // This page opens in link mode and creates a link invitation right away,
+      // which moves the setup out of draft. Cancel that pending invitation so
+      // the email invitation can replace it (the copied link stops working).
+      const draft = await api(`/api/parents/child-setups/${encodeURIComponent(draftId)}`);
+      if (draft?.status === "Invited") {
+        await api(`/api/parents/child-setups/${encodeURIComponent(draftId)}/invite/cancel`, {
+          method: "POST",
+        });
+        setLink("");
+        sessionStorage.removeItem("childSetupInvitation");
+      }
+
+      const invitation = await createEmailChildSetupInvitation(draftId, cleanEmail, api);
+      // Same next step as the parent-managed flow: the confirmation page.
+      sessionStorage.setItem(
+        "childSetupInvitation",
+        JSON.stringify({ ...invitation, childEmail: cleanEmail }),
+      );
+      navigate("/setup/invitation-sent");
     } catch (requestError) {
       setError(
-        getChildSetupValidationMessage(requestError) ||
-          requestError.message ||
-          "Could not send the invitation. Please try again.",
+        requestError.status >= 500
+          ? "We couldn’t send the invitation email right now. Please try again later, or copy the invitation link instead."
+          : getChildSetupValidationMessage(requestError) ||
+            requestError.message ||
+            "Could not send the invitation. Please try again.",
       );
     } finally {
       setIsSending(false);

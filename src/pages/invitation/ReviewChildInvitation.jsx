@@ -14,6 +14,7 @@ import {
   Check,
   Info,
 } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 import "../../css/invitation/ReviewChildInvitation.css";
 
 export default function ReviewChildInvitation() {
@@ -24,6 +25,7 @@ export default function ReviewChildInvitation() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const token = sessionStorage.getItem("pendingInvitationToken");
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     if (invitation) return;
@@ -56,6 +58,21 @@ export default function ReviewChildInvitation() {
   ].filter(Boolean).join(" · ");
   const sharedItems = ["Study schedule", "Goals & routines", "Focus-session summaries"];
 
+  // An email invitation can only be answered by the parent account with that
+  // email; the backend rejects any other account.
+  const invitedEmail = invitation?.type === "Email"
+    ? invitation?.targetEmail?.trim().toLowerCase() || ""
+    : "";
+  const signedInEmail = user?.email?.trim().toLowerCase() || "";
+  const isWrongAccount = Boolean(invitedEmail && signedInEmail && invitedEmail !== signedInEmail);
+
+  async function switchAccount() {
+    // The pending invitation token stays in this tab, so it is picked up again
+    // after signing in with the invited email.
+    await logout();
+    navigate("/sign-in", { replace: true, state: { returnTo: "/review-invitation" } });
+  }
+
   async function handleConfirmConnection() {
     try {
       setSubmitting(true);
@@ -65,7 +82,26 @@ export default function ReviewChildInvitation() {
       await acceptAccessInvitation(invitationId);
       clearAccessInvitation();
       navigate("/overview");
-    } catch (requestError) { setError(requestError.message); }
+    } catch (requestError) {
+      // Already connected (e.g. accepted on an earlier click): nothing is left
+      // to confirm, so continue to the dashboard instead of showing an error.
+      const details = JSON.stringify(requestError.details || {});
+      if (/Access\.RelationshipExists|Access\.InvitationNoLongerPending/.test(details)) {
+        clearAccessInvitation();
+        navigate("/overview", { replace: true });
+        return;
+      }
+      if (requestError.status === 401) {
+        // Not signed in (or the session ended): sign in, then come back here.
+        navigate("/sign-in", { replace: true, state: { returnTo: "/review-invitation" } });
+        return;
+      }
+      setError(
+        requestError.status === 403
+          ? "This invitation was sent to a different email. Sign in with that email to accept it."
+          : requestError.message,
+      );
+    }
     finally { setSubmitting(false); }
   }
 
@@ -78,7 +114,13 @@ export default function ReviewChildInvitation() {
       await declineAccessInvitation(invitationId);
       clearAccessInvitation();
       navigate("/overview");
-    } catch (requestError) { setError(requestError.message); }
+    } catch (requestError) {
+      if (requestError.status === 401) {
+        navigate("/sign-in", { replace: true, state: { returnTo: "/review-invitation" } });
+        return;
+      }
+      setError(requestError.message);
+    }
     finally { setSubmitting(false); }
   }
 
@@ -135,17 +177,32 @@ export default function ReviewChildInvitation() {
               </span>
             </div>
 
-            {error && !showDecline && <p className="password-error">{error}</p>}
+            {isWrongAccount && (
+              <div className="review-invitation-account" role="alert">
+                <p>
+                  This invitation was sent to <b>{invitedEmail}</b>, but you’re
+                  signed in as <b>{signedInEmail}</b>.
+                </p>
+                <p>Sign in with the invited email to accept or decline it.</p>
+                <button type="button" onClick={switchAccount}>
+                  Sign in with {invitedEmail}
+                </button>
+              </div>
+            )}
+
+            {error && !showDecline && (
+              <p className="review-invitation-error" role="alert">{error}</p>
+            )}
 
             <div className="review-invitation-actions">
-              <Button onClick={handleConfirmConnection} disabled={submitting}>
+              <Button onClick={handleConfirmConnection} disabled={submitting || isWrongAccount}>
                 {submitting ? "Updating…" : "Confirm connection"}
               </Button>
 
               <button
                 type="button"
                 className="review-invitation-decline"
-                disabled={submitting}
+                disabled={submitting || isWrongAccount}
                 onClick={() => {
                   setError("");
                   setShowDecline(true);

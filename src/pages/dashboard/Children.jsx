@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Plus } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import ChildProfileModal from "../../components/ui/ChildProfileModal";
@@ -23,6 +24,8 @@ import sessionClockImage from "../../assets/seclock.png";
 
 
 import "../../css/dashboard/Children.css";
+import { copyText } from "../../services/clipboard";
+import { useChildSetupImage } from "../../services/childSetupImage";
 
 function ChildrenUnavailable({ onAction }) {
   return (
@@ -87,6 +90,9 @@ export default function Children() {
   const isConnected = Boolean(childInfo?.studentId);
   const isPending = !isConnected && Boolean(pendingChild);
   const child = buildChildView(studentDetails, childInfo, pendingChild, dashboard);
+  const childImage = useChildSetupImage(
+    pendingChild?.childSetupDraftId || childInfo?.childSetupDraftId,
+  );
 
   function showFeedback(type) {
     window.clearTimeout(feedbackTimer.current);
@@ -110,12 +116,12 @@ export default function Children() {
   async function copyInvitationLink() {
     try {
       const response = await api(`/api/parents/child-setups/${pendingChild.childSetupDraftId || pendingChild.id}/invite/link`, { method: "POST" });
-      await navigator.clipboard.writeText(response.invitationUrl);
+      if (!response?.invitationUrl) throw new Error("No invitation link returned.");
+      await copyText(response.invitationUrl);
+      showFeedback("copied");
     } catch {
-      // Mock UI
+      showFeedback("error");
     }
-
-    showFeedback("copied");
   }
 
   async function cancelInvitation() {
@@ -173,7 +179,11 @@ export default function Children() {
               </p>
             </div>
 
-            <span className="children-heading-avatar">{child.preferredName?.[0]?.toUpperCase() || "C"}</span>
+            <span className="children-heading-avatar">
+              {childImage
+                ? <img src={childImage} alt="" />
+                : child.preferredName?.[0]?.toUpperCase() || "C"}
+            </span>
           </header>
 
           {/* =====================================================
@@ -184,7 +194,9 @@ export default function Children() {
             <>
               <section className="children-hero">
                 <div className="children-avatar">
-                  {child.preferredName?.[0] || "Y"}
+                  {childImage
+                    ? <img src={childImage} alt="" />
+                    : child.preferredName?.[0] || "Y"}
                 </div>
 
                 <div className="children-hero-main">
@@ -661,24 +673,15 @@ export default function Children() {
                 </section>
               </div>
 
-              <footer className="children-future-footer">
-                <div>
-                  <strong>FUTURE · NOT FOR IMPLEMENTATION</strong>
-                  <span>Not linked in prototype</span>
-                </div>
-
-                <div className="children-future-actions">
-                  <button
-                    type="button"
-                    onClick={() => navigate("/choose-start")}
-                  >
-                    Add another child
-                  </button>
-
-                  <button type="button" disabled>
-                    Future
-                  </button>
-                </div>
+              <footer className="children-add-footer">
+                <button
+                  type="button"
+                  className="children-add-button"
+                  onClick={() => navigate("/choose-start")}
+                >
+                  <Plus size={18} strokeWidth={2.4} aria-hidden="true" />
+                  Add another child
+                </button>
               </footer>
             </>
           )}

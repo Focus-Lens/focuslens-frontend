@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   AuthLayout,
@@ -7,7 +7,8 @@ import {
   Card,
 } from "../../components/ui/CommonUI";
 import { useChildProfile } from "../../context/ChildProfileContext";
-import { Check } from "lucide-react";
+import { api } from "../../services/api";
+import { Check, ChevronDown } from "lucide-react";
 import "../../css/onboarding/ChildStudyGoal.css";
 
 const steps = [
@@ -19,6 +20,16 @@ const steps = [
   "Invite",
 ];
 
+const weekDays = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
 export default function ChildStudyGoal() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -27,8 +38,54 @@ export default function ChildStudyGoal() {
     () => String(child.studyTimeGoal?.value || 8),
   );
 
-  function saveGoal() {
+  // Every new child starts on Sunday; returning to this step keeps the day
+  // already chosen for this child.
+  const [weekStartsOn, setWeekStartsOn] = useState(
+    () => child.weekStartsOn || "Sunday",
+  );
+  const [isDayMenuOpen, setIsDayMenuOpen] = useState(false);
+  const dayMenuRef = useRef(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!isDayMenuOpen) return undefined;
+
+    function closeOnOutsideClick(event) {
+      if (!dayMenuRef.current?.contains(event.target)) setIsDayMenuOpen(false);
+    }
+    function closeOnEscape(event) {
+      if (event.key === "Escape") setIsDayMenuOpen(false);
+    }
+
+    document.addEventListener("mousedown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("mousedown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isDayMenuOpen]);
+
+  async function saveGoal() {
+    if (isSaving) return;
+
+    // The week start day is a parent setting; the weekly goal sent with the
+    // invitation uses it as its only day.
+    try {
+      setIsSaving(true);
+      setError("");
+      await api("/api/parents/me/settings", {
+        method: "PUT",
+        body: { weekStartsOn },
+      });
+    } catch (requestError) {
+      setError(requestError.message || "Could not save the week start day. Please try again.");
+      setIsSaving(false);
+      return;
+    }
+
     updateChild({
+      weekStartsOn,
       suggestedGoal: `${weeklyHours} hours per week`,
       studyTimeGoal: {
       goalType: "weekly",
@@ -110,6 +167,61 @@ export default function ChildStudyGoal() {
                 />
               </div>
 
+              <div
+                className={`child-goal-input-wrap child-goal-select-wrap ${
+                  isDayMenuOpen ? "open" : ""
+                }`}
+                ref={dayMenuRef}
+              >
+                <label id="child-goal-week-start-label">Week starts on</label>
+
+                <button
+                  type="button"
+                  className="child-goal-select-trigger"
+                  aria-haspopup="listbox"
+                  aria-expanded={isDayMenuOpen}
+                  aria-labelledby="child-goal-week-start-label"
+                  onClick={() => setIsDayMenuOpen((open) => !open)}
+                >
+                  <span>{weekStartsOn}</span>
+                  <ChevronDown
+                    className="child-goal-select-icon"
+                    size={18}
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  />
+                </button>
+
+                {isDayMenuOpen && (
+                  <ul
+                    className="child-goal-select-menu"
+                    role="listbox"
+                    aria-labelledby="child-goal-week-start-label"
+                  >
+                    {weekDays.map((day) => (
+                      <li key={day}>
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={day === weekStartsOn}
+                          className={day === weekStartsOn ? "selected" : ""}
+                          onClick={() => {
+                            setWeekStartsOn(day);
+                            setIsDayMenuOpen(false);
+                            setError("");
+                          }}
+                        >
+                          <span>{day}</span>
+                          {day === weekStartsOn && (
+                            <Check size={15} strokeWidth={2.6} aria-hidden="true" />
+                          )}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
               <div className="child-goal-current-week">
                 Current week · Set automatically
               </div>
@@ -123,8 +235,12 @@ export default function ChildStudyGoal() {
                   Back
                 </button>
 
-                <Button onClick={saveGoal}>Add weekly goal</Button>
+                <Button onClick={saveGoal} disabled={isSaving}>
+                  {isSaving ? "Saving..." : "Add weekly goal"}
+                </Button>
               </div>
+
+              {error && <p className="child-goal-error" role="alert">{error}</p>}
             </div>
           </Card>
         </div>

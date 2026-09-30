@@ -20,12 +20,14 @@ import {
   createLinkChildSetupInvitation,
   getChildSetupValidationMessage,
   getDraftProfileSetupMode,
+  reuseOrReleaseChildSetupInvitation,
 } from "../../services/childSetupFlow";
 import { cachePendingInvitation } from "../../services/pendingInvitationCache";
 import { api } from "../../services/api";
 import logo from "../../assets/logo.png";
 
 import "../../css/onboarding/InviteChild.css";
+import { copyText } from "../../services/clipboard";
 
 const steps = [
   "Basic info",
@@ -56,7 +58,42 @@ const priorities = {
   ReachStudyGoals: "ReachStudyGoals",
 };
 
-function buildChildSetupPayload(child) {
+// The backend grade is an enum (Grade5…Grade12, Other). A free-text "Other"
+// grade that names a known grade is sent as GradeN; anything else is sent as
+// Other with its name in customGrade (only allowed, and required, for Other).
+function toBackendGrade(child) {
+  if (!child.grade) return { grade: null, customGrade: null };
+  const label = child.grade === "Other" ? child.otherGrade?.trim() : child.grade;
+  const gradeNumber = Number(label?.match(/\d+/)?.[0]);
+  if (gradeNumber >= 5 && gradeNumber <= 12) {
+    return { grade: `Grade${gradeNumber}`, customGrade: null };
+  }
+  return { grade: "Other", customGrade: label || null };
+}
+
+// The backend keeps a single study goal; the first chosen priority is used.
+const priorityGoals = {
+  BuildStudyRoutine: "BuildARoutine",
+  StayFocused: "FocusBetter",
+  UnderstandDifficultTopics: "CatchUp",
+  ExamPreparation: "PrepareForExams",
+  ReachStudyGoals: "BuildARoutine",
+};
+
+// A weekly study-time goal needs exactly one day: the day the parent's week
+// starts. Parents without that setting get Sunday, which the backend also
+// needs before any invitation can be created.
+async function ensureWeekStartsOn() {
+  const settings = await api("/api/parents/me/settings");
+  if (settings?.weekStartsOn) return settings.weekStartsOn;
+  await api("/api/parents/me/settings", {
+    method: "PUT",
+    body: { weekStartsOn: "Sunday" },
+  });
+  return "Sunday";
+}
+
+function buildChildSetupPayload(child, weekStartsOn) {
   const customSubjects = child.otherSubjects?.length
     ? child.otherSubjects
     : child.otherSubject?.trim()
@@ -80,17 +117,15 @@ function buildChildSetupPayload(child) {
     firstName: child.preferredName?.trim(),
     lastName: child.lastName?.trim(),
     dateOfBirth: child.dateOfBirth || null,
-    grade: child.grade === "Other"
-      ? child.otherGrade?.trim() || null
-      : child.grade?.replace(/\s/g, "") || null,
+    ...toBackendGrade(child),
     subjects,
-    studyPriorities,
+    goal: priorityGoals[studyPriorities[0]] || null,
     studyTimeGoal: {
       period: "Weekly",
       targetMinutes: Number.isFinite(targetHours) && targetHours > 0
         ? Math.round(targetHours * 60)
         : null,
-      days: null,
+      days: weekStartsOn ? [weekStartsOn] : null,
       startDate: Number.isFinite(targetHours) && targetHours > 0
         ? new Date().toISOString().slice(0, 10)
         : null,
@@ -159,11 +194,17 @@ export default function InviteChild() {
     setIsLoadingLink(true);
     setShowErrorToast(false);
     try {
-      await api(`/api/parents/child-setups/${encodeURIComponent(draftId)}`, {
-        method: "PUT",
-        body: buildChildSetupPayload(child),
-      });
-      const response = await createLinkChildSetupInvitation(draftId, api);
+      // A pending link invitation is reused as is; its details were saved
+      // when it was created, and the backend no longer allows edits.
+      let response = await reuseOrReleaseChildSetupInvitation(draftId, api);
+      if (!response) {
+        const weekStartsOn = await ensureWeekStartsOn();
+        await api(`/api/parents/child-setups/${encodeURIComponent(draftId)}`, {
+          method: "PUT",
+          body: buildChildSetupPayload(child, weekStartsOn),
+        });
+        response = await createLinkChildSetupInvitation(draftId, api);
+      }
       const url = response?.invitationUrl || response?.setupUrl || response?.url;
       if (!url) throw new Error("The server did not return an invitation link.");
       sessionStorage.setItem("childSetupInvitation", JSON.stringify(response));
@@ -225,7 +266,7 @@ export default function InviteChild() {
             ? isStandardGrade ? draftGrade : "Other"
             : child.grade,
           otherGrade: draftGrade && !isStandardGrade
-            ? draftGrade
+            ? draft.customGrade || (draftGrade !== "Other" ? draftGrade : child.otherGrade)
             : child.otherGrade,
           subjects: draftSubjects,
           otherSubjects: draft.subjects?.length ? draftOtherSubjects : child.otherSubjects,
@@ -283,17 +324,24 @@ export default function InviteChild() {
       if (!draftId) {
         throw new Error("Start the child setup again before sending an invitation.");
       }
-      const settings = await api("/api/parents/me/settings");
-      if (!settings.weekStartsOn) {
-        await api("/api/parents/me/settings", {
-          method: "PUT",
-          body: { weekStartsOn: "Sunday" },
+      const weekStartsOn = await ensureWeekStartsOn();
+
+      // Opening this page in link mode already creates a link invitation, and
+      // the backend only edits or invites a setup that is still a draft. Cancel
+      // that pending invitation so the setup returns to draft; the copied link
+      // stops working and the email invitation replaces it.
+      const draft = await api(`/api/parents/child-setups/${encodeURIComponent(draftId)}`);
+      if (draft?.status === "Invited") {
+        await api(`/api/parents/child-setups/${encodeURIComponent(draftId)}/invite/cancel`, {
+          method: "POST",
         });
+        setInviteLink("");
+        sessionStorage.removeItem("childSetupInvitation");
       }
 
       await api(`/api/parents/child-setups/${draftId}`, {
         method: "PUT",
-        body: buildChildSetupPayload(child),
+        body: buildChildSetupPayload(child, weekStartsOn),
       });
 
       const invitation = await createEmailChildSetupInvitation(draftId, cleanEmail, api);
@@ -313,7 +361,9 @@ export default function InviteChild() {
     } catch (requestError) {
       const message = requestError.message || "Something went wrong. Please try again.";
       const validationMessage = getChildSetupValidationMessage(requestError);
-      if (validationMessage) {
+      if (requestError.status >= 500) {
+        showSendingError("We couldn’t send the invitation email right now. Please try again later, or copy the invitation link instead.");
+      } else if (validationMessage) {
         showSendingError(validationMessage);
       } else if (/already.*invited|invitation.*already exists/i.test(message)) {
         showSendingError("This child already has an invitation. Manage it from your dashboard.");
@@ -356,13 +406,8 @@ export default function InviteChild() {
     const link = inviteLink || await loadInviteLink();
     if (!link) return;
 
-    if (!navigator.clipboard) {
-      showSendingError("Your browser could not copy the link. Please copy it manually.");
-      return;
-    }
-
     try {
-      await navigator.clipboard.writeText(link);
+      await copyText(link);
       const draftId = sessionStorage.getItem("childSetupDraftId");
       let invitation = null;
       try {
@@ -388,8 +433,11 @@ export default function InviteChild() {
         parentEmail: user?.email,
         childSetupInvitationExpiresAtUtc: invitation?.expiresAtUtc,
       });
-      setShowLinkMessage(true);
-      setShowCopiedModal(true);
+      sessionStorage.setItem(
+        "childSetupInvitation",
+        JSON.stringify({ ...invitation, delivery: "link" }),
+      );
+      navigate("/setup/invitation-sent");
     } catch {
       showSendingError("Your browser could not copy the link. Please try again.");
     }
@@ -571,8 +619,8 @@ export default function InviteChild() {
                 <b>{child.preferredName} stays in control</b>
 
                 <p>
-                  He&apos;ll see who invited him, review his profile and
-                  suggested goal, then activate the invitation.
+                  He/She will see who invited him/her, review his/her profile
+                  and suggested goal, then activate the invitation.
                 </p>
 
                 <small>

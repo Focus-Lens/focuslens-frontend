@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
 import { api } from "../../services/api";
+import { holdRegistrationPassword } from "../../services/pendingRegistration";
 
 import {
   RiEyeLine,
@@ -68,6 +69,7 @@ export default function CreatePassword() {
       if (!pending) throw new Error("Your registration details have expired. Please start again.");
       await api("/api/auth/register/parent", { method: "POST", auth: false, body: { ...pending, password } });
       sessionStorage.setItem("pendingParentEmail", pending.email);
+      holdRegistrationPassword(password);
       navigate("/verify-email");
     } catch (error) {
       if (error.status === 409) {

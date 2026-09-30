@@ -9,6 +9,7 @@ import {
 } from "../../components/ui/CommonUI";
 import { useChildProfile } from "../../context/ChildProfileContext";
 import { api } from "../../services/api";
+import { setChildSetupImage } from "../../services/childSetupImage";
 import { Info, ChevronLeft, UserRound } from "lucide-react";
 import "../../css/onboarding/ChildBasicInfo.css";
 
@@ -24,6 +25,11 @@ export default function ChildBasicInfo() {
   const [profileImageUrl, setProfileImageUrl] = useState("");
   const [isLoadingProfileImage, setIsLoadingProfileImage] = useState(false);
   const [isSavingProfileImage, setIsSavingProfileImage] = useState(false);
+  // Continue pressed while the photo is still uploading: show a waiting state,
+  // then continue automatically once the upload succeeds.
+  const [isWaitingForUpload, setIsWaitingForUpload] = useState(false);
+  const continueAfterUpload = useRef(false);
+  const latestContinue = useRef(null);
   const [profileImageError, setProfileImageError] = useState("");
   const profileImageObjectUrl = useRef("");
   const draftId = sessionStorage.getItem("childSetupDraftId");
@@ -83,11 +89,14 @@ export default function ChildBasicInfo() {
     setIsSavingProfileImage(true);
     setProfileImageError("");
     const imagePath = `/api/parents/child-setups/${encodeURIComponent(draftId)}/profile-image`;
+    let uploaded = false;
     try {
       const imageForm = new FormData();
       imageForm.append("file", imageFile);
       await api(imagePath, { method: "PUT", body: imageForm });
+      uploaded = true;
       displayProfileImage(imageFile);
+      setChildSetupImage(draftId, imageFile);
 
       try {
         const savedImage = await api(imagePath, { responseType: "blob" });
@@ -101,6 +110,12 @@ export default function ChildBasicInfo() {
       setProfileImageError(requestError.message || "Could not save the profile image.");
     } finally {
       setIsSavingProfileImage(false);
+      setIsWaitingForUpload(false);
+      if (continueAfterUpload.current) {
+        continueAfterUpload.current = false;
+        // A failed upload stays on this step so its error can be seen.
+        if (uploaded) latestContinue.current?.({ uploadFinished: true });
+      }
     }
   }
 
@@ -113,7 +128,15 @@ export default function ChildBasicInfo() {
     "Invite",
   ];
 
-  function handleContinue() {
+  function handleContinue({ uploadFinished = false } = {}) {
+    // The handler kept for the upload callback was captured while the upload
+    // was still running, so it is told explicitly that the upload is done.
+    if (isSavingProfileImage && !uploadFinished) {
+      continueAfterUpload.current = true;
+      setIsWaitingForUpload(true);
+      return;
+    }
+
     const nextErrors = {
       name: name.trim() ? "" : "First name is required.",
       lastName: lastName.trim() ? "" : "Last name is required.",
@@ -137,6 +160,13 @@ export default function ChildBasicInfo() {
 
     navigate(returnTo === "review" ? "/setup/review" : "/setup/studies");
   }
+
+
+  // Keep the latest handler (with the current form values) for the upload
+  // callback that finishes later.
+  useEffect(() => {
+    latestContinue.current = handleContinue;
+  });
 
   function handleBack() {
     const returnTo = searchParams.get("returnTo");
@@ -284,8 +314,8 @@ export default function ChildBasicInfo() {
                   <ChevronLeft size={21} strokeWidth={1.8} />
                 </button>
 
-                <Button onClick={handleContinue} disabled={isSavingProfileImage}>
-                  Continue
+                <Button onClick={() => handleContinue()} disabled={isWaitingForUpload}>
+                  {isWaitingForUpload ? "Waiting for photo upload..." : "Continue"}
                 </Button>
               </div>
             </div>

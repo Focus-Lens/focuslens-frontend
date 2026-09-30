@@ -12,13 +12,31 @@ import { Check } from "lucide-react";
 import logo from "../../assets/logo.png";
 
 import "../../css/onboarding/InvitationSent.css";
+import { copyText } from "../../services/clipboard";
 
 export default function InvitationSent() {
   const navigate = useNavigate();
   const { child } = useChildProfile();
   const [showCopiedModal, setShowCopiedModal] = useState(false);
+  // When the child sets up their own profile there is no name yet, and the
+  // email only exists on the invitation that was just sent.
+  const [sentInvitation] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem("childSetupInvitation") || "null");
+    } catch {
+      return null;
+    }
+  });
+  const childName = child.preferredName;
+  const displayedName = childName || "your child";
+  // The same confirmation is shown after copying the link instead of emailing.
+  const isLinkDelivery = sentInvitation?.delivery === "link";
+  const sentToEmail = isLinkDelivery ? "" : child.email || sentInvitation?.childEmail;
   const [copyError, setCopyError] = useState("");
   const [isCopying, setIsCopying] = useState(false);
+  // The button itself confirms the copy, so the result is visible even if the
+  // confirmation dialog is dismissed or never noticed.
+  const [justCopied, setJustCopied] = useState(false);
 
   async function copyInvitationLink() {
     if (isCopying) return;
@@ -40,7 +58,9 @@ export default function InvitationSent() {
     setCopyError("");
     setIsCopying(true);
     try {
-      await navigator.clipboard.writeText(url);
+      await copyText(url);
+      setJustCopied(true);
+      window.setTimeout(() => setJustCopied(false), 2500);
       setShowCopiedModal(true);
     } catch (error) {
       setCopyError(error.message || "Could not copy the invitation link. Please try again.");
@@ -66,26 +86,38 @@ export default function InvitationSent() {
 
               {/* TITLE */}
               <h1>
-                Invitation sent to {child.preferredName}
+                {isLinkDelivery
+                  ? "Invitation link copied"
+                  : childName
+                    ? `Invitation sent to ${childName}`
+                    : "Invitation sent"}
               </h1>
 
               {/* EMAIL */}
-              <p className="invitation-sent-email">
-                Sent to {child.email}
-              </p>
+              {sentToEmail && (
+                <p className="invitation-sent-email">
+                  Sent to {sentToEmail}
+                </p>
+              )}
 
               {/* DESCRIPTION */}
+              {isLinkDelivery && (
+                <p className="invitation-sent-email">
+                  Share it privately with {displayedName}.
+                </p>
+              )}
+
               <p className="invitation-sent-description">
-                Next, {child.preferredName} opens the invitation &amp; study
-                progress will appear
+                Next, {displayedName} opens the invitation &amp; study
+                progress will appear{" "}
                 <br />
-                after he starts study sessions.
+                after he/she starts study sessions.
               </p>
 
               {/* PRIMARY BUTTON */}
               <button
                 className="invitation-sent-primary"
-                onClick={() => navigate("/waiting-for-child")}
+                onClick={() => navigate("/overview", { replace: true })}
                 type="button"
               >
                 Go to dashboard
@@ -98,7 +130,11 @@ export default function InvitationSent() {
                 disabled={isCopying}
                 type="button"
               >
-                {isCopying ? "Getting invitation link..." : "Copy invitation link"}
+                {isCopying
+                  ? "Copying..."
+                  : justCopied
+                    ? "Link copied ✓"
+                    : "Copy invitation link"}
               </button>
               {copyError && <p role="alert" className="invitation-link-error">{copyError}</p>}
 
@@ -125,7 +161,7 @@ export default function InvitationSent() {
                 </h2>
 
                 <p>
-                  Share it privately with {child.preferredName}.
+                  Share it privately with {displayedName}.
                   <br />
                   The invitation expires in 7 days.
                 </p>

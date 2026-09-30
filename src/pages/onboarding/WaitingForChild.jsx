@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CircleAlert, Check, Clock3 } from "lucide-react";
+import { CircleAlert, Check, Clock3, Link2, Mail } from "lucide-react";
 
 import { ParentLayout, Button } from "../../components/ui/CommonUI";
 import { parent } from "../../data/mockData";
@@ -18,10 +18,27 @@ import {
 import { api } from "../../services/api";
 
 import "../../css/onboarding/WaitingForChild.css";
+import { copyText } from "../../services/clipboard";
+import useTabReturnRefresh from "../../services/useTabReturnRefresh";
+
+function formatExpiresIn(expiresAtUtc) {
+  const expiresAt = expiresAtUtc ? new Date(expiresAtUtc).getTime() : NaN;
+  if (Number.isNaN(expiresAt)) return null;
+
+  const remainingMs = expiresAt - Date.now();
+  if (remainingMs <= 0) return "Expired";
+
+  const days = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+  if (days > 1) return `Expires in ${days} days`;
+
+  const hours = Math.ceil(remainingMs / (60 * 60 * 1000));
+  return hours > 1 ? `Expires in ${hours} hours` : "Expires in less than an hour";
+}
 
 export default function WaitingForChild({
   childName,
   pendingChild,
+  initialInvitation = null,
   onInvitationCancelled,
 }) {
   const navigate = useNavigate();
@@ -30,12 +47,19 @@ export default function WaitingForChild({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const [isResending, setIsResending] = useState(false);
+  const [isCopyingLink, setIsCopyingLink] = useState(false);
+  const [justCopiedLink, setJustCopiedLink] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
-  const [serverInvitation, setServerInvitation] = useState(null);
+  // Provided by the Overview, which loads it together with the children list,
+  // so the email and expiry show immediately.
+  const [serverInvitation, setServerInvitation] = useState(initialInvitation);
 
-  const displayedName =
-    serverInvitation?.firstName || pendingChild?.firstName || childName || child.preferredName || "your child";
+  const knownName =
+    serverInvitation?.firstName || pendingChild?.firstName || childName || child.preferredName;
+  // A setup the child completes themselves has no name until they do.
+  const isChildManaged = !knownName;
+  const displayedName = knownName || "your child";
   const displayedGrade = serverInvitation?.grade
     ? serverInvitation.grade.replace(/(\D)(\d)/, "$1 $2")
     : child.grade === "Other"
@@ -49,7 +73,16 @@ export default function WaitingForChild({
   const displayedSubjects = (child.subjects || [])
     .flatMap((subject) => subject === "Other" ? customSubjects : [subject])
     .filter(Boolean);
-  const childDetails = [
+  const invitation = serverInvitation || pendingChild;
+  // Link invitations can only be copied again and email invitations can only
+  // be resent; the backend rejects the other action for each type.
+  const isLinkInvitation = invitation?.type === "Link";
+  const isEmailInvitation = invitation?.type === "Email";
+  const expiryText = formatExpiresIn(invitation?.expiresAtUtc);
+  const invitedEmail = isEmailInvitation
+    ? (invitation?.targetEmail || invitation?.email || child.email || "").toLowerCase()
+    : "";
+  const childDetails = isChildManaged ? [] : [
     ["Name", [displayedName, child.lastName].filter(Boolean).join(" ")],
     ["Date of birth", child.dateOfBirth],
     ["Grade", displayedGrade],
@@ -60,22 +93,35 @@ export default function WaitingForChild({
       : "")],
   ].filter(([, value]) => value);
 
+  const tabReturnCount = useTabReturnRefresh();
+
   useEffect(() => {
+    if (tabReturnCount === 0 && initialInvitation) return undefined;
     let active = true;
 
     api("/api/parents/child-setups/invitations")
       .then((invitations) => {
-        if (active) setServerInvitation(invitations[0] || null);
+        if (!active) return;
+        const nextInvitation = invitations[0] || null;
+        setServerInvitation(nextInvitation);
+        // Opened on its own route and the invitation is gone (cancelled or
+        // accepted elsewhere): there is nothing left to wait for. Inside the
+        // Overview, the Overview reloads and decides what to show.
+        if (!nextInvitation && tabReturnCount > 0 && !onInvitationCancelled) {
+          navigate("/overview", { replace: true });
+        }
       })
       .catch(() => {});
 
     return () => {
       active = false;
     };
-  }, []);
+    // Reloads on mount and whenever the parent returns to this tab.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabReturnCount]);
 
-  function showFeedback(title, message) {
-    setFeedback({ title, message });
+  function showFeedback(title, message, type = "success") {
+    setFeedback({ title, message, type });
 
     setTimeout(() => {
       setFeedback(null);
@@ -111,29 +157,76 @@ export default function WaitingForChild({
       });
       showFeedback(
         "Invitation resent",
-        `A new invitation was sent to ${displayedEmail}.`,
+        invitation?.targetEmail || invitation?.email || child.email
+          ? `A new invitation was sent to ${(invitation?.targetEmail || invitation?.email || child.email).toLowerCase()}.`
+          : `A new invitation was sent to ${displayedName}.`,
       );
     } catch (error) {
       showFeedback(
         "We couldn't resend the invitation",
         error.message || "Please try again in a moment.",
+        "error",
       );
     } finally {
       setIsResending(false);
     }
   }
 
-  function handleCopyLink() {
-    const link = `https://focuslens.app/invite/${encodeURIComponent(
-      displayedName || "demo"
-    )}`;
+  // The invitations list does not include the link, so the backend issues a
+  // fresh one for the pending invitation (the previous link stops working).
+  async function handleCopyLink() {
+    if (isCopyingLink) return;
 
-    navigator.clipboard?.writeText(link).catch(() => {});
+    try {
+      setIsCopyingLink(true);
+      let invitation = serverInvitation || pendingChild;
+      let draftId =
+        invitation?.draftId ||
+        invitation?.childSetupDraftId ||
+        getChildInvitationDraft().draftId ||
+        getChildInvitationDraft().childSetupDraftId;
 
-    showFeedback(
-      "Invitation link copied",
-      `Share it privately with ${displayedName}.`
-    );
+      if (!draftId) {
+        const invitations = await api("/api/parents/child-setups/invitations");
+        invitation = invitations[0];
+        draftId = invitation?.draftId || invitation?.childSetupDraftId;
+        if (invitation) setServerInvitation(invitation);
+      }
+
+      if (!draftId) {
+        throw new Error("No pending invitation was found.");
+      }
+
+      const response = await api(
+        `/api/parents/child-setups/${encodeURIComponent(draftId)}/invite/link`,
+        { method: "POST" },
+      );
+      const link = response?.invitationUrl;
+      if (!link) throw new Error("The server did not return an invitation link.");
+
+      sessionStorage.setItem("childSetupInvitation", JSON.stringify(response));
+      if (response.expiresAtUtc) {
+        setServerInvitation((current) =>
+          current ? { ...current, expiresAtUtc: response.expiresAtUtc } : current,
+        );
+      }
+      await copyText(link);
+      setJustCopiedLink(true);
+      window.setTimeout(() => setJustCopiedLink(false), 2500);
+
+      showFeedback(
+        "Invitation link copied",
+        `Share it privately with ${displayedName}.`
+      );
+    } catch (error) {
+      showFeedback(
+        "We couldn't copy the invitation link",
+        error.message || "Please try again in a moment.",
+        "error",
+      );
+    } finally {
+      setIsCopyingLink(false);
+    }
   }
 
   async function handleCancelInvitation() {
@@ -195,9 +288,14 @@ export default function WaitingForChild({
         <main className="waiting-content">
           {/* Feedback */}
           {feedback && (
-            <div className="waiting-feedback">
+            <div
+              className={`waiting-feedback ${feedback.type === "error" ? "error" : ""}`}
+              role={feedback.type === "error" ? "alert" : "status"}
+            >
               <div className="feedback-icon">
-                <Check size={17} strokeWidth={2.5} />
+                {feedback.type === "error"
+                  ? <CircleAlert size={18} strokeWidth={2.5} />
+                  : <Check size={17} strokeWidth={2.5} />}
               </div>
 
               <div className="feedback-text">
@@ -225,72 +323,95 @@ export default function WaitingForChild({
             </p>
           </section>
 
-          {/* Invitation Card */}
-          <section className="waiting-card invitation-card">
-            <div className="invitation-status">
-              <span className="status-icon">
-                <Clock3 size={19} strokeWidth={1.9} />
-              </span>
+          <div className="waiting-layout">
+            {/* Invitation Card */}
+            <section className="waiting-card invitation-card">
+              <div className="invitation-card-top">
+                <div className="invitation-status">
+                  <span className="status-icon">
+                    <Clock3 size={17} strokeWidth={2} />
+                  </span>
 
-              <h2>Invitation pending</h2>
-            </div>
-
-            <div className="invitation-info">
-              <span>{displayedName}{displayedGrade ? ` · ${displayedGrade}` : ""}</span>
-            </div>
-
-            <dl className="waiting-child-details">
-              {childDetails.map(([label, value]) => (
-                <div className="waiting-child-detail" key={label}>
-                  <dt>{label}</dt>
-                  <dd>{value}</dd>
+                  <h2>Invitation pending</h2>
                 </div>
-              ))}
-            </dl>
 
-            <p className="invitation-expiry">
-              Expires in {child.invitationExpiresIn} · Activation and sharing
-              approval are still needed.
-            </p>
+                {expiryText && <span className="invitation-expiry-badge">{expiryText}</span>}
+              </div>
 
-            <div className="waiting-actions">
-              <Button onClick={handleResendInvitation} disabled={isResending}>
-                {isResending ? "Resending..." : "Resend invitation"}
-              </Button>
+              <p className="invitation-summary">
+                {isChildManaged
+                  ? "Your child will create their own profile when they open the invitation."
+                  : `${displayedName}${displayedGrade ? ` · ${displayedGrade}` : ""}`}
+              </p>
 
-              <Button secondary onClick={handleCopyLink}>
-                Copy link
-              </Button>
-            </div>
-          </section>
+              {(isEmailInvitation || isLinkInvitation) && (
+                <div className="invitation-delivery">
+                  <span className="invitation-delivery-icon">
+                    {isEmailInvitation
+                      ? <Mail size={17} strokeWidth={2} />
+                      : <Link2 size={17} strokeWidth={2} />}
+                  </span>
+                  <div>
+                    <span className="invitation-delivery-label">
+                      {isEmailInvitation ? "Sent by email to" : "Shared as"}
+                    </span>
+                    <b>{isEmailInvitation ? invitedEmail || "your child’s email" : "A private invitation link"}</b>
+                  </div>
+                </div>
+              )}
 
-          {/* Setup Checklist */}
-          <section className="waiting-card setup-card">
-            <h2>Setup checklist</h2>
+              {childDetails.length > 0 && (
+                <dl className="waiting-child-details">
+                  {childDetails.map(([label, value]) => (
+                    <div className="waiting-child-detail" key={label}>
+                      <dt>{label}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
 
-            <p className="setup-description">
-              Profile ready, {displayedName} can review and adjust the
-              setup.
-            </p>
+              <div className="waiting-actions">
+                {!isLinkInvitation && (
+                  <Button onClick={handleResendInvitation} disabled={isResending}>
+                    {isResending ? "Resending..." : "Resend invitation"}
+                  </Button>
+                )}
 
-            <div className="setup-actions">
-              <Button
-                onClick={() =>
-                  navigate("/setup/review?returnTo=waiting")
-                }
-              >
-                Edit child information
-              </Button>
+                {!isEmailInvitation && (
+                  <Button
+                    secondary={!isLinkInvitation}
+                    onClick={handleCopyLink}
+                    disabled={isCopyingLink}
+                  >
+                    {isCopyingLink
+                      ? "Copying..."
+                      : justCopiedLink
+                        ? "Link copied ✓"
+                        : "Copy link"}
+                  </Button>
+                )}
 
-              <button
-                className="cancel-invitation"
-                onClick={() => setShowCancelModal(true)}
-                type="button"
-              >
-                Cancel invitation
-              </button>
-            </div>
-          </section>
+                {!isChildManaged && (
+                  <button
+                    className="waiting-edit-link"
+                    onClick={() => navigate("/setup/review?returnTo=waiting")}
+                    type="button"
+                  >
+                    Edit child information
+                  </button>
+                )}
+
+                <button
+                  className="cancel-invitation"
+                  onClick={() => setShowCancelModal(true)}
+                  type="button"
+                >
+                  Cancel invitation
+                </button>
+              </div>
+            </section>
+          </div>
         </main>
       </ParentLayout>
 

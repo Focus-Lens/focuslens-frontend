@@ -54,7 +54,15 @@
 }
 
 .setup-card {
-  margin-top: 22px;
+  margin-top: 0;
+}
+
+/* The heading stays aligned to the page's left edge; the card is centered. */
+.waiting-layout {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
 }
 
 /* =========================
@@ -189,7 +197,7 @@
 
 /* Copy link */
 
-.waiting-actions > :nth-child(2) {
+.waiting-actions > :nth-child(2):not(.cancel-invitation) {
   width: 160px !important;
   height: 38px !important;
   padding: 0 !important;
@@ -209,7 +217,7 @@
   cursor: pointer;
 }
 
-.waiting-actions > :nth-child(2):hover {
+.waiting-actions > :nth-child(2):not(.cancel-invitation):hover {
   border-color: #7130dc !important;
   background: #faf7ff !important;
 }
@@ -275,7 +283,7 @@
   box-shadow: 0 12px 35px rgba(40, 35, 60, 0.12);
 }
 
-.feedback-icon {
+.waiting-feedback .feedback-icon {
   width: 34px;
   height: 34px;
   flex-shrink: 0;
@@ -287,6 +295,16 @@
   border-radius: 50%;
   background: #eee3ff;
   color: #7130dc;
+}
+
+.waiting-feedback.error {
+  border-color: #fecdca;
+  background: #fef3f2;
+}
+
+.waiting-feedback.error .feedback-icon {
+  background: #d92d20;
+  color: #ffffff;
 }
 
 .feedback-text {
@@ -451,6 +469,7 @@
 
   .waiting-actions > :first-child,
   .waiting-actions > :nth-child(2),
+  .waiting-actions > :nth-child(2):not(.cancel-invitation),
   .setup-actions > :first-child {
     width: 100% !important;
   }
@@ -496,5 +515,141 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 9px;
     padding: 12px;
+  }
+}
+
+/* =========================
+   INVITATION CARD (details)
+========================= */
+
+.invitation-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.invitation-expiry-badge {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #fff6e0;
+  color: #9a5a00;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.invitation-summary {
+  margin: 12px 0 0;
+  color: #4b4a55;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.invitation-delivery {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #faf8ff;
+}
+
+.invitation-delivery-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #eee3ff;
+  color: #7130dc;
+}
+
+.invitation-delivery-label {
+  display: block;
+  color: #777783;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.invitation-delivery b {
+  display: block;
+  margin-top: 2px;
+  color: #302f35;
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.invitation-card .waiting-actions {
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.waiting-actions > .cancel-invitation {
+  margin-left: 8px;
+}
+
+.waiting-edit-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #7130dc;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.waiting-edit-link:hover {
+  text-decoration: underline;
+}
+
+.waiting-actions > .waiting-edit-link {
+  margin-left: 8px;
+}
+
+.waiting-actions > .waiting-edit-link + .cancel-invitation {
+  margin-left: 12px;
+}
+
+/* =========================
+   SMALL SCREENS
+========================= */
+
+@media (max-width: 700px) {
+  /* Buttons stack full width; the text actions stay compact and centered. */
+  .waiting-actions > .waiting-edit-link,
+  .waiting-actions > .cancel-invitation {
+    width: auto !important;
+    align-self: center;
+    margin-left: 0;
+    padding: 4px 0;
+  }
+
+  .waiting-actions > .waiting-edit-link + .cancel-invitation {
+    margin-left: 0;
+  }
+
+  .invitation-card-top {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .invitation-summary {
+    font-size: 13px;
+  }
+
+  .invitation-delivery {
+    padding: 12px;
+  }
+
+  .invitation-delivery b {
+    font-size: 13px;
   }
 }

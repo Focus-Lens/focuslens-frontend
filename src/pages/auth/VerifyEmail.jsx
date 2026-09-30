@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { AuthLayout } from "../../components/ui/CommonUI";
 import { api } from "../../services/api";
+import { takeRegistrationPassword } from "../../services/pendingRegistration";
 import { useAuth } from "../../context/AuthContext";
 import { Mail, CheckCircle2, CircleAlert, X, Clock3 } from "lucide-react";
 import "../../css/auth/VerifyEmail.css";
@@ -44,7 +45,26 @@ export default function VerifyEmail() {
     setIsOpening(true);
     try {
       const verification = await api("/api/auth/verify-email", { method: "POST", auth: false, body: { email, otp } });
-      if (verification?.tokens?.accessToken) {
+
+      // Verification returns no session, so sign in with the new credentials;
+      // without them (e.g. after a reload) the parent signs in manually.
+      let session = verification?.tokens?.accessToken ? verification : null;
+      if (!session) {
+        const password = takeRegistrationPassword();
+        if (!password) {
+          sessionStorage.removeItem("pendingParentRegistration");
+          navigate("/sign-in", { replace: true });
+          return;
+        }
+        session = await api("/api/auth/login", {
+          method: "POST",
+          auth: false,
+          body: { email, password },
+        });
+      }
+
+      if (session?.tokens?.accessToken) {
+        const verification = session;
         let registration = null;
         try {
           registration = JSON.parse(sessionStorage.getItem("pendingParentRegistration") || "null");

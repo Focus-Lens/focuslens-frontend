@@ -58,3 +58,27 @@ export function getChildSetupValidationMessage(error) {
   }
   return null;
 }
+
+// The backend only creates a link invitation for a setup that is still a
+// draft. When the setup already has a pending invitation (for example after
+// a reload, or after sending it by email), a pending link invitation is
+// reissued to get its URL, and an email invitation is cancelled so a link can
+// replace it. Returns the reissued invitation, or null when the setup is a
+// draft and a new link invitation can be created.
+export async function reuseOrReleaseChildSetupInvitation(draftId, request) {
+  const encodedId = encodeURIComponent(draftId);
+  const draft = await request(`/api/parents/child-setups/${encodedId}`);
+  if (draft?.status !== "Invited") return null;
+
+  const invitations = await request("/api/parents/child-setups/invitations");
+  const current = Array.isArray(invitations)
+    ? invitations.find((item) => item.draftId === draftId)
+    : null;
+
+  if (current?.type === "Link") {
+    return request(`/api/parents/child-setups/${encodedId}/invite/link`, { method: "POST" });
+  }
+
+  await request(`/api/parents/child-setups/${encodedId}/invite/cancel`, { method: "POST" });
+  return null;
+}

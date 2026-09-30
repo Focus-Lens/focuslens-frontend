@@ -13,7 +13,7 @@ import "../../css/onboarding/ChooseStart.css";
 export default function ChooseStart() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { resetChild, updateChild } = useChildProfile();
 
   const hasInvitation = Boolean(
@@ -61,6 +61,12 @@ export default function ChooseStart() {
       updateChild({ profileSetupMode: getDraftProfileSetupMode(draft) });
       navigate("/profile-setup-choice");
     } catch (requestError) {
+      if (requestError.status === 401) {
+        // The refresh token was rejected too; the stored session is gone.
+        setUser(null);
+        navigate("/sign-in", { replace: true, state: { returnTo: "/choose-start" } });
+        return;
+      }
       setError(requestError.message || "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);

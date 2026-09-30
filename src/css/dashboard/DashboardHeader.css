@@ -3,7 +3,7 @@
   top: 0;
   z-index: 100;
   width: 100%;
-  height: 65px;
+  height: 76px;
   padding: 0 34px;
   box-sizing: border-box;
   display: flex;
@@ -23,42 +23,42 @@
 }
 
 .dashboard-brand img {
-  width: 27px;
-  height: 27px;
+  width: 32px;
+  height: 32px;
   display: block;
   object-fit: contain;
 }
 
 .dashboard-brand span {
-  font-size: 18px;
+  font-size: 21px;
   line-height: 1;
   font-weight: 600;
   letter-spacing: -0.7px;
 }
 
 .dashboard-nav {
-  height: 31px;
-  padding: 2px;
+  height: 40px;
+  padding: 3px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 2px;
   border: 1px solid #dedee5;
-  border-radius: 18px;
+  border-radius: 22px;
   background: #ffffff;
 }
 
 .dashboard-nav-item {
   position: relative;
-  height: 25px;
-  padding: 0 13px;
+  height: 32px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  border-radius: 15px;
+  border-radius: 18px;
   color: #575661;
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 400;
   text-decoration: none;
   white-space: nowrap;
@@ -78,7 +78,7 @@
   position: absolute;
   inset: 0;
   z-index: 0;
-  border-radius: 15px;
+  border-radius: 18px;
   background: #8138f4;
   animation: activePillIn 0.25s ease-out;
 }
@@ -107,8 +107,8 @@
 
 .dashboard-notification {
   position: relative;
-  width: 30px;
-  height: 30px;
+  width: 38px;
+  height: 38px;
   padding: 0;
   display: flex;
   align-items: center;
@@ -139,17 +139,17 @@
 }
 
 .dashboard-user-pill {
-  height: 30px;
-  padding: 0 8px 0 4px;
+  height: 38px;
+  padding: 0 10px 0 5px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   border: 1px solid #dedee5;
-  border-radius: 17px;
+  border-radius: 20px;
   background: #ffffff;
   color: #555561;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 500;
   text-decoration: none;
   white-space: nowrap;
@@ -162,14 +162,14 @@
 }
 
 .dashboard-user-avatar {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -216,11 +216,11 @@
   }
 
   .dashboard-brand span {
-    font-size: 23px;
+    font-size: 21px;
   }
 }
 
-@media (max-width: 800px) {
+@media (max-width: 1100px) {
   .dashboard-header {
     height: auto;
     min-height: 80px;
@@ -388,3 +388,14 @@
   }
 }
 
+
+.dashboard-user-avatar {
+  overflow: hidden;
+}
+
+.dashboard-user-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}

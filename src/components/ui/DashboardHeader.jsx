@@ -14,7 +14,7 @@ import {
   findPendingChild,
   getCachedParentChildren,
 } from "../../services/parentChildrenCache";
-import { getPendingInvitationForUser } from "../../services/pendingInvitationCache";
+import { useChildSetupImage } from "../../services/childSetupImage";
 import logo from "../../assets/logo.png";
 
 import "../../css/dashboard/DashboardHeader.css";
@@ -22,11 +22,12 @@ import "../../css/dashboard/DashboardHeader.css";
 export default function DashboardHeader({ activePage = "overview" }) {
   const { user } = useAuth();
   const cachedChildren = getCachedParentChildren();
+  // Only the server's children list (cached after it loads) is trusted, so a
+  // cancelled invitation never flashes here.
   const child =
-    findConnectedChild(cachedChildren) ||
-    findPendingChild(cachedChildren) ||
-    getPendingInvitationForUser(user?.email);
+    findConnectedChild(cachedChildren) || findPendingChild(cachedChildren);
   const childName = child?.firstName || "Your children";
+  const childImage = useChildSetupImage(child?.childSetupDraftId);
   const navItems = [
     {
       key: "overview",
@@ -108,7 +109,11 @@ export default function DashboardHeader({ activePage = "overview" }) {
           className="dashboard-user-pill"
         >
           <span className="dashboard-user-avatar child-avatar">
-            {childName[0]?.toUpperCase() ?? "Y"}
+            {childImage
+              ? <img src={childImage} alt="" />
+              : child?.firstName
+                ? child.firstName[0].toUpperCase()
+                : <Users size={16} strokeWidth={2.2} aria-label="No children yet" />}
           </span>
 
           <span>

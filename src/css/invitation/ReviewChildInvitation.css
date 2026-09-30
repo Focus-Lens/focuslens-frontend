@@ -379,3 +379,56 @@
     overflow: hidden;
   }
 }
+
+/* Shown when the signed-in parent is not the invited email. */
+.review-invitation-account {
+  width: 100%;
+  margin-top: 14px;
+  padding: 14px 16px;
+  box-sizing: border-box;
+  border: 1px solid #fecdca;
+  border-radius: 16px;
+  background: #fef3f2;
+  color: #7a271a;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.review-invitation-account p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.review-invitation-account p + p {
+  margin-top: 4px;
+}
+
+.review-invitation-account button {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #7130dc;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.review-invitation-error {
+  width: 100%;
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  box-sizing: border-box;
+  border: 1px solid #fecdca;
+  border-radius: 14px;
+  background: #fef3f2;
+  color: #b42318;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
+  overflow-wrap: anywhere;
+}

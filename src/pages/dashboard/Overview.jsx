@@ -36,65 +36,87 @@ import WaitingForChild from "../onboarding/WaitingForChild";
 import elementIcon from "../../assets/elementIcon.png";
 import logo from "../../assets/logo.png";
 
+import useTabReturnRefresh from "../../services/useTabReturnRefresh";
 import "../../css/dashboard/Overview.css";
 
 export default function Overview() {
   const [sessionFilter, setSessionFilter] = useState("all");
   const { user } = useAuth();
-  const cachedChildren = getCachedParentChildren();
-  const [childInfo, setChildInfo] = useState(() => findConnectedChild(cachedChildren));
-  const [pendingChildInfo, setPendingChildInfo] = useState(
-    () => findPendingChild(cachedChildren) || getPendingInvitationForUser(user?.email),
-  );
+  // Nothing child-specific is shown until the server has answered: cached
+  // copies can describe an invitation that was cancelled in the meantime.
+  const [isChildrenLoaded, setIsChildrenLoaded] = useState(false);
+  const [childInfo, setChildInfo] = useState(null);
+  const [pendingChildInfo, setPendingChildInfo] = useState(null);
+  const [pendingInvitationDetails, setPendingInvitationDetails] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [sessionHistory, setSessionHistory] = useState([]);
   const [sessionPagination, setSessionPagination] = useState(null);
+  // Reload when the parent returns to this tab, so changes made in another
+  // browser (e.g. a cancelled invitation) show without a manual refresh.
+  const tabReturnCount = useTabReturnRefresh();
+  const userKey = user?.userId || user?.id;
 
   useEffect(() => {
     let active = true;
-    api("/api/parents/overview/children").then((children) => {
+    // The children list has no invitation email or type, so the invitation
+    // details are requested at the same time instead of after the card mounts.
+    Promise.all([
+      api("/api/parents/overview/children"),
+      api("/api/parents/child-setups/invitations").catch(() => null),
+    ]).then(([children, invitations]) => {
       if (!active) return null;
       cacheParentChildren(children);
       const firstChild = findConnectedChild(children);
       const localPending = getPendingInvitationForUser(user?.email);
-      const pendingChild = findPendingChild(children) || (!firstChild ? localPending : null);
+      // The server list includes pending child-setup invitations, so it is the
+      // source of truth; a locally cached invitation may already have been
+      // cancelled (e.g. from another browser).
+      const pendingChild = firstChild ? null : findPendingChild(children);
       setPendingChildInfo(pendingChild);
+      setPendingInvitationDetails(
+        pendingChild && Array.isArray(invitations)
+          ? invitations.find((item) => item.draftId === pendingChild.childSetupDraftId) ||
+              invitations[0] ||
+              null
+          : null,
+      );
       setChildInfo(firstChild);
-      if (firstChild) {
-        clearPendingInvitation();
-      } else if (findPendingChild(children)) {
+      // A connected child keeps the placeholder until the dashboard arrives,
+      // so the empty "no data yet" view never flashes first.
+      if (!firstChild) setIsChildrenLoaded(true);
+      if (pendingChild) {
         cachePendingInvitation({
           ...localPending,
           firstName: pendingChild.firstName,
           parentEmail: user?.email,
         });
-      } else if (!localPending) {
+      } else {
         clearPendingInvitation();
       }
       if (!firstChild) {
         setDashboard(null);
         return null;
       }
-      return api(`/api/parents/students/${firstChild.studentId}/dashboard`).then(
-        async (dashboardData) => {
-          // The dashboard contains the summary; this endpoint provides the real
-          // session total and makes the filters work beyond the latest five items.
-          const history = await api(
-            `/api/parents/students/${firstChild.studentId}/dashboard/sessions?page=1&pageSize=20`,
-          ).catch(() => null);
-          return { dashboardData, history };
-        },
-      );
+      // The dashboard contains the summary; the sessions endpoint provides the
+      // real session total and makes the filters work beyond the latest five
+      // items. Both only need the student, so they load in parallel.
+      return Promise.all([
+        api(`/api/parents/students/${firstChild.studentId}/dashboard`),
+        api(
+          `/api/parents/students/${firstChild.studentId}/dashboard/sessions?page=1&pageSize=20`,
+        ).catch(() => null),
+      ]).then(([dashboardData, history]) => ({ dashboardData, history }));
     }).then((data) => {
       if (!data || !active) return;
+      setIsChildrenLoaded(true);
       setDashboard(data.dashboardData);
       setSessionHistory(data.history?.sessions || data.dashboardData.recentStudySessions || []);
       setSessionPagination(data.history?.pagination || null);
     }).catch(() => {
-      // Keep the last locally cached invitation visible if the request fails.
+      if (active) setIsChildrenLoaded(true);
     });
     return () => { active = false; };
-  }, [user?.email, user?.userId]);
+  }, [user?.email, userKey, tabReturnCount]);
 
   const childName = childInfo?.firstName || "your child";
 
@@ -147,12 +169,37 @@ export default function Overview() {
     dashboard?.focusQuality != null ||
     Boolean(goal);
 
+  if (!isChildrenLoaded) {
+    return (
+      <div className="overview-page">
+        <DashboardHeader activePage="overview" />
+        <ParentLayout>
+          <main className="overview-content overview-loading" aria-busy="true" aria-label="Loading your dashboard">
+            <div className="overview-skeleton overview-skeleton-title" />
+            <div className="overview-skeleton overview-skeleton-line" />
+            <section className="overview-skeleton-card">
+              <div className="overview-skeleton-row">
+                <div className="overview-skeleton overview-skeleton-dot" />
+                <div className="overview-skeleton overview-skeleton-label" />
+                <div className="overview-skeleton overview-skeleton-pill" />
+              </div>
+              <div className="overview-skeleton overview-skeleton-text" />
+              <div className="overview-skeleton overview-skeleton-box" />
+              <div className="overview-skeleton overview-skeleton-button" />
+            </section>
+          </main>
+        </ParentLayout>
+      </div>
+    );
+  }
+
   if (!childInfo && pendingChildInfo) {
     return (
       <WaitingForChild
         childName={pendingChildInfo.firstName}
         childEmail={pendingChildInfo.email}
         pendingChild={pendingChildInfo}
+        initialInvitation={pendingInvitationDetails}
         onInvitationCancelled={handleInvitationCancelled}
       />
     );
