@@ -80,9 +80,9 @@ const priorityGoals = {
   ReachStudyGoals: "BuildARoutine",
 };
 
-// A weekly study-time goal needs exactly one day: the day the parent's week
-// starts. Parents without that setting get Sunday, which the backend also
-// needs before any invitation can be created.
+// The backend builds the weekly goal from the parent's week start setting, and
+// it refuses to save a goal or send an invitation until that setting exists.
+// Parents who never chose one get Sunday.
 async function ensureWeekStartsOn() {
   const settings = await api("/api/parents/me/settings");
   if (settings?.weekStartsOn) return settings.weekStartsOn;
@@ -93,7 +93,15 @@ async function ensureWeekStartsOn() {
   return "Sunday";
 }
 
-function buildChildSetupPayload(child, weekStartsOn) {
+// Only the weekly hours are sent; the backend derives the period, minutes,
+// day and start date. The goal step only accepts quarter-hour values (so
+// hours * 60 is a whole number of minutes); the value is sent unchanged.
+function toTargetHours(value) {
+  const hours = Number(value);
+  return Number.isFinite(hours) && hours > 0 ? hours : null;
+}
+
+function buildChildSetupPayload(child) {
   const customSubjects = child.otherSubjects?.length
     ? child.otherSubjects
     : child.otherSubject?.trim()
@@ -110,7 +118,7 @@ function buildChildSetupPayload(child, weekStartsOn) {
   const studyPriorities = (child.studyPriorities || [])
     .map((item) => priorities[item])
     .filter(Boolean);
-  const targetHours = Number(child.studyTimeGoal?.value);
+  const targetHours = toTargetHours(child.studyTimeGoal?.value);
 
   return {
     profileSetupMode: child.profileSetupMode,
@@ -120,16 +128,7 @@ function buildChildSetupPayload(child, weekStartsOn) {
     ...toBackendGrade(child),
     subjects,
     goal: priorityGoals[studyPriorities[0]] || null,
-    studyTimeGoal: {
-      period: "Weekly",
-      targetMinutes: Number.isFinite(targetHours) && targetHours > 0
-        ? Math.round(targetHours * 60)
-        : null,
-      days: weekStartsOn ? [weekStartsOn] : null,
-      startDate: Number.isFinite(targetHours) && targetHours > 0
-        ? new Date().toISOString().slice(0, 10)
-        : null,
-    },
+    studyTimeGoal: targetHours ? { targetHours } : null,
   };
 }
 
@@ -174,9 +173,11 @@ export default function InviteChild() {
   const hasFailed = status === "failed";
 
   useEffect(() => {
+    const sendingTimerRef = sendingTimer;
+    const errorToastTimerRef = errorToastTimer;
     return () => {
-      window.clearTimeout(sendingTimer.current);
-      window.clearTimeout(errorToastTimer.current);
+      window.clearTimeout(sendingTimerRef.current);
+      window.clearTimeout(errorToastTimerRef.current);
     };
   }, []);
 
@@ -198,10 +199,10 @@ export default function InviteChild() {
       // when it was created, and the backend no longer allows edits.
       let response = await reuseOrReleaseChildSetupInvitation(draftId, api);
       if (!response) {
-        const weekStartsOn = await ensureWeekStartsOn();
+        await ensureWeekStartsOn();
         await api(`/api/parents/child-setups/${encodeURIComponent(draftId)}`, {
           method: "PUT",
-          body: buildChildSetupPayload(child, weekStartsOn),
+          body: buildChildSetupPayload(child),
         });
         response = await createLinkChildSetupInvitation(draftId, api);
       }
@@ -324,7 +325,7 @@ export default function InviteChild() {
       if (!draftId) {
         throw new Error("Start the child setup again before sending an invitation.");
       }
-      const weekStartsOn = await ensureWeekStartsOn();
+      await ensureWeekStartsOn();
 
       // Opening this page in link mode already creates a link invitation, and
       // the backend only edits or invites a setup that is still a draft. Cancel
@@ -341,7 +342,7 @@ export default function InviteChild() {
 
       await api(`/api/parents/child-setups/${draftId}`, {
         method: "PUT",
-        body: buildChildSetupPayload(child, weekStartsOn),
+        body: buildChildSetupPayload(child),
       });
 
       const invitation = await createEmailChildSetupInvitation(draftId, cleanEmail, api);

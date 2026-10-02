@@ -38,15 +38,28 @@ export default function ChildStudyGoal() {
     () => String(child.studyTimeGoal?.value || 8),
   );
 
-  // Every new child starts on Sunday; returning to this step keeps the day
-  // already chosen for this child.
-  const [weekStartsOn, setWeekStartsOn] = useState(
-    () => child.weekStartsOn || "Sunday",
-  );
+  // "Start Day" is the parent's week start setting on the server, not part of
+  // the child's goal: it is loaded from and saved to /api/parents/me/settings.
+  // Sunday is shown until the setting loads, or when the parent has none yet.
+  const [weekStartsOn, setWeekStartsOn] = useState("Sunday");
   const [isDayMenuOpen, setIsDayMenuOpen] = useState(false);
   const dayMenuRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    api("/api/parents/me/settings")
+      .then((settings) => {
+        if (active && weekDays.includes(settings?.weekStartsOn)) {
+          setWeekStartsOn(settings.weekStartsOn);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isDayMenuOpen) return undefined;
@@ -69,8 +82,18 @@ export default function ChildStudyGoal() {
   async function saveGoal() {
     if (isSaving) return;
 
-    // The week start day is a parent setting; the weekly goal sent with the
-    // invitation uses it as its only day.
+    // The backend needs hours * 60 to be whole minutes, so only quarter-hour
+    // values are accepted (1, 1.25, 1.5, 1.75 …). Nothing is rounded.
+    const hours = Number(weeklyHours);
+    if (!Number.isFinite(hours) || hours <= 0) {
+      setError("Enter how many hours per week, greater than 0.");
+      return;
+    }
+    if (!Number.isInteger(hours * 4)) {
+      setError("Use quarter-hour steps, for example 1, 1.25, 1.5 or 1.75 hours.");
+      return;
+    }
+
     try {
       setIsSaving(true);
       setError("");
@@ -85,7 +108,6 @@ export default function ChildStudyGoal() {
     }
 
     updateChild({
-      weekStartsOn,
       suggestedGoal: `${weeklyHours} hours per week`,
       studyTimeGoal: {
       goalType: "weekly",
@@ -161,9 +183,14 @@ export default function ChildStudyGoal() {
 
                 <input
                   type="number"
-                  min="1"
+                  min="0.25"
+                  step="0.25"
+                  inputMode="decimal"
                   value={weeklyHours}
-                  onChange={(event) => setWeeklyHours(event.target.value)}
+                  onChange={(event) => {
+                    setWeeklyHours(event.target.value);
+                    setError("");
+                  }}
                 />
               </div>
 
