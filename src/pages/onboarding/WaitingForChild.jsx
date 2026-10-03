@@ -6,7 +6,7 @@ import { ParentLayout, Button } from "../../components/ui/CommonUI";
 import { parent } from "../../data/mockData";
 
 import DashboardHeader from "../../components/ui/DashboardHeader";
-import { useChildProfile } from "../../context/ChildProfileContext";
+import { useChildProfile } from "../../context/useChildProfile";
 import {
   clearPendingInvitation,
 } from "../../services/pendingInvitationCache";

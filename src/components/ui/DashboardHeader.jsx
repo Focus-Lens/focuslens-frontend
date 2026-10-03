@@ -8,13 +8,14 @@ import {
   Users,
 } from "lucide-react";
 
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import {
   findConnectedChild,
   findPendingChild,
   getCachedParentChildren,
 } from "../../services/parentChildrenCache";
 import { useChildSetupImage } from "../../services/childSetupImage";
+import { getStudentDisplayName } from "../../services/studentDisplayName";
 import logo from "../../assets/logo.png";
 
 import "../../css/dashboard/DashboardHeader.css";
@@ -26,7 +27,7 @@ export default function DashboardHeader({ activePage = "overview" }) {
   // cancelled invitation never flashes here.
   const child =
     findConnectedChild(cachedChildren) || findPendingChild(cachedChildren);
-  const childName = child?.firstName || "Your children";
+  const childName = getStudentDisplayName(child, "Your children");
   const childImage = useChildSetupImage(child?.childSetupDraftId);
   const navItems = [
     {
@@ -111,8 +112,8 @@ export default function DashboardHeader({ activePage = "overview" }) {
           <span className="dashboard-user-avatar child-avatar">
             {childImage
               ? <img src={childImage} alt="" />
-              : child?.firstName
-                ? child.firstName[0].toUpperCase()
+              : childName !== "Your children"
+                ? childName[0].toUpperCase()
                 : <Users size={16} strokeWidth={2.2} aria-label="No children yet" />}
           </span>
 

@@ -6,8 +6,9 @@ import { ParentLayout } from "../../components/ui/CommonUI";
 import ChildProfileModal from "../../components/ui/ChildProfileModal";
 import DashboardHeader from "../../components/ui/DashboardHeader";
 import { api } from "../../services/api";
-import { cacheParentChildren, findConnectedChild, findPendingChild, getCachedParentChildren } from "../../services/parentChildrenCache";
-import { useChildProfile } from "../../context/ChildProfileContext";
+import { cacheParentChildren, cacheStudentPreferredName, findConnectedChild, findPendingChild, getCachedParentChildren } from "../../services/parentChildrenCache";
+import { getStudentDisplayName } from "../../services/studentDisplayName";
+import { useChildProfile } from "../../context/useChildProfile";
 import { clearChildInvitationDraft } from "../../services/childInvitationDraft";
 import { clearPendingInvitation } from "../../services/pendingInvitationCache";
 import logo from "../../assets/logo.png";
@@ -58,6 +59,7 @@ export default function Children() {
   const [pendingChild, setPendingChild] = useState(() => findPendingChild(getCachedParentChildren()));
   const [studentDetails, setStudentDetails] = useState(null);
   const [dashboard, setDashboard] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
   const [feedback, setFeedback] = useState(null);
@@ -80,10 +82,16 @@ export default function Children() {
           if (active) {
             setStudentDetails(details);
             setDashboard(dashboardData);
+            if (details?.preferredName) {
+              cacheStudentPreferredName(connectedChild.studentId, details.preferredName);
+            }
           }
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
     return () => { active = false; };
   }, []);
 
@@ -154,11 +162,40 @@ export default function Children() {
     : 0;
 
   if (!childInfo && !pendingChild) {
+    if (isLoading) {
+      return (
+        <div className="children-page-shell">
+          <DashboardHeader activePage="children" />
+          <ParentLayout>
+            <main className="children-page" aria-busy="true">
+              <header className="children-heading">
+                <div><h1>Children</h1><p>Loading your child&apos;s profile…</p></div>
+              </header>
+            </main>
+          </ParentLayout>
+        </div>
+      );
+    }
     return (
       <div className="children-page-shell">
         <DashboardHeader activePage="children" />
         <ParentLayout>
           <ChildrenUnavailable onAction={() => navigate("/choose-start")} />
+        </ParentLayout>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="children-page-shell">
+        <DashboardHeader activePage="children" />
+        <ParentLayout>
+          <main className="children-page" aria-busy="true">
+            <header className="children-heading">
+              <div><h1>Children</h1><p>Loading your child&apos;s profile…</p></div>
+            </header>
+          </main>
         </ParentLayout>
       </div>
     );
@@ -201,7 +238,7 @@ export default function Children() {
 
                 <div className="children-hero-main">
                   <div className="children-hero-info">
-                    <h2>{child.fullName}</h2>
+                    <h2>{child.displayName}</h2>
 
                     <p>
                       {child.grade}
@@ -494,7 +531,7 @@ export default function Children() {
                     </span>
 
                     <div>
-                      <h2>{child.fullName}</h2>
+                      <h2>{child.displayName}</h2>
 
                       <p>
                         {child.grade}
@@ -724,13 +761,12 @@ export default function Children() {
 
 function buildChildView(details, connectedChild, pendingChild, dashboard) {
   const source = connectedChild || pendingChild || {};
-  const firstName = details?.preferredName || details?.firstName || source.firstName || "your child";
-  const lastName = details?.lastName || source.lastName || "";
+  const displayName = getStudentDisplayName({ ...source, ...details });
   const goal = dashboard?.currentStudyGoal;
   const progress = dashboard?.currentStudyGoalProgress;
   return {
-    fullName: `${firstName} ${lastName}`.trim(),
-    preferredName: firstName,
+    displayName,
+    preferredName: displayName,
     grade: formatLabel(details?.grade) || "Grade not shared",
     email: details?.email || "Not shared",
     subjects: (details?.subjects || []).map((subject) => subject.customName || formatLabel(subject.type)).filter(Boolean),

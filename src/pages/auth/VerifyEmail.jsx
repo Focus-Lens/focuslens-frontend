@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { AuthLayout } from "../../components/ui/CommonUI";
 import { api } from "../../services/api";
 import { takeRegistrationPassword } from "../../services/pendingRegistration";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { Mail, CheckCircle2, CircleAlert, X, Clock3 } from "lucide-react";
 import "../../css/auth/VerifyEmail.css";
 

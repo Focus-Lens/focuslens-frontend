@@ -1,11 +1,10 @@
-import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ParentLayout,
   Card,
   AuthLayout,
 } from "../../components/ui/CommonUI";
-import { useChildProfile } from "../../context/ChildProfileContext";
+import { useChildProfile } from "../../context/useChildProfile";
 import { Check, ChevronLeft } from "lucide-react";
 
 import "../../css/onboarding/ReviewChildProfile.css";

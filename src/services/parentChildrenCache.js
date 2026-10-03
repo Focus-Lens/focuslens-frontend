@@ -22,10 +22,34 @@ export function getCachedParentChildren() {
 }
 
 export function cacheParentChildren(children) {
+  const previousChildren = getCachedParentChildren() || [];
+  const preferredNames = new Map(
+    previousChildren
+      .filter((child) => child.studentId && child.preferredName)
+      .map((child) => [child.studentId, child.preferredName]),
+  );
+  const nextChildren = Array.isArray(children)
+    ? children.map((child) => ({
+        ...child,
+        preferredName: child.preferredName || preferredNames.get(child.studentId),
+      }))
+    : [];
+
   sessionStorage.setItem(cacheKey, JSON.stringify({
     parentEmail: currentParentEmail(),
-    children: Array.isArray(children) ? children : [],
+    children: nextChildren,
   }));
+}
+
+export function cacheStudentPreferredName(studentId, preferredName) {
+  if (!studentId || !preferredName?.trim()) return;
+  const children = getCachedParentChildren();
+  if (!children) return;
+  cacheParentChildren(children.map((child) =>
+    child.studentId === studentId
+      ? { ...child, preferredName: preferredName.trim() }
+      : child,
+  ));
 }
 
 export function findConnectedChild(children) {

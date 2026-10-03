@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useChildProfile } from "../../context/ChildProfileContext";
+import { useChildProfile } from "../../context/useChildProfile";
 import {
   AuthLayout,
   ParentLayout,

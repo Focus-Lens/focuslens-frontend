@@ -24,7 +24,7 @@ import {
   getCachedParentChildren,
 } from "../../services/parentChildrenCache";
 import { getPendingInvitationForUser } from "../../services/pendingInvitationCache";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 
 import arrowImage from "../../assets/arrow.jpg";
 import mathImage from "../../assets/math.jpg";

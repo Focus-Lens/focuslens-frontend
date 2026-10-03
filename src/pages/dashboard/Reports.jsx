@@ -22,7 +22,7 @@ import {
   getCachedParentChildren,
 } from "../../services/parentChildrenCache";
 import { getPendingInvitationForUser } from "../../services/pendingInvitationCache";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import seclock from "../../assets/seclock.png";
 import people from "../../assets/people.png";
 
@@ -84,10 +84,6 @@ export default function Reports() {
   );
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [subjectFilter, statusFilter]);
-
-  useEffect(() => {
     let active = true;
     api("/api/parents/overview/children")
       .then(async (children) => {
@@ -100,10 +96,10 @@ export default function Reports() {
         );
         if (connectedChild?.studentId) {
           const history = await api(
-            `/api/parents/students/${connectedChild.studentId}/dashboard/sessions?page=1&pageSize=100`,
+            `/api/reports/sessions?studentId=${encodeURIComponent(connectedChild.studentId)}&page=1&pageSize=100`,
           ).catch(() => null);
           if (active) {
-            setSessions((history?.sessions || []).map(mapSession));
+            setSessions((history?.items || []).map(mapSession));
           }
         } else if (active) {
           setSessions([]);
@@ -233,7 +229,10 @@ export default function Reports() {
 
                   <select
                     value={subjectFilter}
-                    onChange={(event) => setSubjectFilter(event.target.value)}
+                    onChange={(event) => {
+                      setSubjectFilter(event.target.value);
+                      setCurrentPage(1);
+                    }}
                   >
                     {subjects.map((subject) => (
                       <option
@@ -261,7 +260,10 @@ export default function Reports() {
 
                   <select
                     value={statusFilter}
-                    onChange={(event) => setStatusFilter(event.target.value)}
+                    onChange={(event) => {
+                      setStatusFilter(event.target.value);
+                      setCurrentPage(1);
+                    }}
                   >
                     <option value="all">
                       All statuses
@@ -542,16 +544,16 @@ export default function Reports() {
 }
 
 function mapSession(session) {
-  const subject = session.subjectName || "Study session";
+  const subject = session.subject || "Study session";
   return {
-    id: session.id,
+    id: session.sessionId,
     subject,
     subjectCode: subject.slice(0, 2).toUpperCase(),
     date: new Date(session.startedAtUtc).toLocaleString(),
-    durationMinutes: session.actualStudyMinutes || 0,
+    durationMinutes: session.actualDurationMinutes || 0,
     format: session.mode || "Study session",
     status: String(session.status || "").toLowerCase(),
-    focusTrend: null,
+    focusTrend: String(session.focusState || "").toLowerCase().includes("improv") ? "improving" : null,
   };
 }
 

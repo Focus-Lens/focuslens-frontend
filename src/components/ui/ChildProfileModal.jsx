@@ -19,10 +19,10 @@ export default function ChildProfileModal({ child, onClose }) {
         <h2>Child profile</h2>
 
         <div className="child-profile-summary">
-          <span>{child.preferredName[0]}</span>
+          <span>{child.displayName[0]}</span>
 
           <div>
-            <b>{child.fullName}</b>
+            <b>{child.displayName}</b>
             <small>
               {child.grade} · <em>● Connected</em>
             </small>

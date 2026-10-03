@@ -9,8 +9,8 @@ import {
 } from "lucide-react";
 
 import { Card } from "../../components/ui/CommonUI";
-import { useAuth } from "../../context/AuthContext";
-import { useChildProfile } from "../../context/ChildProfileContext";
+import { useAuth } from "../../context/useAuth";
+import { useChildProfile } from "../../context/useChildProfile";
 import {
   getChildInvitationDraft,
   saveChildInvitationDraft,

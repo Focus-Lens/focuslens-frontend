@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
 import { api } from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 
 import "../../css/dashboard/ProfileAccount.css";
 
@@ -29,6 +29,9 @@ export default function ProfileAccount() {
   const [profile, setProfile] = useState(() => toProfile(signedInUser));
   const [draft, setDraft] = useState(() => toProfile(signedInUser));
   const [accountStatus, setAccountStatus] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [reloadCount, setReloadCount] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [message, setMessage] = useState(() => routeToast?.title || null);
   const [messageDescription, setMessageDescription] = useState(
@@ -49,9 +52,10 @@ export default function ProfileAccount() {
         setDraft(nextProfile);
         setAccountStatus(status);
       })
-      .catch((requestError) => active && setMessage(requestError.message));
+      .catch((requestError) => active && setLoadError(requestError.message || "We couldn’t load your account."))
+      .finally(() => active && setIsLoading(false));
     return () => { active = false; };
-  }, []);
+  }, [reloadCount]);
 
   useEffect(() => {
     if (!message) return undefined;
@@ -135,6 +139,39 @@ export default function ProfileAccount() {
 
   const initials = profile.fullName.split(" ").filter(Boolean).map((name) => name[0]).join("").slice(0, 2).toUpperCase();
   const relationship = accountStatus?.childRelationships?.[0];
+
+  if (isLoading || loadError) {
+    return (
+      <div className="profile-page-shell">
+        <DashboardHeader activePage={null} />
+        <ParentLayout>
+          <main className="profile-page">
+            <header className="profile-heading">
+              <h1>Profile &amp; account</h1>
+              <p>Manage your personal information and account preferences.</p>
+            </header>
+            {isLoading ? (
+              <div className="profile-load-panel" role="status" aria-live="polite">
+                <span className="profile-loading-spinner" aria-hidden="true" />
+                <span>Loading your account…</span>
+              </div>
+            ) : (
+              <div className="profile-load-panel profile-load-error" role="alert">
+                <span>{loadError}</span>
+                <button type="button" onClick={() => {
+                  setLoadError("");
+                  setIsLoading(true);
+                  setReloadCount((count) => count + 1);
+                }}>
+                  Try again
+                </button>
+              </div>
+            )}
+          </main>
+        </ParentLayout>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page-shell">

@@ -18,7 +18,7 @@ import {
   AuthLayout,
 } from "../../components/ui/CommonUI";
 
-import { useChildProfile } from "../../context/ChildProfileContext";
+import { useChildProfile } from "../../context/useChildProfile";
 
 import "../../css/onboarding/ChildStudyContext.css";
 

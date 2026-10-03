@@ -18,8 +18,10 @@ import {
   findPendingChild,
   getCachedParentChildren,
 } from "../../services/parentChildrenCache";
+import { getStudentDisplayName } from "../../services/studentDisplayName";
 import { getPendingInvitationForUser } from "../../services/pendingInvitationCache";
-import { useAuth } from "../../context/AuthContext";
+import { getStudyGoalView } from "../../services/studyGoalView";
+import { useAuth } from "../../context/useAuth";
 
 import flagPending from "../../assets/flag1.jpg";
 import flagEmpty from "../../assets/flag2.png";
@@ -109,8 +111,10 @@ function StudyGoalsUnavailable({ childName }) {
 export default function StudyGoals() {
   const { user } = useAuth();
   const [view, setView] = useState("empty");
+  const [isLoading, setIsLoading] = useState(true);
   const [hours, setHours] = useState(5);
   const [dashboard, setDashboard] = useState(null);
+  const [loadError, setLoadError] = useState("");
   const [goalError, setGoalError] = useState("");
   const [isSubmittingGoal, setIsSubmittingGoal] = useState(false);
   const [childInfo, setChildInfo] = useState(() => findConnectedChild(getCachedParentChildren()));
@@ -120,8 +124,10 @@ export default function StudyGoals() {
 
   useEffect(() => {
     let active = true;
-    api("/api/parents/overview/children")
-      .then(async (children) => {
+
+    async function loadStudyGoals() {
+      try {
+        const children = await api("/api/parents/overview/children");
         if (!active) return;
         cacheParentChildren(children);
         const connectedChild = findConnectedChild(children);
@@ -132,20 +138,31 @@ export default function StudyGoals() {
         if (connectedChild?.studentId) {
           const nextDashboard = await api(
             `/api/parents/students/${connectedChild.studentId}/dashboard`,
-          ).catch(() => null);
-          if (active) {
-            setDashboard(nextDashboard);
-            setView(nextDashboard?.pendingStudyGoalProposal ? "pending" : nextDashboard?.currentStudyGoal ? "active" : "empty");
-            setHours(nextDashboard?.currentStudyGoal?.targetMinutes / 60 || 5);
-          }
-        } else if (active) {
+          );
+          if (!active) return;
+
+          const acceptedProposal = nextDashboard?.currentStudyGoalAcceptedProposal;
+          const currentGoal = nextDashboard?.currentStudyGoal;
+          const activeGoal = currentGoal || acceptedProposal?.goal;
+
+          setDashboard(nextDashboard);
+          setView(getStudyGoalView(nextDashboard));
+          setHours(activeGoal?.targetMinutes / 60 || 5);
+        } else {
+          if (!active) return;
           setDashboard(null);
+          setView("empty");
         }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!active) return;
-      });
+      } catch (error) {
+        if (active) {
+          setLoadError(error.message || "We couldn’t load study goals. Please try again.");
+        }
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    loadStudyGoals();
     return () => { active = false; };
   }, [user?.email]);
 
@@ -168,17 +185,58 @@ export default function StudyGoals() {
     }
   }
 
-  const displayName = childInfo?.firstName || "your child";
+  const displayName = getStudentDisplayName(childInfo);
   const pendingGoal = dashboard?.pendingStudyGoalProposal;
-  const activeGoal = dashboard?.currentStudyGoal;
+  const acceptedProposal = dashboard?.currentStudyGoalAcceptedProposal;
+  const activeGoal = dashboard?.currentStudyGoal || acceptedProposal?.goal;
   const activeProgress = dashboard?.currentStudyGoalProgress;
   const goal = toDisplayGoal(
     view === "pending" ? pendingGoal?.goal : activeGoal,
-    view === "pending" ? pendingGoal : dashboard?.currentStudyGoalAcceptedProposal,
+    view === "pending" ? pendingGoal : acceptedProposal,
     activeProgress,
     displayName,
   );
   const percentage = Math.min(100, Math.round(goal?.completionPercentage || 0));
+
+  if (isLoading) {
+    return (
+      <div className="study-goals-page-shell">
+        <DashboardHeader activePage="study-goals" />
+        <ParentLayout>
+          <main className="overview-content overview-loading" aria-busy="true" aria-label="Loading study goals">
+            <div className="overview-skeleton overview-skeleton-title" />
+            <div className="overview-skeleton overview-skeleton-line" />
+            <section className="overview-skeleton-card">
+              <div className="overview-skeleton-row">
+                <div className="overview-skeleton overview-skeleton-dot" />
+                <div className="overview-skeleton overview-skeleton-label" />
+                <div className="overview-skeleton overview-skeleton-pill" />
+              </div>
+              <div className="overview-skeleton overview-skeleton-text" />
+              <div className="overview-skeleton overview-skeleton-box" />
+              <div className="overview-skeleton overview-skeleton-button" />
+            </section>
+          </main>
+        </ParentLayout>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="study-goals-page-shell">
+        <DashboardHeader activePage="study-goals" />
+        <ParentLayout>
+          <main className="study-goals-page">
+            <header className="study-goals-heading">
+              <h1>Study Goals</h1>
+            </header>
+            <p role="alert">{loadError}</p>
+          </main>
+        </ParentLayout>
+      </div>
+    );
+  }
 
   if (!childInfo) {
     return (
@@ -194,7 +252,7 @@ export default function StudyGoals() {
       <DashboardHeader activePage="study-goals" />
 
       <ParentLayout>
-        <main className="study-goals-page">
+        <main className={`study-goals-page ${view === "create" ? "study-goals-create-page" : ""}`}>
           <header className="study-goals-heading">
             <h1>Study Goals</h1>
 
@@ -235,8 +293,8 @@ export default function StudyGoals() {
 
                 <span className="goal-type">Weekly goal</span>
 
-                <label>
-                  Weekly study target
+                <label className="goal-hours-label">
+                  <span>Weekly study target</span>
                   <input
                     min="1"
                     onChange={(event) => setHours(event.target.value)}
@@ -246,9 +304,12 @@ export default function StudyGoals() {
                   <small>Hours per week</small>
                 </label>
 
-                <label>
-                  <input disabled value="Current week · Set automatically" />
-                </label>
+                <input
+                  className="goal-current-week"
+                  aria-label="Goal period"
+                  disabled
+                  value="Current week · Set automatically"
+                />
 
                 <div className="goal-form-actions">
                   <button
@@ -298,29 +359,37 @@ export default function StudyGoals() {
                     <h2>Active Goal</h2>
 
                     <span className="on-track-badge">
-                      ● On track
+                      ● {goal.hasProgress ? "On track" : "Accepted"}
                     </span>
                   </div>
 
-                  <span className="days-remaining">
-                    <Clock3 size={16} strokeWidth={1.8} />
-                    {goal.daysRemaining} days remaining
-                  </span>
+                  {goal.hasProgress && (
+                    <span className="days-remaining">
+                      <Clock3 size={16} strokeWidth={1.8} />
+                      {goal.daysRemaining} days remaining
+                    </span>
+                  )}
                 </div>
 
                 <div className="active-goal-body">
                   <div className="active-goal-progress">
-                    <strong>{Math.round(goal.completedMinutes / 60)}</strong>
-                    <span>of {Math.round(goal.targetMinutes / 60)} hours</span>
-                    <b>{percentage}% completed</b>
+                    {goal.hasProgress ? (
+                      <>
+                        <strong>{Math.round(goal.completedMinutes / 60)}</strong>
+                        <span>of {Math.round(goal.targetMinutes / 60)} hours</span>
+                        <b>{percentage}% completed</b>
 
-                    <div className="active-progress-track">
-                      <i style={{ width: `${percentage}%` }} />
-                      <span style={{ left: `${percentage}%` }}>★</span>
-                    </div>
+                        <div className="active-progress-track">
+                          <i style={{ width: `${percentage}%` }} />
+                          <span style={{ left: `${percentage}%` }}>★</span>
+                        </div>
 
-                    <small>0 min</small>
-                    <small>{Math.round(goal.targetMinutes / 60)} hours</small>
+                        <small>0 min</small>
+                        <small>{Math.round(goal.targetMinutes / 60)} hours</small>
+                      </>
+                    ) : (
+                      <p role="status">Progress details aren’t available yet.</p>
+                    )}
                   </div>
 
                   <img
@@ -329,7 +398,7 @@ export default function StudyGoals() {
                     alt=""
                   />
 
-                  <GoalDetails goal={goal} showAcceptance />
+                  <GoalDetails goal={goal} showAcceptance={Boolean(acceptedProposal)} />
                 </div>
               </section>
 
@@ -344,7 +413,7 @@ export default function StudyGoals() {
                   </div>
 
                   <div className="weekly-bars">
-                    {goal.dailyProgress.map((item) => (
+                    {goal.dailyProgress.length > 0 ? goal.dailyProgress.map((item) => (
                       <div className="weekly-day" key={item.day}>
                         <small>{item.day}</small>
                         <b>
@@ -360,7 +429,9 @@ export default function StudyGoals() {
                           }}
                         />
                       </div>
-                    ))}
+                    )) : (
+                      <p role="status">Daily study time isn’t available yet.</p>
+                    )}
                   </div>
                 </section>
 
@@ -385,10 +456,12 @@ export default function StudyGoals() {
 function toDisplayGoal(goal, proposal, progress, childName) {
   if (!goal) return null;
   const startsOn = progress?.startsOn || goal.startDate;
-  const endsOn = progress?.endsOn || goal.startDate;
+  const endsOn = progress?.endsOn;
   const cycle = startsOn && endsOn
     ? `${formatDate(startsOn)} – ${formatDate(endsOn)}`
-    : "Current cycle";
+    : startsOn
+      ? `Starts ${formatDate(startsOn)}`
+      : "Current cycle";
   const dailyProgress = progress?.days?.map((day) => ({
     day: new Date(`${day.date}T00:00:00`).toLocaleDateString(undefined, { weekday: "short" }),
     minutes: day.actualStudyMinutes || 0,
@@ -396,6 +469,7 @@ function toDisplayGoal(goal, proposal, progress, childName) {
   return {
     frequency: goal.period,
     targetMinutes: goal.targetMinutes,
+    hasProgress: Boolean(progress),
     completedMinutes: progress?.completedMinutes || 0,
     completionPercentage: progress?.completionPercentage || 0,
     cycle,

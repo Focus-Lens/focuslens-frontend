@@ -1,6 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { ChildProfileContext } from "./ChildProfileContextValue";
 
-const ChildProfileContext = createContext(null);
 const storageKey = "focusLensChildProfile";
 
 const initialChild = {
@@ -53,10 +53,4 @@ export function ChildProfileProvider({ children }) {
       {children}
     </ChildProfileContext.Provider>
   );
-}
-
-export function useChildProfile() {
-  const context = useContext(ChildProfileContext);
-  if (!context) throw new Error("useChildProfile must be used within ChildProfileProvider");
-  return context;
 }

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -6,12 +6,12 @@ import {
   ArrowUp,
   Check,
   Pause,
-  TrendingUp,
   LockKeyhole,
 } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
-import { dashboardMockData } from "../../data/mockData";
+import { api } from "../../services/api";
+import { getCachedParentChildren, findConnectedChild } from "../../services/parentChildrenCache";
 import DashboardHeader from "../../components/ui/DashboardHeader";
 
 import arabicImage from "../../assets/arabic.jpg";
@@ -29,23 +29,48 @@ import "../../css/dashboard/SessionInsight.css";
 export default function SessionInsight() {
   const navigate = useNavigate();
   const { sessionId } = useParams();
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
-  const session = useMemo(
-    () =>
-      dashboardMockData.reports.sessions.find(
-        (item) => item.id === sessionId
-      ),
-    [sessionId]
-  );
+  useEffect(() => {
+    let active = true;
+    const cachedChild = findConnectedChild(getCachedParentChildren());
+    const childRequest = cachedChild
+      ? Promise.resolve(cachedChild)
+      : api("/api/parents/overview/children").then((children) => {
+          const child = findConnectedChild(children);
+          return child;
+        });
 
-  if (!session) {
+    childRequest
+      .then((child) => {
+        if (!child?.studentId) throw new Error("Connect a child to view this report.");
+        return api(`/api/reports/sessions/${encodeURIComponent(sessionId)}?studentId=${encodeURIComponent(child.studentId)}`);
+      })
+      .then((report) => {
+        if (!active) return;
+        setSession(mapReport(report));
+        setLoadError("");
+      })
+      .catch((error) => {
+        if (!active) return;
+        setLoadError(error.message || "We couldn’t load this report.");
+        setSession(null);
+      })
+      .finally(() => { if (active) setLoading(false); });
+
+    return () => { active = false; };
+  }, [sessionId]);
+
+  if (loading || !session) {
     return (
       <div className="session-insight-shell">
         <DashboardHeader activePage="reports" />
 
         <ParentLayout>
           <main className="session-not-found">
-            <h1>Session not found</h1>
+            <h1>{loading ? "Loading session…" : loadError || "Session not found"}</h1>
 
             <button
               onClick={() => navigate("/reports")}
@@ -513,8 +538,8 @@ export default function SessionInsight() {
                 </h2>
 
                 <p>
-                  {session.supportiveContext?.description ??
-                    "The focus score reflects this session's processed pattern. It is separate from time studied and does not diagnose ability."}
+                  {session.supportiveContext?.description ?? session.summary ??
+                    "Processed session details will appear here when available."}
                 </p>
 
                 <button
@@ -523,9 +548,7 @@ export default function SessionInsight() {
                   }
                   type="button"
                 >
-                  <span>
-                    View learning results
-                  </span>
+                  <span>View learning results</span>
 
                   <ArrowRight
                     size={17}
@@ -576,7 +599,7 @@ export default function SessionInsight() {
                       {session.learningResults.mcqScore}
                     </b>
 
-                    <span>/10</span>
+                      <span>/{session.learningResults.questionsCompleted}</span>
                   </div>
 
                   <span>MCQ score</span>
@@ -633,8 +656,7 @@ export default function SessionInsight() {
                   </div>
 
                   <p>
-                    Youssef completed every question
-                    in this session.
+                    {session.summary || "Learning results were processed for this session."}
                   </p>
                 </div>
               </div>
@@ -664,4 +686,34 @@ export default function SessionInsight() {
       </ParentLayout>
     </div>
   );
+}
+
+function mapReport(report) {
+  const questionsCompleted = report.questionsGenerated || 0;
+  const correctAnswers = report.correctQuestions || 0;
+  return {
+    id: report.sessionId,
+    subject: report.subject || "Study session",
+    date: new Date(report.startedAtUtc).toLocaleString(),
+    format: report.mode || "Study session",
+    status: String(report.status || "").toLowerCase() === "completed" ? "completed" : "paused",
+    focusScore: report.focusScore,
+    focusTrend: String(report.focusTrend || "").toLowerCase(),
+    focusQuality: report.focusState?.replaceAll("_", " ") || "Not evaluated",
+    focusChart: [],
+    durationMinutes: report.actualDurationMinutes || 0,
+    completionPercent: report.completionPercentage || 0,
+    learningResults: questionsCompleted > 0 ? {
+      available: true,
+      mcqScore: correctAnswers,
+      questionsCompleted,
+      correctAnswers,
+      resultPercent: report.learningPercentage || 0,
+    } : { available: false },
+    summary: report.summary,
+    supportiveContext: {
+      title: report.focusState?.replaceAll("_", " ") || "Session summary",
+      description: report.summary,
+    },
+  };
 }

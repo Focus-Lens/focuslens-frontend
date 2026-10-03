@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { isSetupDeferred } from "../services/setupDeferral";
 
 import InvitationLanding from "../pages/invitation/InvitationLanding";

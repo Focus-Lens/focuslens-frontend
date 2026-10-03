@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
-import { useAuth } from "../../context/AuthContext";
-import { useChildProfile } from "../../context/ChildProfileContext";
+import { useAuth } from "../../context/useAuth";
+import { useChildProfile } from "../../context/useChildProfile";
 import { api } from "../../services/api";
 import {
   getChildSetupValidationMessage,

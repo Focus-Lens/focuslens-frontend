@@ -1,8 +1,7 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { api, clearSession, forgetRememberedSession, saveTokens } from "../services/api";
 import { clearSetupDeferred } from "../services/setupDeferral";
-
-const AuthContext = createContext(null);
+import { AuthContext } from "./AuthContextValue";
 
 function storedUser() {
   try { return JSON.parse(sessionStorage.getItem("focusLensUser")); }
@@ -11,7 +10,7 @@ function storedUser() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(storedUser);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => Boolean(sessionStorage.getItem("accessToken")));
 
   const persistUser = useCallback((nextUser) => {
     setUser(nextUser);
@@ -56,15 +55,24 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!sessionStorage.getItem("accessToken")) { setLoading(false); return; }
-    refreshUser().catch(() => { clearSession(); setUser(null); }).finally(() => setLoading(false));
+    if (!sessionStorage.getItem("accessToken")) return;
+    let active = true;
+    const timer = window.setTimeout(() => {
+      refreshUser()
+        .catch(() => {
+          if (!active) return;
+          clearSession();
+          setUser(null);
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    }, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
   }, [refreshUser]);
 
   return <AuthContext.Provider value={{ user, loading, isAuthenticated: Boolean(user), login, refreshUser, logout, setUser: persistUser }}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
-  return ctx;
 }

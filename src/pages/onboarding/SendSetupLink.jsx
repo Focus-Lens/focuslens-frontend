@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Button,
@@ -29,16 +29,16 @@ export default function SendSetupLink() {
     draftId ? "" : "Your child setup draft is missing. Please start setup again.",
   );
   const [notice, setNotice] = useState("");
-  const [isLoadingLink, setIsLoadingLink] = useState(false);
+  const [isLoadingLink, setIsLoadingLink] = useState(() => Boolean(draftId));
   const [isSending, setIsSending] = useState(false);
   const linkRequestInFlight = useRef(false);
 
-  async function ensureInvitationLink() {
+  const ensureInvitationLink = useCallback(async () => {
     if (link) return link;
     if (!draftId || linkRequestInFlight.current) return null;
 
     linkRequestInFlight.current = true;
-    setIsLoadingLink(true);
+    await Promise.resolve();
     setError("");
     setNotice("");
     try {
@@ -61,13 +61,14 @@ export default function SendSetupLink() {
       linkRequestInFlight.current = false;
       setIsLoadingLink(false);
     }
-  }
+  }, [draftId, link]);
 
   useEffect(() => {
-    if (method === "link") void ensureInvitationLink();
+    if (method !== "link") return undefined;
+    const timer = window.setTimeout(() => void ensureInvitationLink(), 0);
     // The link is generated automatically when this page opens in link mode.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [method]);
+    return () => window.clearTimeout(timer);
+  }, [method, ensureInvitationLink]);
 
   function handleSelectLink() {
     setMethod("link");

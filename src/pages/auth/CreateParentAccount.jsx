@@ -4,7 +4,7 @@ import GoogleAuthButton from "../../components/ui/GoogleAuthButton";
 import EmailStatusAlert from "../../components/ui/EmailStatusAlert";
 import { AuthLayout, Button, Card, Field } from "../../components/ui/CommonUI";
 import { api } from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { getGoogleProfile } from "../../services/googleIdentity";
 import { STUDENT_EMAIL_MESSAGE, continueWithGoogleParent } from "../../services/googleParentAuth";
 import {

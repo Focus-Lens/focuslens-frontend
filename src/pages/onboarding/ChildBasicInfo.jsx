@@ -7,7 +7,7 @@ import {
   Field,
   AuthLayout,
 } from "../../components/ui/CommonUI";
-import { useChildProfile } from "../../context/ChildProfileContext";
+import { useChildProfile } from "../../context/useChildProfile";
 import { api } from "../../services/api";
 import { setChildSetupImage } from "../../services/childSetupImage";
 import { Info, ChevronLeft, UserRound } from "lucide-react";

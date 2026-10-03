@@ -832,6 +832,57 @@
   }
 }
 
+.profile-load-panel {
+  width: min(300px, 100%);
+  min-height: 76px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  box-sizing: border-box;
+  border: 1px solid #eeeaf3;
+  border-radius: 18px;
+  background: #fff;
+  color: #716a77;
+  font-size: 14px;
+}
+
+.profile-loading-spinner {
+  width: 17px;
+  height: 17px;
+  box-sizing: border-box;
+  border: 2px solid #eadfff;
+  border-top-color: #8138f4;
+  border-radius: 50%;
+  animation: profile-loading-spin 0.8s linear infinite;
+}
+
+.profile-load-panel:not(.profile-load-error) {
+  gap: 9px;
+  font-size: 12px;
+}
+
+.profile-load-error {
+  flex-direction: column;
+  color: #ba2f45;
+}
+
+.profile-load-error button {
+  min-height: 38px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #8138f4;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+@keyframes profile-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* Password change confirmation: top-left placement across screen sizes. */
 .profile-success-toast {
   top: 16px;

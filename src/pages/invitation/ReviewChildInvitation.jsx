@@ -14,7 +14,7 @@ import {
   Check,
   Info,
 } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import "../../css/invitation/ReviewChildInvitation.css";
 
 export default function ReviewChildInvitation() {

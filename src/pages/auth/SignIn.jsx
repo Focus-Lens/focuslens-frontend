@@ -15,7 +15,7 @@ import {
   rememberSession,
   restoreRememberedSession,
 } from "../../services/api";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { getGoogleProfile } from "../../services/googleIdentity";
 import { continueWithGoogleParent } from "../../services/googleParentAuth";
 import {

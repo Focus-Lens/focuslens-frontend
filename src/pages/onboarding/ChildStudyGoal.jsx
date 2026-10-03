@@ -6,7 +6,7 @@ import {
   Button,
   Card,
 } from "../../components/ui/CommonUI";
-import { useChildProfile } from "../../context/ChildProfileContext";
+import { useChildProfile } from "../../context/useChildProfile";
 import { api } from "../../services/api";
 import { Check, ChevronDown } from "lucide-react";
 import "../../css/onboarding/ChildStudyGoal.css";

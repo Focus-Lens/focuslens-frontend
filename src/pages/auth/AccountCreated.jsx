@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/useAuth";
 import { markSetupDeferred } from "../../services/setupDeferral";
 import "../../css/auth/AccountCreated.css"
 export default function AccountCreated() {
