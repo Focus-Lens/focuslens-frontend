@@ -40,10 +40,10 @@
 
 /* Empty state */
 .progress-unavailable-card {
-  width: min(100%, 786px);
-  min-height: 349px;
-  margin: 88px auto 0;
-  padding: 36px 24px;
+  width: min(100%, 720px);
+  min-height: 320px;
+  margin: 70px auto 0;
+  padding: 30px 22px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -325,6 +325,25 @@
   stroke-linejoin: round;
 }
 
+.progress-focus-line {
+  fill: none;
+  stroke: #8138f4;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 2px 4px rgb(129 56 244 / 18%));
+}
+
+.progress-focus-area {
+  fill: url(#focusAreaGradient);
+}
+
+.progress-focus-glow {
+  fill: #8138f4;
+  opacity: 0.13;
+  filter: url(#progressFocusGlow);
+}
+
 .progress-line-chart circle {
   fill: #8138f4;
   stroke: #ffffff;
@@ -380,6 +399,8 @@
   position: relative;
   flex: 1;
   height: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .study-grid-lines {
@@ -401,27 +422,37 @@
   right: 4px;
   top: 14px;
   bottom: 28px;
-  display: flex;
+  display: grid;
   align-items: flex-end;
-  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .study-bar-column {
+  min-width: 0;
   height: 100%;
   display: flex;
+  justify-content: center;
   align-items: flex-end;
 }
 
 .study-bar-column i {
   display: block;
-  width: 15px;
-  min-height: 20px;
+  width: 100%;
+  max-width: 19px;
+  min-width: 0;
+  min-height: 0;
   border-radius: 8px 8px 5px 5px;
   background: linear-gradient(
     to top,
     #b968f0,
     #d6b0f8
   );
+}
+
+.study-bar-column i.empty {
+  visibility: hidden;
 }
 
 .study-bar-column i.last {
@@ -624,6 +655,7 @@
 
 .progress-table-wrap table {
   width: 100%;
+  min-width: 860px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -1240,6 +1272,21 @@
   text-align: center;
 }
 
+.progress-custom-prompt {
+  display: flex;
+  min-height: 150px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  border: 1.5px solid #b7ff00;
+  border-radius: 24px;
+  background: #fff;
+  color: #77727f;
+  font-size: 15px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
 .progress-empty-spark {
   width: 62px;
   height: 62px;
@@ -1354,4 +1401,581 @@
     max-width: 100%;
     overflow-x: auto;
   }
+}
+
+/* Empty progress state */
+.progress-page.progress-empty-connected-page {
+  padding-top: 34px;
+  padding-bottom: 44px;
+}
+
+.progress-empty-connected-page .progress-heading {
+  margin-bottom: 24px;
+}
+
+.progress-connected-empty-card {
+  position: relative;
+  display: flex !important;
+  flex: 0 1 940px;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: min(100%, 940px) !important;
+  max-width: 940px !important;
+  min-height: 0;
+  margin-inline: auto;
+  padding: 34px 30px;
+  gap: 24px;
+  border: 1.5px solid #b7ff00;
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(183, 255, 0, 0.055), transparent 52%),
+    linear-gradient(145deg, #ffffff, #fcfbff);
+  box-shadow: 0 12px 28px rgba(49, 47, 58, 0.055);
+}
+
+.progress-empty-intro {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: center;
+}
+
+/* The original empty-state rule styled every direct div as the old stats grid. */
+.progress-connected-empty-card > .progress-empty-intro {
+  display: flex !important;
+  grid-template-columns: none;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center;
+  gap: 0;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  text-align: center;
+}
+
+.progress-connected-empty-card > .progress-empty-intro > .progress-empty-spark {
+  padding: 0;
+  background: linear-gradient(145deg, #f5edff, #eee5ff);
+}
+
+.progress-connected-empty-card > .progress-empty-intro > .progress-empty-eyebrow {
+  padding: 0;
+  background: transparent;
+}
+
+.progress-empty-spark {
+  width: 54px;
+  height: 54px;
+  margin-bottom: 12px;
+  border: 1px solid #e8dcff;
+  background: linear-gradient(145deg, #f5edff, #eee5ff);
+  box-shadow: 0 5px 14px rgba(129, 56, 244, 0.1);
+}
+
+.progress-empty-eyebrow {
+  margin-bottom: 7px;
+  color: #8550dc;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.progress-connected-empty-card h2 {
+  font-size: clamp(22px, 2vw, 27px);
+  letter-spacing: -0.025em;
+}
+
+.progress-connected-empty-card > .progress-empty-intro p {
+  max-width: 600px;
+  margin: 9px 0 0;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.progress-connected-empty-card > .progress-empty-stats {
+  display: grid;
+  width: min(100%, 720px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 11px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.progress-connected-empty-card > .progress-empty-stats article {
+  display: flex;
+  min-height: 70px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px 16px;
+  border: 1px solid #ece7f4;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 3px 10px rgba(43, 34, 56, 0.035);
+  text-align: left;
+}
+
+.progress-connected-empty-card > .progress-empty-stats article > span,
+.progress-connected-empty-card > .progress-empty-stats article > b {
+  padding: 0;
+  background: transparent;
+}
+
+.progress-connected-empty-card > .progress-empty-stats article > span {
+  color: #77717f;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.progress-connected-empty-card > .progress-empty-stats article > b {
+  color: #342d3c;
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.15;
+}
+
+.progress-connected-empty-card > .progress-empty-stats article > b > span {
+  margin-left: 2px;
+  color: #77717f;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.progress-connected-empty-card > .progress-empty-stats article > b.progress-empty-unavailable {
+  color: #8b8295;
+  font-size: 14px;
+}
+
+@media (max-width: 700px) {
+  .progress-page.progress-empty-connected-page {
+    padding-top: 24px;
+    padding-bottom: 35px;
+  }
+
+  .progress-connected-empty-card {
+    width: 100%;
+    max-width: 100% !important;
+    flex-basis: auto;
+    padding: 28px 18px;
+    gap: 20px;
+    border-radius: 18px;
+  }
+
+  .progress-connected-empty-card > .progress-empty-stats {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .progress-connected-empty-card > .progress-empty-stats article {
+    min-height: 58px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+/* Behavioral focus trend states returned by /api/progress/behavioral. */
+.progress-change.improving { border: 1px solid #c3f0dc; background: #edfff6; color: #12905c; }
+.progress-change.declining { border: 1px solid #f0cdd2; background: #fff3f4; color: #bd3f52; }
+.progress-change.steady { border: 1px solid #dde4eb; background: #f3f6f9; color: #69717a; }
+.table-trend.declining { border: 1px solid #f0cdd2; background: #fff3f4; color: #bd3f52; }
+.subject-details .subject-declining,
+.subject-details .subject-declining svg,
+.subject-details .subject-declining b { color: #bd3f52; }
+.subject-details .subject-stable,
+.subject-details .subject-stable svg,
+.subject-details .subject-stable b { color: #69717a; }
+
+/* Refined to match the wide parent Progress dashboard reference. */
+.progress-page {
+  width: min(1760px, 100%);
+  padding: 38px 26px 48px;
+}
+
+.progress-heading {
+  align-items: center;
+  margin-bottom: 26px;
+}
+
+.progress-heading h1 {
+  color: #17151a;
+  font-size: 38px;
+  letter-spacing: -1.4px;
+}
+
+.progress-heading p {
+  font-size: 16px;
+}
+
+.progress-ranges {
+  padding: 5px;
+  background: #f1f4f8;
+}
+
+.progress-ranges button {
+  height: 42px;
+  padding: 0 24px;
+  font-size: 14px;
+}
+
+.progress-ranges button.active {
+  background: #6425d9;
+}
+
+.progress-main-grid {
+  grid-template-columns: minmax(0, 2fr) minmax(340px, 0.94fr);
+  gap: 20px;
+}
+
+.progress-left {
+  gap: 20px;
+}
+
+.progress-chart-card,
+.progress-comparison-card,
+.progress-subject-card {
+  border: 1.5px solid #b7ff00;
+  border-radius: 26px;
+  box-shadow: 0 10px 24px rgba(31, 37, 50, 0.035);
+}
+
+.progress-chart-card {
+  padding: 23px;
+}
+
+.progress-chart-card h2,
+.progress-comparison-card h2 {
+  color: #19171c;
+  font-size: 19px;
+  letter-spacing: -0.35px;
+}
+
+.progress-main-number {
+  gap: 14px;
+  margin-top: 17px;
+}
+
+.progress-number-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 13px;
+  border-width: 2px;
+}
+
+.progress-main-number strong {
+  font-size: 34px;
+  letter-spacing: -1.3px;
+}
+
+.progress-change {
+  margin-top: 9px;
+  padding: 5px 11px;
+  font-size: 11px;
+}
+
+.focus-chart,
+.study-chart {
+  height: 158px;
+  margin-top: 19px;
+}
+
+.focus-y-axis,
+.study-y-axis {
+  font-size: 12px;
+}
+
+.focus-y-axis {
+  width: 48px;
+}
+
+.study-y-axis {
+  width: 38px;
+}
+
+.progress-line-chart {
+  height: 130px;
+}
+
+.progress-line-chart polyline {
+  stroke-width: 3.2;
+}
+
+.progress-line-chart circle {
+  r: 4;
+}
+
+.focus-x-axis,
+.study-x-axis {
+  font-size: 11px;
+}
+
+.study-bar-column i {
+  width: 19px;
+  border-radius: 10px 10px 6px 6px;
+}
+
+.progress-card-note {
+  margin-top: 14px;
+  padding-top: 12px;
+  font-size: 12px;
+}
+
+.progress-subject-card {
+  min-height: 460px;
+  padding: 38px 26px 24px;
+}
+
+.subject-icon-box {
+  width: 104px;
+  height: 104px;
+  border-width: 2px;
+  border-radius: 17px;
+  box-shadow: 0 6px 12px rgba(72, 49, 98, 0.12);
+}
+
+.progress-subject-card h2 {
+  margin-top: 26px;
+  font-size: 26px;
+}
+
+.subject-data-status {
+  margin: 10px auto 25px;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+.subject-details {
+  gap: 17px;
+}
+
+.subject-details p {
+  gap: 12px;
+  font-size: 14px;
+}
+
+.subject-details svg {
+  width: 22px;
+  height: 22px;
+}
+
+.progress-report-button {
+  height: 52px;
+  margin-top: 27px;
+  background: linear-gradient(180deg, #6826d7 0%, #9450f4 100%);
+  box-shadow: 0 9px 18px rgba(126, 56, 230, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  font-size: 15px;
+}
+
+.progress-report-button:hover {
+  background: linear-gradient(180deg, #5f1ecb 0%, #8843eb 100%);
+}
+
+.progress-comparison-card {
+  padding: 23px;
+}
+
+.progress-comparison-card > p {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.progress-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 22px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.progress-table-wrap th {
+  padding: 0 9px 13px;
+  font-size: 10px;
+}
+
+.progress-table-wrap td {
+  height: 54px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.table-trend {
+  gap: 5px;
+  padding: 5px 9px;
+  font-size: 10px;
+}
+
+.table-data {
+  gap: 9px;
+}
+
+.table-data > span {
+  width: 9px;
+  height: 9px;
+}
+
+.details-button {
+  font-size: 14px;
+}
+
+.progress-bottom-grid {
+  gap: 20px;
+}
+
+.progress-pattern-card,
+.progress-about-card {
+  min-height: 170px;
+  padding: 23px;
+  border-radius: 22px;
+}
+
+.progress-pattern-card h2,
+.progress-about-card h2 {
+  font-size: 18px;
+}
+
+.time-pattern-options {
+  width: min(100%, 440px);
+  gap: 11px;
+  margin-top: 16px;
+}
+
+.time-pattern-options button {
+  height: 72px;
+  border-radius: 17px;
+}
+
+.time-pattern-options button svg {
+  width: 26px;
+  height: 26px;
+}
+
+.time-pattern-options span:last-child {
+  font-size: 13px;
+}
+
+.progress-pattern-card > p,
+.progress-about-card p {
+  max-width: 100%;
+  margin-top: 15px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.progress-custom-dates {
+  flex: 0 0 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  color: #686574;
+  font-size: 12px;
+}
+
+.progress-custom-dates label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.progress-custom-dates input {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid #e2e8ef;
+  border-radius: 10px;
+  color: #302c35;
+  font: inherit;
+}
+
+/* Keep the custom date controls on their own row without squeezing the title
+   or wrapping the range buttons when Custom range is selected. */
+.progress-heading {
+  flex-wrap: wrap;
+  row-gap: 14px;
+}
+
+.progress-heading > div:first-child {
+  flex: 1 1 420px;
+  min-width: min(100%, 360px);
+}
+
+.progress-ranges {
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+.progress-ranges button {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.progress-custom-dates {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.progress-custom-dates label {
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .progress-heading {
+    align-items: flex-start;
+  }
+
+  .progress-heading > div:first-child {
+    flex-basis: 100%;
+    min-width: 0;
+  }
+
+  .progress-ranges {
+    margin-left: 0;
+  }
+
+  .progress-custom-dates label {
+    flex: 0 1 auto;
+  }
+}
+
+@media (max-width: 1150px) {
+  .progress-page { padding: 36px 22px 50px; }
+  .progress-main-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, 0.72fr); }
+  .progress-chart-card { padding: 24px; }
+  .progress-subject-card { min-height: 440px; padding: 34px 22px 24px; }
+}
+
+@media (max-width: 900px) {
+  .progress-page { padding: 30px 18px 44px; }
+  .progress-main-grid { grid-template-columns: minmax(0, 1fr); }
+  .progress-left { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .progress-heading { align-items: flex-start; }
+  .progress-subject-card { min-height: 0; }
+}
+
+@media (max-width: 700px) {
+  .progress-page { padding: 24px 14px 35px; }
+  .progress-heading h1 { font-size: 29px; }
+  .progress-heading p { font-size: 13px; }
+  .progress-chart-card,
+  .progress-comparison-card,
+  .progress-subject-card,
+  .progress-pattern-card,
+  .progress-about-card { padding: 18px; border-radius: 19px; }
+  .progress-chart-card h2,
+  .progress-comparison-card h2 { font-size: 17px; }
+  .progress-main-number strong { font-size: 31px; }
+  .focus-chart,
+  .study-chart { height: 145px; }
+  .progress-line-chart { height: 120px; }
+  .progress-comparison-card { overflow: hidden; }
+  .progress-custom-dates { justify-content: flex-start; flex-wrap: wrap; }
+  .progress-custom-dates label { flex: 1 1 100%; justify-content: space-between; }
 }

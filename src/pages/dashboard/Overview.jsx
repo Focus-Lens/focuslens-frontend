@@ -15,12 +15,14 @@ import {
   UserRound,
   Check,
   BookText,
+  Star,
 } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
 import { useAuth } from "../../context/useAuth";
 import { api } from "../../services/api";
+import { durationToMinutes, mapParentDashboard, mapParentStudyGoals } from "../../services/parentDashboard";
 import {
   cacheParentChildren,
   findConnectedChild,
@@ -51,6 +53,11 @@ export default function Overview() {
   const [dashboard, setDashboard] = useState(null);
   const [sessionHistory, setSessionHistory] = useState([]);
   const [sessionPagination, setSessionPagination] = useState(null);
+  const [overviewWeeks, setOverviewWeeks] = useState([]);
+  const [overviewWeekStart, setOverviewWeekStart] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+  const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0);
   // Reload when the parent returns to this tab, so changes made in another
   // browser (e.g. a cancelled invitation) show without a manual refresh.
   const tabReturnCount = useTabReturnRefresh();
@@ -97,6 +104,14 @@ export default function Overview() {
         setDashboard(null);
         return null;
       }
+      // This read may create the current StudentWeek row. Complete it before
+      // requesting the dashboard, which resolves that same row as well.
+      return api(`/api/parents/students/${firstChild.studentId}/overview-weeks`)
+        .catch(() => null)
+        .then((weeksData) => ({ firstChild, weeksData }));
+    }).then((context) => {
+      if (!context || !active) return null;
+      const { firstChild, weeksData } = context;
       // The dashboard contains the summary; the sessions endpoint provides the
       // real session total and makes the filters work beyond the latest five
       // items. Both only need the student, so they load in parallel.
@@ -105,18 +120,69 @@ export default function Overview() {
         api(
           `/api/parents/students/${firstChild.studentId}/dashboard/sessions?page=1&pageSize=20`,
         ).catch(() => null),
-      ]).then(([dashboardData, history]) => ({ dashboardData, history }));
+        api(`/api/parents/students/${firstChild.studentId}/study-goals`).catch(() => null),
+        api(`/api/progress/behavioral?studentId=${encodeURIComponent(firstChild.studentId)}&range=Week`).catch(() => null),
+      ]).then(([dashboardData, history, goalsData, behavioralData]) => ({ dashboardData, history, goalsData, behavioralData, weeksData }));
     }).then((data) => {
       if (!data || !active) return;
       setIsChildrenLoaded(true);
-      setDashboard(data.dashboardData);
+      const mappedDashboard = mapParentDashboard(data.dashboardData);
+      setDashboard({
+        ...mappedDashboard,
+        ...mapParentStudyGoals(data.goalsData),
+        focusQuality: data.behavioralData?.focus?.latestScore ?? null,
+        focusQualityTrend:
+          mappedDashboard.focusQualityTrend || data.behavioralData?.focus?.trend || null,
+      });
+      setOverviewWeeks(data.weeksData?.weeks || []);
+      setOverviewWeekStart(data.dashboardData.week?.startsOn || "");
       setSessionHistory(data.history?.sessions || data.dashboardData.recentStudySessions || []);
       setSessionPagination(data.history?.pagination || null);
     }).catch(() => {
       if (active) setIsChildrenLoaded(true);
     });
     return () => { active = false; };
-  }, [user?.email, userKey, tabReturnCount]);
+  }, [user?.email, userKey, tabReturnCount, dashboardRefreshKey]);
+
+  async function changeOverviewWeek(weekStart) {
+    if (!childInfo?.studentId || !weekStart || weekStart === overviewWeekStart) return;
+    try {
+      const selectedWeek = overviewWeeks.find((week) => week.startsOn === weekStart);
+      const updatedWeek = await api(`/api/parents/students/${childInfo.studentId}/overview-week`, {
+        method: "PUT",
+        // A null weekStart tells the API to clear the saved selection and
+        // resolve the student's actual current week.
+        body: { weekStart: selectedWeek?.isCurrentWeek ? null : weekStart },
+      });
+      setOverviewWeekStart(updatedWeek?.startsOn || weekStart);
+      setDashboardRefreshKey((value) => value + 1);
+    } catch (error) {
+      setExportError(error.message || "We couldn’t update the selected week.");
+    }
+  }
+
+  async function exportSessionLog() {
+    if (!childInfo?.studentId) return;
+    setIsExporting(true);
+    setExportError("");
+    try {
+      const params = new URLSearchParams();
+      if (sessionFilter !== "all") params.set("status", sessionFilter === "completed" ? "Completed" : "Paused");
+      const blob = await api(`/api/parents/students/${childInfo.studentId}/dashboard/sessions/export?${params.toString()}`, { responseType: "blob" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "focuslens-study-sessions.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      setExportError(error.message || "We couldn’t export the session log.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   const childName = childInfo?.firstName || "your child";
 
@@ -136,10 +202,10 @@ export default function Overview() {
     id: session.id,
     subject: session.subjectName || "Study session",
     date: new Date(session.startedAtUtc).toLocaleString(),
-    duration: `${session.actualStudyMinutes} min`,
+    duration: `${durationToMinutes(session.actualStudyMinutes)} min`,
     format: session.mode,
     status: session.status,
-    focus: dashboard.focusQuality ? `${dashboard.focusQuality}%` : "",
+    focus: session.focusQuality != null ? `${session.focusQuality}%` : "",
     note: "", icon: <BookText size={13} />, tone: "",
   }));
 
@@ -156,7 +222,11 @@ export default function Overview() {
       !peak || day.actualStudyMinutes > peak.actualStudyMinutes ? day : peak,
     null,
   );
-  const pulsePoints = buildPulsePoints(pulseDays);
+  const pulseLinePath = buildSmoothPulsePath(pulseDays);
+  const focusPatternDays = dashboard?.focusPattern?.days || [];
+  const focusPatternRows = buildFocusPatternRows(focusPatternDays);
+  const focusTrend = dashboard?.focusQualityTrend;
+  const activeTimeBlock = dashboard?.focusPattern?.mostActiveTimeBlock;
   const goal = dashboard?.currentStudyGoal;
   const goalProgress = dashboard?.currentStudyGoalProgress;
   const goalCompletion = Math.min(
@@ -289,7 +359,7 @@ export default function Overview() {
                   <Flag size={38} />
                   <h2>No shared goal yet</h2>
                   <p>Suggest a gentle study-time goal. {childName} stays in control of accepting it.</p>
-                  <Link to="/study-goals" className="button">Suggest a goal</Link>
+                  <Link to="/study-goals" state={{ openCreateGoal: true }} className="button">Suggest a goal</Link>
                 </div>
               </article>
             </section>
@@ -332,10 +402,16 @@ export default function Overview() {
             </div>
 
             <div className="figma-heading-actions">
-              <button type="button">
+              <label className="overview-week-picker">
                 <CalendarDays size={15} />
-                This week
-              </button>
+                <select aria-label="Choose dashboard week" onChange={(event) => changeOverviewWeek(event.target.value)} value={overviewWeekStart}>
+                  {overviewWeeks.map((week) => (
+                    <option key={week.startsOn} value={week.startsOn}>
+                      {week.isCurrentWeek ? "This week" : formatWeekRange(week.startsOn, week.endsOn)}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
               <Link to="/reports" className="view-report-button">
                 View full report
@@ -390,7 +466,7 @@ export default function Overview() {
                         <stop
                           offset="0%"
                           stopColor="#8138f4"
-                          stopOpacity="0.22"
+                          stopOpacity="0.16"
                         />
                         <stop
                           offset="100%"
@@ -398,17 +474,35 @@ export default function Overview() {
                           stopOpacity="0"
                         />
                       </linearGradient>
+                      <linearGradient id="pulseGlow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8138f4" stopOpacity="0.22" />
+                        <stop offset="65%" stopColor="#8138f4" stopOpacity="0.06" />
+                        <stop offset="100%" stopColor="#8138f4" stopOpacity="0" />
+                      </linearGradient>
                     </defs>
 
-                    {pulsePoints.length > 1 && <polygon
-                      fill="url(#pulseFill)"
-                      points={`${pulsePoints} 250,92 10,92`}
+                    {pulseLinePath && <path
+                      className="chart-area-glow"
+                      d={`${pulseLinePath} L250,92 L10,92 Z`}
+                      fill="url(#pulseGlow)"
                     />}
 
-                    <polyline
+                    {pulseLinePath && <path
+                      className="chart-area"
+                      d={`${pulseLinePath} L250,92 L10,92 Z`}
+                      fill="url(#pulseFill)"
+                    />}
+
+                    {pulseLinePath && <path
+                      className="chart-line-glow"
+                      d={pulseLinePath}
+                      transform="translate(0 4)"
+                    />}
+
+                    {pulseLinePath && <path
                       className="chart-line"
-                      points={pulsePoints}
-                    />
+                      d={pulseLinePath}
+                    />}
                     {buildPulseCircles(pulseDays).map(({ x, y, isPeak }, index) => (
                       <circle
                         className={isPeak ? "chart-peak" : "chart-dot"}
@@ -445,7 +539,7 @@ export default function Overview() {
 
                 <span>
                   <TrendingUp size={13} />
-                  Focus quality <b>{dashboard?.focusQuality != null ? `${dashboard.focusQuality}%` : "not shared"}</b>
+                  Focus quality <b>{dashboard?.focusQualityTrend || (dashboard?.focusQuality != null ? `${dashboard.focusQuality}%` : "not shared")}</b>
                 </span>
               </div>
             </article>
@@ -454,31 +548,35 @@ export default function Overview() {
               <CardTitle
                 icon={<img src={elementIcon} alt="" />}
                 title="Focus pattern"
-                subtitle="Shared activity by day"
+                subtitle="Recorded session density by time block"
               />
 
-              <div className="heatmap">
+              {focusPatternRows.length > 0 ? <div className="heatmap">
                 <div className="heat-row days">
-                  <span>Day</span>
+                  <span>Hour</span>
 
-                  {pulseDays.map((day) => (
-                    <span key={day.date}>{formatDay(day.date)}</span>
+                  {focusPatternDays.map((day, index) => (
+                    <span key={`${day.day}-${index}`}>{formatWeekday(day.day)}</span>
                   ))}
                 </div>
 
-                <div className="heat-row">
-                    <span>Minutes</span>
-
-                    {pulseDays.map((day) => {
-                      const level = intensityLevel(day.actualStudyMinutes);
-                      return (
-                      <i className={`level-${level}`} key={day.date}>
-                        {day.actualStudyMinutes > 0 ? day.actualStudyMinutes : ""}
+                {focusPatternRows.map((row) => (
+                  <div className={`heat-row${isHourInFocusBlock(row.hour, activeTimeBlock) ? " is-active" : ""}`} key={row.hour}>
+                    <span>{formatHourLabel(row.hour)}</span>
+                    {row.minutesByDay.map((minutes, index) => (
+                      <i
+                        aria-label={minutes ? `${minutes} minutes` : "No sessions"}
+                        className={`level-${intensityLevel(minutes)}`}
+                        key={`${row.hour}-${index}`}
+                        role="img"
+                        title={minutes ? `${minutes} minutes` : "No sessions"}
+                      >
+                        {intensityLevel(minutes) === 3 ? <Star size={10} fill="currentColor" strokeWidth={2} aria-hidden="true" /> : null}
                       </i>
-                      );
-                    })}
+                    ))}
                   </div>
-              </div>
+                ))}
+              </div> : <p className="insight">No shared study-time pattern is available for this week yet.</p>}
 
               <div className="intensity">
                 <span>Intensity:</span>
@@ -502,9 +600,10 @@ export default function Overview() {
 
               <p className="insight">
                 <b>Insight:</b>{" "}
-                {dashboard?.focusQuality != null
-                  ? `${childName}'s shared focus quality is ${dashboard.focusQuality}%.`
-                  : `Focus-quality insights will appear when ${childName} shares enough recorded activity.`}
+                {activeTimeBlock
+                  ? `${childName}'s most active study time is ${activeTimeBlock.startTime}–${activeTimeBlock.endTime}. `
+                  : "Most active study time is not available yet. "}
+                {formatFocusTrend(focusTrend, childName)}
               </p>
             </article>
           </section>
@@ -544,7 +643,7 @@ export default function Overview() {
                   <Flag size={38} />
                   <h2>No shared goal yet</h2>
                   <p>{childName} has not shared an active study goal.</p>
-                  <Link to="/study-goals" className="button">Suggest a goal</Link>
+                  <Link to="/study-goals" state={{ openCreateGoal: true }} className="button">Suggest a goal</Link>
                 </div>
               )}
             </article>
@@ -586,12 +685,13 @@ export default function Overview() {
                     </button>
                   </div>
 
-                  <button type="button" className="export-btn">
+                  <button type="button" className="export-btn" disabled={isExporting} onClick={exportSessionLog}>
                     <Download size={12} />
-                    Export log
+                    {isExporting ? "Exporting…" : "Export log"}
                   </button>
                 </div>
               </div>
+              {exportError && <p className="overview-export-error" role="alert">{exportError}</p>}
 
               <div className="sessions-labels">
                 <span>Date &amp; Subject</span>
@@ -681,11 +781,85 @@ function formatDay(date) {
   });
 }
 
+function formatWeekRange(startsOn, endsOn) {
+  const formatDate = (value) => new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+  return `${formatDate(startsOn)} – ${formatDate(endsOn)}`;
+}
+
+function formatRangeDate(value) {
+  return new Date(`${value}T00:00:00`).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 function intensityLevel(minutes) {
   if (minutes >= 60) return 3;
   if (minutes >= 30) return 2;
   if (minutes > 0) return 1;
   return 0;
+}
+
+function isHourInFocusBlock(hour, timeBlock) {
+  const start = parseFocusBlockHour(timeBlock?.startTime);
+  const end = parseFocusBlockHour(timeBlock?.endTime);
+  if (start == null || end == null) return false;
+  return start <= end ? hour >= start && hour <= end : hour >= start || hour <= end;
+}
+
+function parseFocusBlockHour(value) {
+  if (typeof value !== "string") return null;
+  const match = value.trim().match(/^(\d{1,2})(?::\d{2})?(?::\d{2})?\s*(AM|PM)?$/i);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  if (hour > 23) return null;
+  if (!match[2]) return hour;
+  return (hour % 12) + (match[2].toUpperCase() === "PM" ? 12 : 0);
+}
+
+function buildFocusPatternRows(days) {
+  const totalsByHour = new Map();
+  days.forEach((day) => {
+    (day.sessions || []).forEach((session) => {
+      if (session.hour == null) return;
+      totalsByHour.set(session.hour, (totalsByHour.get(session.hour) || 0) + session.studyMinutes);
+    });
+  });
+
+  const selectedHours = [...totalsByHour.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+    .slice(0, 5)
+    .map(([hour]) => hour)
+    .sort((a, b) => a - b);
+
+  return selectedHours.map((hour) => ({
+    hour,
+    minutesByDay: days.map((day) =>
+      (day.sessions || []).reduce(
+        (total, session) => total + (session.hour === hour ? session.studyMinutes : 0),
+        0,
+      ),
+    ),
+  }));
+}
+
+function formatHourLabel(hour) {
+  const normalized = hour % 12 || 12;
+  return `${normalized}${hour < 12 ? "am" : "pm"}`;
+}
+
+function formatWeekday(day) {
+  return typeof day === "string" ? day.slice(0, 1).toUpperCase() : "–";
+}
+
+function formatFocusTrend(trend, childName) {
+  if (trend === "Improving") return `${childName}'s shared focus quality is improving.`;
+  if (trend === "Declining") return `${childName}'s shared focus quality has declined.`;
+  if (trend === "Steady") return `${childName}'s shared focus quality is steady.`;
+  return "Focus-quality trend will appear after enough shared activity.";
 }
 
 function buildPulseCircles(days) {
@@ -699,10 +873,23 @@ function buildPulseCircles(days) {
   }));
 }
 
-function buildPulsePoints(days) {
-  return buildPulseCircles(days)
-    .map(({ x, y }) => `${x},${y}`)
-    .join(" ");
+function buildSmoothPulsePath(days) {
+  const points = buildPulseCircles(days);
+  if (points.length < 2) return "";
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M${point.x},${point.y}`;
+
+    const previous = points[index - 1];
+    const beforePrevious = points[index - 2] || previous;
+    const next = points[index + 1] || point;
+    const control1X = previous.x + (point.x - beforePrevious.x) / 6;
+    const control1Y = previous.y + (point.y - beforePrevious.y) / 6;
+    const control2X = point.x - (next.x - previous.x) / 6;
+    const control2Y = point.y - (next.y - previous.y) / 6;
+
+    return `${path} C${control1X},${control1Y} ${control2X},${control2Y} ${point.x},${point.y}`;
+  }, "");
 }
 
 function CardTitle({ icon, title, subtitle }) {

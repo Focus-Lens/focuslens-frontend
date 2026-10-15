@@ -6,6 +6,8 @@ import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
 import { api } from "../../services/api";
 import { useAuth } from "../../context/useAuth";
+import { findConnectedChild } from "../../services/parentChildrenCache";
+import { getStudentDisplayName } from "../../services/studentDisplayName";
 
 import "../../css/dashboard/ProfileAccount.css";
 
@@ -29,6 +31,7 @@ export default function ProfileAccount() {
   const [profile, setProfile] = useState(() => toProfile(signedInUser));
   const [draft, setDraft] = useState(() => toProfile(signedInUser));
   const [accountStatus, setAccountStatus] = useState(null);
+  const [connectedChild, setConnectedChild] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [reloadCount, setReloadCount] = useState(0);
@@ -44,13 +47,21 @@ export default function ProfileAccount() {
 
   useEffect(() => {
     let active = true;
-    Promise.all([api("/api/users/me"), api("/api/users/me/account-status")])
-      .then(([user, status]) => {
+    Promise.all([
+      api("/api/users/me"),
+      api("/api/users/me/account-status"),
+      api("/api/parents/overview/children").catch(() => []),
+      api("/api/access/students").catch(() => []),
+    ])
+      .then(([user, status, children, studentSummaries]) => {
         if (!active) return;
         const nextProfile = toProfile(user);
         setProfile(nextProfile);
         setDraft(nextProfile);
         setAccountStatus(status);
+        const child = findConnectedChild(children);
+        const student = studentSummaries.find((item) => item.id === child?.studentId);
+        setConnectedChild(child ? { ...child, ...student, status: child.status } : null);
       })
       .catch((requestError) => active && setLoadError(requestError.message || "We couldn’t load your account."))
       .finally(() => active && setIsLoading(false));
@@ -138,7 +149,7 @@ export default function ProfileAccount() {
   }
 
   const initials = profile.fullName.split(" ").filter(Boolean).map((name) => name[0]).join("").slice(0, 2).toUpperCase();
-  const relationship = accountStatus?.childRelationships?.[0];
+  const relationship = connectedChild;
 
   if (isLoading || loadError) {
     return (
@@ -249,7 +260,7 @@ export default function ProfileAccount() {
 
                 <div className="profile-status-row">
                   <span>Connected child</span>
-                  <b className="dark-status">{relationship?.childName || "No connected child"}</b>
+                  <b className="dark-status">{relationship ? getStudentDisplayName(relationship) : "No connected child"}</b>
                 </div>
 
                 <div className="profile-status-row">

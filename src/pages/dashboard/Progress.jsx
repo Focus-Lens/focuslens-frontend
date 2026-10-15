@@ -11,7 +11,7 @@ import {
   Moon,
   Sun,
   TrendingUp,
-  X,
+  TrendingDown,
 } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
@@ -54,71 +54,127 @@ export default function Progress() {
   const [selectedSubjectName, setSelectedSubjectName] = useState("");
 
   const [selectedTimePeriod, setSelectedTimePeriod] = useState("Afternoon");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [childInfo, setChildInfo] = useState(() => findConnectedChild(getCachedParentChildren()));
   const [pendingChild, setPendingChild] = useState(
     () => findPendingChild(getCachedParentChildren()) || getPendingInvitationForUser(user?.email)
   );
-  const [dashboard, setDashboard] = useState(null);
-  const [sessionHistory, setSessionHistory] = useState([]);
+  const [progressData, setProgressData] = useState(null);
+  const [behaviorData, setBehaviorData] = useState(null);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const customRangeReady = isCompleteDate(dateFrom) && isCompleteDate(dateTo) && dateFrom <= dateTo;
 
   useEffect(() => {
+    if (range === "custom" && !customRangeReady) {
+      setIsLoadingData(false);
+      return;
+    }
+
     let active = true;
+    setIsLoadingData(true);
     api("/api/parents/overview/children")
       .then(async (children) => {
         if (!active) return;
         cacheParentChildren(children);
         const connectedChild = findConnectedChild(children);
         setChildInfo(connectedChild);
-        setPendingChild(
-          findPendingChild(children) || getPendingInvitationForUser(user?.email)
-        );
-        if (connectedChild?.studentId) {
-          const [dashboardData, history] = await Promise.all([
-            api(`/api/parents/students/${connectedChild.studentId}/dashboard`).catch(() => null),
-            api(`/api/parents/students/${connectedChild.studentId}/dashboard/sessions?page=1&pageSize=100`).catch(() => null),
-          ]);
-          if (active) {
-            setDashboard(dashboardData);
-            setSessionHistory(history?.sessions || dashboardData?.recentStudySessions || []);
+        const pendingFromServer = findPendingChild(children);
+        const pending = pendingFromServer || getPendingInvitationForUser(user?.email);
+        setPendingChild(pending);
+        if (!connectedChild?.studentId) {
+          if (pending) {
+            const invitations = await api("/api/parents/child-setups/invitations").catch(() => []);
+            const pendingDraftId = pending.childSetupDraftId || pending.draftId || pending.id;
+            const invitation = invitations.find((item) =>
+              (pendingDraftId && item.draftId === pendingDraftId) ||
+              (pending.childSetupInvitationId && item.invitationId === pending.childSetupInvitationId),
+            );
+            if (active) setPendingChild(invitation ? { ...pending, ...invitation } : pendingFromServer);
           }
-        } else if (active) {
-          setDashboard(null);
-          setSessionHistory([]);
+          setProgressData(null);
+          setBehaviorData(null);
+          setIsLoadingData(false);
+          return;
+        }
+        const rangeQuery = range === "7" ? "Last7Days" : range === "30" ? "Last30Days" : "Custom";
+        const params = new URLSearchParams({ studentId: connectedChild.studentId, range: rangeQuery });
+        if (range === "custom") {
+          params.set("dateFrom", dateFrom);
+          params.set("dateTo", dateTo);
+        }
+        const behavioralParams = new URLSearchParams({ studentId: connectedChild.studentId, range: rangeQuery });
+        if (range === "custom") {
+          behavioralParams.set("dateFrom", dateFrom);
+          behavioralParams.set("dateTo", dateTo);
+        }
+        const [progress, behavior] = await Promise.all([
+          api(`/api/progress?${params.toString()}`).catch(() => null),
+          api(`/api/progress/behavioral?${behavioralParams.toString()}`).catch(() => null),
+        ]);
+        if (active) {
+          setProgressData(progress);
+          setBehaviorData(behavior);
         }
       })
       .catch(() => {})
       .finally(() => {
-        if (!active) return;
+        if (active) setIsLoadingData(false);
       });
     return () => { active = false; };
-  }, [user?.email]);
+  }, [user?.email, range, dateFrom, dateTo]);
 
-  const subjects = useMemo(() => buildSubjectStats(sessionHistory), [sessionHistory]);
+  const subjects = useMemo(() => (progressData?.subjects || []).map((subject) => {
+    const insight = (behaviorData?.subjects || []).find((item) =>
+      (subject.subjectId && item.subjectId === subject.subjectId) || item.subject === subject.subject,
+    );
+    const apiTrend = String(insight?.focusTrend || "").toLowerCase();
+    return {
+      name: subject.subject,
+      sessions: subject.sessionCount,
+      totalMinutes: subject.actualStudyMinutes,
+      trend: apiTrend === "steady" ? "stable" : apiTrend || null,
+      hasEnoughData: subject.dataStatus === "EnoughData" || subject.dataStatus === 1,
+    };
+  }), [progressData, behaviorData]);
   const selectedSubject = useMemo(
     () => subjects.find((subject) => subject.name === selectedSubjectName) || subjects[0],
     [selectedSubjectName, subjects],
   );
-  const pulseDays = dashboard?.weeklyStudyPulse?.days || [];
-  const focusPoints = pulseDays.map(() => dashboard?.focusQuality ?? 0);
+  const pulseDays = (progressData?.daily || []).map((day) => ({
+    date: day.date,
+    actualStudyMinutes: day.actualStudyMinutes,
+  }));
+  const behavioralByDate = new Map((behaviorData?.daily || []).map((day) => [normalizeDateKey(day.date), day.focusScore]));
+  const selectedTimeInsight = (behaviorData?.timeOfDay || []).find(
+    (item) => item.period?.toLowerCase() === selectedTimePeriod.toLowerCase(),
+  );
+  const overallFocusTrend = String(behaviorData?.focus?.trend || "").toLowerCase();
 
   const chartWidth = 330;
   const chartHeight = 150;
 
-  const chartCoordinates = focusPoints
-    .map((value, index) => {
-      const x =
-        index *
-        (chartWidth / Math.max(focusPoints.length - 1, 1));
-
-      const y = chartHeight - value;
-
-      return `${x},${y}`;
-    })
-    .join(" ");
+  const focusPoints = pulseDays.flatMap((day, index) => {
+    const score = behavioralByDate.get(normalizeDateKey(day.date));
+    if (score == null || !Number.isFinite(Number(score))) return [];
+    return [{
+      x: index * (chartWidth / Math.max(pulseDays.length - 1, 1)),
+      y: chartHeight * (1 - Number(score) / 100),
+      score: Number(score),
+    }];
+  });
+  const focusLinePath = buildSmoothChartPath(focusPoints);
+  const focusAreaPath = focusPoints.length
+    ? `${focusLinePath} L ${focusPoints.at(-1).x} ${chartHeight} L ${focusPoints[0].x} ${chartHeight} Z`
+    : "";
 
   const studyPoints = pulseDays.map((day) => day.actualStudyMinutes || 0);
-  const maxStudyMinutes = Math.max(1, ...studyPoints);
-  const hasActivity = sessionHistory.length > 0 || (dashboard?.weeklyStudyPulse?.actualStudyMinutes || 0) > 0;
+  const maxStudyMinutes = 180;
+  const axisDays = pulseDays.filter((_, index) => {
+    const stride = Math.max(1, Math.ceil(pulseDays.length / 7));
+    return index === 0 || index === pulseDays.length - 1 || index % stride === 0;
+  });
+  const hasActivity = (progressData?.sessionCount || 0) > 0 || (progressData?.actualStudyMinutes || 0) > 0;
 
   if (!childInfo) {
     return (
@@ -126,9 +182,50 @@ export default function Progress() {
         <DashboardHeader activePage="progress" />
         <ParentLayout>
           <ProgressUnavailable
-            childName={pendingChild?.firstName}
+            pendingInvitation={pendingChild}
             onAction={() => navigate(pendingChild ? "/children" : "/choose-start")}
           />
+        </ParentLayout>
+      </div>
+    );
+  }
+
+  if (isLoadingData) {
+    return (
+      <div className="progress-page-shell">
+        <DashboardHeader activePage="progress" />
+        <ParentLayout>
+          <main className="progress-page" role="status" aria-live="polite">Loading progress…</main>
+        </ParentLayout>
+      </div>
+    );
+  }
+
+  if (range === "custom" && !customRangeReady) {
+    return (
+      <div className="progress-page-shell">
+        <DashboardHeader activePage="progress" />
+        <ParentLayout>
+          <main className="progress-page">
+            <header className="progress-heading">
+              <div>
+                <h1>Progress</h1>
+                <p>See how focus quality and study patterns change over time.</p>
+              </div>
+              <div className="progress-ranges">
+                <button onClick={() => setRange("7")} type="button">Last 7 days</button>
+                <button onClick={() => setRange("30")} type="button">Last 30 days</button>
+                <button className="active" onClick={() => setRange("custom")} type="button">Custom range</button>
+              </div>
+              <div className="progress-custom-dates">
+                <label>From <input aria-label="Start date" onChange={(event) => setDateFrom(event.target.value)} type="date" value={dateFrom} /></label>
+                <label>To <input aria-label="End date" onChange={(event) => setDateTo(event.target.value)} type="date" value={dateTo} /></label>
+              </div>
+            </header>
+            <section className="progress-custom-prompt" role="status">
+              Choose a complete start date and end date to view progress for this range.
+            </section>
+          </main>
         </ParentLayout>
       </div>
     );
@@ -147,16 +244,28 @@ export default function Progress() {
               </div>
             </header>
             <section className="progress-connected-empty-card">
-              <span className="progress-empty-spark"><TrendingUp size={30} /></span>
-              <h2>{childInfo.firstName || "Your child"}&apos;s progress will grow here</h2>
-              <p>
-                There&apos;s no shared study activity yet. Once {childInfo.firstName || "your child"}
-                records sessions, this page will show real study time, focus quality, and subject progress.
-              </p>
-              <div>
-                <span>Study time</span><b>0m</b>
-                <span>Focus quality</span><b>Not available yet</b>
-                <span>Sessions</span><b>0</b>
+              <div className="progress-empty-intro">
+                <span className="progress-empty-spark"><TrendingUp size={26} strokeWidth={2.1} /></span>
+                <span className="progress-empty-eyebrow">PROGRESS OVERVIEW</span>
+                <h2>{childInfo.firstName || "Your child"}&apos;s progress will grow here</h2>
+                <p>
+                  There&apos;s no shared study activity yet. Once {childInfo.firstName || "your child"} records a session,
+                  this page will show study time, focus quality, and subject progress.
+                </p>
+              </div>
+              <div className="progress-empty-stats" aria-label="Progress summary">
+                <article>
+                  <span>Study time</span>
+                  <b>0<span>m</span></b>
+                </article>
+                <article>
+                  <span>Focus quality</span>
+                  <b className="progress-empty-unavailable">Not available yet</b>
+                </article>
+                <article>
+                  <span>Sessions</span>
+                  <b>0</b>
+                </article>
               </div>
             </section>
           </main>
@@ -217,6 +326,12 @@ export default function Progress() {
                 Custom range
               </button>
             </div>
+              {range === "custom" && (
+                <div className="progress-custom-dates">
+                  <label>From <input aria-label="Start date" onChange={(event) => setDateFrom(event.target.value)} type="date" value={dateFrom} /></label>
+                  <label>To <input aria-label="End date" onChange={(event) => setDateTo(event.target.value)} type="date" value={dateTo} /></label>
+                </div>
+              )}
           </header>
 
 
@@ -249,19 +364,22 @@ export default function Progress() {
                   </span>
 
                   <strong>
-                    {dashboard?.focusQuality != null ? `${dashboard.focusQuality}%` : "—"}
+                    {behaviorData?.focus?.latestScore != null ? `${behaviorData.focus.latestScore}%` : "—"}
                   </strong>
                 </div>
 
-                <span className="progress-change positive">
-                  <ArrowUp
-                    size={14}
-                    strokeWidth={2.2}
-                  />
-
-                  {dashboard?.focusQuality != null
-                    ? "Average shared focus quality"
-                    : "Focus quality has not been shared"}
+                <span className={`progress-change${overallFocusTrend ? ` ${overallFocusTrend}` : ""}`}>
+                  {overallFocusTrend === "improving" ? (
+                    <><ArrowUp size={14} strokeWidth={2.2} />Improving</>
+                  ) : overallFocusTrend === "declining" ? (
+                    <><TrendingDown size={14} strokeWidth={2.2} />Declining</>
+                  ) : overallFocusTrend === "steady" ? (
+                    <>— Steady</>
+                  ) : behaviorData?.focus?.latestScore != null ? (
+                    "Latest shared focus quality"
+                  ) : (
+                    "Focus quality has not been shared"
+                  )}
                 </span>
 
                 <div className="focus-chart">
@@ -303,6 +421,9 @@ export default function Progress() {
                             stopOpacity="0"
                           />
                         </linearGradient>
+                        <filter id="progressFocusGlow" x="-10%" y="-30%" width="120%" height="170%">
+                          <feGaussianBlur stdDeviation="7" />
+                        </filter>
                       </defs>
 
                       <line
@@ -340,31 +461,16 @@ export default function Progress() {
                         y2="150"
                       />
 
-                      <polygon
-                        points={`0,${chartHeight} ${chartCoordinates} 330,${chartHeight}`}
-                        fill="url(#focusAreaGradient)"
-                      />
+                      {focusAreaPath && <path className="progress-focus-glow" d={focusAreaPath} />}
+                      {focusAreaPath && <path className="progress-focus-area" d={focusAreaPath} />}
+                      {focusLinePath && <path className="progress-focus-line" d={focusLinePath} />}
 
-                      <polyline
-                        points={chartCoordinates}
-                      />
-
-                      {focusPoints.map((value, index) => {
-                        const x =
-                          index *
-                          (chartWidth /
-                            Math.max(
-                              focusPoints.length - 1,
-                              1
-                            ));
-
-                        const y = chartHeight - value;
-
+                      {focusPoints.map((point, index) => {
                         return (
                           <circle
-                            cx={x}
-                            cy={y}
-                            key={`${value}-${index}`}
+                            cx={point.x}
+                            cy={point.y}
+                            key={`${point.score}-${index}`}
                             r="3"
                           />
                         );
@@ -372,14 +478,14 @@ export default function Progress() {
                     </svg>
 
                     <div className="focus-x-axis">
-                      {pulseDays.map((day) => <span key={day.date}>{formatDay(day.date)}</span>)}
+                      {axisDays.map((day) => <span key={day.date}>{formatDay(day.date, range === "7")}</span>)}
                     </div>
 
                   </div>
                 </div>
 
                 <p className="progress-card-note">
-                  {dashboard?.focusQuality != null
+                  {behaviorData?.focus?.latestScore != null
                     ? "Focus quality reflects the child’s shared study activity."
                     : "Focus quality will appear after enough activity is shared."}
                 </p>
@@ -405,7 +511,7 @@ export default function Progress() {
 
                   <strong>
                     {formatStudyTime(
-                      dashboard?.weeklyStudyPulse?.actualStudyMinutes
+                      progressData?.actualStudyMinutes
                     )}
                   </strong>
 
@@ -417,11 +523,9 @@ export default function Progress() {
                     strokeWidth={2.2}
                   /> */}
 
-                  {formatStudyTime(
-                    Math.abs(dashboard?.weeklyStudyPulse?.actualStudyMinutesTrend || 0)
-                  )}
-
-                  {" "}{(dashboard?.weeklyStudyPulse?.actualStudyMinutesTrend || 0) >= 0 ? "more than previous period" : "less than previous period"}
+                  {progressData?.dateFrom && progressData?.dateTo
+                    ? `${formatRangeDate(progressData.dateFrom)} – ${formatRangeDate(progressData.dateTo)}`
+                    : "Study time in the selected period"}
                 </span>
 
                 <div className="study-chart">
@@ -442,7 +546,10 @@ export default function Progress() {
                       <span />
                     </div>
 
-                    <div className="progress-bars-chart">
+                    <div
+                      className="progress-bars-chart"
+                      style={{ gridTemplateColumns: `repeat(${Math.max(studyPoints.length, 1)}, minmax(0, 1fr))` }}
+                    >
 
                       {studyPoints.map(
                         (minutes, index) => (
@@ -452,17 +559,10 @@ export default function Progress() {
                           >
                             <i
                               className={
-                                index ===
-                                studyPoints.length - 1
-                                  ? "last"
-                                  : ""
+                                `${index === studyPoints.length - 1 ? "last" : ""} ${minutes <= 0 ? "empty" : ""}`.trim()
                               }
                               style={{
-                                height: `${Math.max(
-                                  20,
-                                  (minutes / maxStudyMinutes) *
-                                    100
-                                )}%`,
+                                height: `${Math.min(minutes, maxStudyMinutes) / maxStudyMinutes * 100}%`,
                               }}
                             />
                           </div>
@@ -472,7 +572,7 @@ export default function Progress() {
                     </div>
 
                     <div className="study-x-axis">
-                      {pulseDays.map((day) => <span key={day.date}>{formatDay(day.date)}</span>)}
+                      {axisDays.map((day) => <span key={day.date}>{formatDay(day.date, range === "7")}</span>)}
                     </div>
 
                   </div>
@@ -537,6 +637,11 @@ export default function Progress() {
                                 />
                                 Improving
                               </span>
+                            ) : subject.trend === "declining" ? (
+                              <span className="table-trend declining">
+                                <TrendingDown size={15} strokeWidth={2.2} />
+                                Declining
+                              </span>
                             ) : subject.trend === "stable" ? (
                               <span className="table-trend stable">
                                 <span>—</span>
@@ -570,11 +675,7 @@ export default function Progress() {
 
                             <button
                               className="details-button"
-                              onClick={() =>
-                                setSelectedSubjectName(
-                                  subject.name
-                                )
-                              }
+                              onClick={() => setSelectedSubjectName(subject.name)}
                               type="button"
                             >
                               Details
@@ -672,8 +773,12 @@ export default function Progress() {
               </div>
 
               <p>
-                Focus has been strongest during{" "}
-                {selectedTimePeriod.toLowerCase()} sessions.
+                {selectedTimeInsight?.averageFocusScore != null
+                  ? `${selectedTimePeriod} focus quality averaged ${selectedTimeInsight.averageFocusScore}% across ${selectedTimeInsight.analyzedDayCount} analyzed days. `
+                  : `There isn’t enough shared focus data for ${selectedTimePeriod.toLowerCase()} yet. `}
+                {behaviorData?.strongestTimeOfDay
+                  ? `Focus has been strongest during ${behaviorData.strongestTimeOfDay.toLowerCase()}.`
+                  : "There isn’t enough data yet to identify the strongest time of day."}
               </p>
 
             </section>
@@ -711,22 +816,6 @@ export default function Progress() {
             ========================= */}
 
             <aside className="progress-subject-card">
-
-              <button
-                aria-label="Clear selected subject"
-                className="subject-close"
-                onClick={() =>
-                  setSelectedSubjectName(
-                    subjects[0]?.name || ""
-                  )
-                }
-                type="button"
-              >
-                <X
-                  size={18}
-                  strokeWidth={1.8}
-                />
-              </button>
 
               <div className="subject-icon-box">
                 <img
@@ -781,17 +870,14 @@ export default function Progress() {
                   </b>
                 </p>
 
-                <p
-                  className={
-                    selectedSubject?.trend === "improving"
-                      ? "subject-improving"
-                      : ""
-                  }
-                >
-                  <TrendingUp
-                    size={20}
-                    strokeWidth={2.2}
-                  />
+                <p className={selectedSubject?.trend ? `subject-${selectedSubject.trend}` : ""}>
+                  {selectedSubject?.trend === "declining" ? (
+                    <TrendingDown size={20} strokeWidth={2.2} />
+                  ) : selectedSubject?.trend === "improving" ? (
+                    <TrendingUp size={20} strokeWidth={2.2} />
+                  ) : (
+                    <span aria-hidden="true">—</span>
+                  )}
 
                   <b>
                     {selectedSubject?.trend
@@ -833,9 +919,44 @@ export default function Progress() {
   );
 }
 
-function formatDay(date) {
+function formatDay(date, showWeekday) {
+  return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, showWeekday
+    ? { weekday: "short" }
+    : { month: "short", day: "numeric" });
+}
+
+function normalizeDateKey(date) {
+  return String(date || "").slice(0, 10);
+}
+
+function isCompleteDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const parsed = new Date(year, month - 1, day);
+  return parsed.getFullYear() === year && parsed.getMonth() === month - 1 && parsed.getDate() === day;
+}
+
+function buildSmoothChartPath(points) {
+  if (!points.length) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x} ${point.y}`;
+    const previous = points[index - 1];
+    const beforePrevious = points[index - 2] || previous;
+    const next = points[index + 1] || point;
+    const control1X = previous.x + (point.x - beforePrevious.x) / 6;
+    const control1Y = previous.y + (point.y - beforePrevious.y) / 6;
+    const control2X = point.x - (next.x - previous.x) / 6;
+    const control2Y = point.y - (next.y - previous.y) / 6;
+    return `${path} C ${control1X} ${control1Y}, ${control2X} ${control2Y}, ${point.x} ${point.y}`;
+  }, "");
+}
+
+function formatRangeDate(date) {
   return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
-    weekday: "short",
+    month: "short",
+    day: "numeric",
   });
 }
 
@@ -855,9 +976,9 @@ function buildSubjectStats(sessions) {
   }));
 }
 
-function ProgressUnavailable({ childName, onAction }) {
-  const isPending = Boolean(childName);
-  const displayName = childName || "your child";
+function ProgressUnavailable({ pendingInvitation, onAction }) {
+  const isPending = Boolean(pendingInvitation);
+  const invitedEmail = pendingInvitation?.targetEmail || pendingInvitation?.email;
 
   return (
     <main className="progress-page progress-unavailable-page">
@@ -874,11 +995,13 @@ function ProgressUnavailable({ childName, onAction }) {
         </span>
         {isPending && <span className="progress-pending-badge">Invitation pending</span>}
         <h2 id="progress-unavailable-title">
-          {isPending ? `Waiting for ${displayName} to accept` : "Add a child to see progress"}
+          {isPending ? "Waiting for the student to accept" : "Add a child to see progress"}
         </h2>
         <p>
           {isPending
-            ? `An invitation has been sent to ${displayName}. Progress will appear after the connection is approved and study activity begins.`
+            ? invitedEmail
+              ? `An invitation has been sent to ${invitedEmail}. Progress will appear after the student accepts the connection and completes setup.`
+              : "A private invitation is ready for the student. Progress will appear after the student accepts the connection and completes setup."
             : "Enter your child’s information and send an invitation. Progress will appear after the connection is approved and study activity begins."}
         </p>
         <button type="button" onClick={onAction}>

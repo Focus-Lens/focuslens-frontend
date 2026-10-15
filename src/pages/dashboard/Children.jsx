@@ -6,6 +6,7 @@ import { ParentLayout } from "../../components/ui/CommonUI";
 import ChildProfileModal from "../../components/ui/ChildProfileModal";
 import DashboardHeader from "../../components/ui/DashboardHeader";
 import { api } from "../../services/api";
+import { mapParentDashboard, mapParentStudyGoals } from "../../services/parentDashboard";
 import { cacheParentChildren, cacheStudentPreferredName, findConnectedChild, findPendingChild, getCachedParentChildren } from "../../services/parentChildrenCache";
 import { getStudentDisplayName } from "../../services/studentDisplayName";
 import { useChildProfile } from "../../context/useChildProfile";
@@ -75,13 +76,14 @@ export default function Children() {
         setChildInfo(connectedChild);
         setPendingChild(findPendingChild(children));
         if (connectedChild?.studentId) {
-          const [details, dashboardData] = await Promise.all([
+          const [details, dashboardData, goalsData] = await Promise.all([
             api(`/api/access/students/${connectedChild.studentId}`).catch(() => null),
             api(`/api/parents/students/${connectedChild.studentId}/dashboard`).catch(() => null),
+            api(`/api/parents/students/${connectedChild.studentId}/study-goals`).catch(() => null),
           ]);
           if (active) {
             setStudentDetails(details);
-            setDashboard(dashboardData);
+            setDashboard({ ...mapParentDashboard(dashboardData), ...mapParentStudyGoals(goalsData) });
             if (details?.preferredName) {
               cacheStudentPreferredName(connectedChild.studentId, details.preferredName);
             }

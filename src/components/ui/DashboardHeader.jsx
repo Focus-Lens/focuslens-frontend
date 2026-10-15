@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
+  Bell,
   ChevronDown,
   LayoutGrid,
   FileText,
@@ -16,12 +18,28 @@ import {
 } from "../../services/parentChildrenCache";
 import { useChildSetupImage } from "../../services/childSetupImage";
 import { getStudentDisplayName } from "../../services/studentDisplayName";
+import { api } from "../../services/api";
 import logo from "../../assets/logo.png";
 
 import "../../css/dashboard/DashboardHeader.css";
 
 export default function DashboardHeader({ activePage = "overview" }) {
   const { user } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    api("/api/notifications?filter=All")
+      .then((response) => {
+        if (!active) return;
+        setUnreadCount(response?.unreadCount || 0);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!active) return;
+      });
+    return () => { active = false; };
+  }, [user?.userId, user?.id]);
   const cachedChildren = getCachedParentChildren();
   // Only the server's children list (cached after it loads) is trusted, so a
   // cancelled invitation never flashes here.
@@ -105,6 +123,16 @@ export default function DashboardHeader({ activePage = "overview" }) {
 
       {/* Right side */}
       <div className="dashboard-header-right">
+        <div className="dashboard-notification-wrap">
+          <Link
+            aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
+            className="dashboard-notification"
+            to="/notifications"
+          >
+            <Bell size={19} strokeWidth={1.8} />
+            {unreadCount > 0 && <span className="notification-dot" />}
+          </Link>
+        </div>
         <Link
           to="/children"
           className="dashboard-user-pill"

@@ -9,7 +9,7 @@
 }
 
 .session-insight-page {
-  width: min(1180px, calc(100% - 64px));
+  width: min(1332px, calc(100% - 108px));
   margin: 0 auto;
   padding: 30px 0 45px;
   box-sizing: border-box;
@@ -272,6 +272,11 @@
   font-weight: 600;
 }
 
+.metric-content p.declining {
+  color: #c24154;
+  font-weight: 600;
+}
+
 .metric-subtext {
   margin-top: 7px;
   color: #77717e;
@@ -445,16 +450,22 @@
 }
 
 .chart-area {
-  fill: url(#chartGradient);
-  opacity: 0.12;
+  fill: url(#sessionFocusArea);
 }
 
-.session-chart polyline {
+.chart-area-glow {
+  fill: #8138f4;
+  opacity: 0.16;
+  filter: url(#sessionFocusGlow);
+}
+
+.chart-line {
   fill: none;
   stroke: #8138f4;
   stroke-width: 4;
   stroke-linecap: round;
   stroke-linejoin: round;
+  filter: drop-shadow(0 2px 4px rgb(129 56 244 / 20%));
 }
 
 .chart-point-ring {
@@ -526,8 +537,9 @@
   margin-right: 9px;
 
   border-radius: 50%;
-  background: #8138f4;
+  background: linear-gradient(180deg, #6724ca 0%, #8138f4 58%, #a765f5 100%);
   color: #fff;
+  box-shadow: 0 7px 16px rgb(129 56 244 / 32%), inset 0 1px 1px rgb(255 255 255 / 34%);
 }
 
 .session-consistent-note strong {
@@ -621,7 +633,8 @@
 }
 
 .session-context-card button:hover {
-  background: #702ce0;
+  background: linear-gradient(180deg, #5e1dbb 0%, #742be6 58%, #9955ed 100%);
+  box-shadow: 0 9px 19px rgb(129 56 244 / 38%), inset 0 1px 1px rgb(255 255 255 / 34%);
   transform: translateY(-1px);
 }
 
@@ -630,6 +643,8 @@
 ========================================================= */
 
 .session-learning-card {
+  width: 100%;
+  min-height: 220px;
   margin-top: 18px;
   padding: 22px;
 }
@@ -645,6 +660,50 @@
   font-size: 8px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.learning-pending {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 11px;
+  border: 1px solid #f4dda1;
+  border-radius: 999px;
+  background: #fff8e5;
+  color: #96610b;
+  font-size: 8px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.learning-empty-state {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  margin-top: 20px;
+  padding: 12px 14px;
+  border: 1px solid #eee8f7;
+  border-radius: 12px;
+  background: #fbf9ff;
+  box-sizing: border-box;
+}
+
+.learning-empty-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #f0e8ff;
+  color: #8138f4;
+}
+
+.learning-empty-state p {
+  margin: 0;
+  color: #77717d;
+  font-size: 10px;
+  line-height: 1.5;
 }
 
 /* =========================================================

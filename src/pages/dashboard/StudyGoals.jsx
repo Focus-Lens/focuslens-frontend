@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import {
   CalendarDays,
   CircleCheck,
@@ -21,6 +21,7 @@ import {
 import { getStudentDisplayName } from "../../services/studentDisplayName";
 import { getPendingInvitationForUser } from "../../services/pendingInvitationCache";
 import { getStudyGoalView } from "../../services/studyGoalView";
+import { mapParentStudyGoals } from "../../services/parentDashboard";
 import { useAuth } from "../../context/useAuth";
 
 import flagPending from "../../assets/flag1.jpg";
@@ -110,6 +111,8 @@ function StudyGoalsUnavailable({ childName }) {
 
 export default function StudyGoals() {
   const { user } = useAuth();
+  const location = useLocation();
+  const openCreateGoalOnEmpty = useRef(Boolean(location.state?.openCreateGoal));
   const [view, setView] = useState("empty");
   const [isLoading, setIsLoading] = useState(true);
   const [hours, setHours] = useState(5);
@@ -117,6 +120,7 @@ export default function StudyGoals() {
   const [loadError, setLoadError] = useState("");
   const [goalError, setGoalError] = useState("");
   const [isSubmittingGoal, setIsSubmittingGoal] = useState(false);
+  const [isCancellingProposal, setIsCancellingProposal] = useState(false);
   const [childInfo, setChildInfo] = useState(() => findConnectedChild(getCachedParentChildren()));
   const [pendingChild, setPendingChild] = useState(
     () => findPendingChild(getCachedParentChildren()) || getPendingInvitationForUser(user?.email)
@@ -136,17 +140,18 @@ export default function StudyGoals() {
           findPendingChild(children) || getPendingInvitationForUser(user?.email)
         );
         if (connectedChild?.studentId) {
-          const nextDashboard = await api(
-            `/api/parents/students/${connectedChild.studentId}/dashboard`,
+          const goalsResponse = await api(
+            `/api/parents/students/${connectedChild.studentId}/study-goals`,
           );
           if (!active) return;
 
-          const acceptedProposal = nextDashboard?.currentStudyGoalAcceptedProposal;
-          const currentGoal = nextDashboard?.currentStudyGoal;
-          const activeGoal = currentGoal || acceptedProposal?.goal;
+          const nextDashboard = mapParentStudyGoals(goalsResponse);
+          const activeGoal = nextDashboard?.currentStudyGoal;
 
           setDashboard(nextDashboard);
-          setView(getStudyGoalView(nextDashboard));
+          const nextView = getStudyGoalView(nextDashboard);
+          setView(nextView === "empty" && openCreateGoalOnEmpty.current ? "create" : nextView);
+          openCreateGoalOnEmpty.current = false;
           setHours(activeGoal?.targetMinutes / 60 || 5);
         } else {
           if (!active) return;
@@ -172,16 +177,38 @@ export default function StudyGoals() {
     try {
       setGoalError("");
       setIsSubmittingGoal(true);
-      const proposal = await api(
+      await api(
         `/api/parents/students/${childInfo.studentId}/study-goal-proposals`,
-        { method: "POST", body: { period: "Weekly", targetHours: Number(hours) } },
+        { method: "POST", body: { targetHours: Number(hours) } },
       );
-      setDashboard((current) => ({ ...current, pendingStudyGoalProposal: proposal }));
-      setView("pending");
+      const goalsResponse = await api(
+        `/api/parents/students/${childInfo.studentId}/study-goals`,
+      );
+      const nextDashboard = mapParentStudyGoals(goalsResponse);
+      setDashboard(nextDashboard);
+      setView(getStudyGoalView(nextDashboard));
     } catch (error) {
       setGoalError(error.message || "We couldn’t create the goal. Please try again.");
     } finally {
       setIsSubmittingGoal(false);
+    }
+  }
+
+  async function cancelGoalProposal() {
+    const proposalId = dashboard?.pendingStudyGoalProposal?.id;
+    if (!proposalId || !childInfo?.studentId) return;
+    try {
+      setGoalError("");
+      setIsCancellingProposal(true);
+      await api(`/api/parents/study-goal-proposals/${proposalId}`, { method: "DELETE" });
+      const goalsResponse = await api(`/api/parents/students/${childInfo.studentId}/study-goals`);
+      const nextDashboard = mapParentStudyGoals(goalsResponse);
+      setDashboard(nextDashboard);
+      setView(getStudyGoalView(nextDashboard));
+    } catch (error) {
+      setGoalError(error.message || "We couldn’t cancel this study goal proposal.");
+    } finally {
+      setIsCancellingProposal(false);
     }
   }
 
@@ -343,6 +370,10 @@ export default function StudyGoals() {
               </div>
 
               <GoalDetails goal={goal} />
+              {goalError && <p className="goal-form-error" role="alert">{goalError}</p>}
+              <button className="goal-cancel-proposal" disabled={isCancellingProposal} onClick={cancelGoalProposal} type="button">
+                {isCancellingProposal ? "Cancelling…" : "Cancel proposal"}
+              </button>
 
             </section>
           )}
@@ -456,7 +487,7 @@ export default function StudyGoals() {
 function toDisplayGoal(goal, proposal, progress, childName) {
   if (!goal) return null;
   const startsOn = progress?.startsOn || goal.startDate;
-  const endsOn = progress?.endsOn;
+  const endsOn = progress?.endsOn || goal.endDate;
   const cycle = startsOn && endsOn
     ? `${formatDate(startsOn)} – ${formatDate(endsOn)}`
     : startsOn

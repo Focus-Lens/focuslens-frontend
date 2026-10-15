@@ -7,8 +7,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  FileText,
   Pause,
   ArrowUpRight,
+  ArrowDownRight,
   Check,
 } from "lucide-react";
 
@@ -42,6 +44,7 @@ export default function Reports() {
     () => findPendingChild(getCachedParentChildren()) || getPendingInvitationForUser(user?.email)
   );
   const [sessions, setSessions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const sessionsPerPage = 4;
 
   const filteredSessions = useMemo(() => {
@@ -108,11 +111,52 @@ export default function Reports() {
       .catch(() => {})
       .finally(() => {
         if (!active) return;
-        // A dashboard endpoint may be unavailable or privacy-restricted; that
-        // must render the empty state, never a blank page.
+        // A dashboard endpoint may be unavailable or privacy-restricted; once
+        // the request settles, render the appropriate empty state.
+        setIsLoading(false);
       });
     return () => { active = false; };
   }, [user?.email]);
+
+  if (isLoading) {
+    return (
+      <div className="reports-page-shell">
+        <DashboardHeader activePage="reports" />
+        <ParentLayout>
+          <main className="reports-page reports-loading" aria-busy="true" aria-label="Loading reports">
+            <div className="reports-loading-heading">
+              <div className="reports-skeleton reports-skeleton-eyebrow" />
+              <div className="reports-skeleton reports-skeleton-title" />
+              <div className="reports-skeleton reports-skeleton-subtitle" />
+            </div>
+            <section className="reports-card reports-loading-card">
+              <div className="reports-loading-card-heading">
+                <div>
+                  <div className="reports-skeleton reports-skeleton-card-title" />
+                  <div className="reports-skeleton reports-skeleton-card-subtitle" />
+                </div>
+                <div className="reports-loading-filters">
+                  <div className="reports-skeleton reports-skeleton-filter" />
+                  <div className="reports-skeleton reports-skeleton-filter" />
+                </div>
+              </div>
+              <div className="reports-loading-rows">
+                {[0, 1, 2, 3].map((row) => (
+                  <div className="reports-loading-row" key={row}>
+                    <div className="reports-skeleton reports-skeleton-subject" />
+                    <div className="reports-skeleton reports-skeleton-cell" />
+                    <div className="reports-skeleton reports-skeleton-cell" />
+                    <div className="reports-skeleton reports-skeleton-cell" />
+                    <div className="reports-skeleton reports-skeleton-cell" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          </main>
+        </ParentLayout>
+      </div>
+    );
+  }
 
   if (!childInfo) {
     return (
@@ -135,10 +179,13 @@ export default function Reports() {
         <ParentLayout>
           <main className="reports-page reports-empty-connected-page">
             <header className="reports-heading">
-              <div className="reports-title-content">
-                <span className="reports-eyebrow">✣ Parent learning view</span>
-                <h1>Reports</h1>
-                <p>Completed sessions shared by {childInfo.firstName || "your child"} will appear here.</p>
+              <div className="reports-title-group">
+                <ReportsHeadingIcon />
+                <div className="reports-title-content">
+                  <span className="reports-eyebrow">✣ Parent learning view</span>
+                  <h1>Reports</h1>
+                  <p>Completed sessions shared by {childInfo.firstName || "your child"} will appear here.</p>
+                </div>
               </div>
             </header>
             <section className="reports-connected-empty-card">
@@ -171,18 +218,13 @@ export default function Reports() {
 
            
 
-            <div className="reports-title-content">
-
-              <span className="reports-eyebrow">
-                ✣ PARENT LEARNING VIEW
-              </span>
-
-              <h1>Reports</h1>
-
-              <p>
-                Completed sessions shared by {childInfo.firstName || "your child"}.
-              </p>
-
+            <div className="reports-title-group">
+              <ReportsHeadingIcon />
+              <div className="reports-title-content">
+                <span className="reports-eyebrow">✣ PARENT LEARNING VIEW</span>
+                <h1>Reports</h1>
+                <p>Completed sessions shared by {childInfo.firstName || "your child"}.</p>
+              </div>
             </div>
 
             <button
@@ -334,7 +376,7 @@ export default function Reports() {
                             </b>
 
                             <small>
-                              {session.date}
+                              {session.sessionType ? `${session.date} · ${session.sessionType}` : session.date}
                             </small>
                           </div>
 
@@ -410,11 +452,7 @@ export default function Reports() {
                       <td>
 
                         <span
-                          className={
-                            session.focusTrend === "improving"
-                              ? "reports-trend improving"
-                              : "reports-trend"
-                          }
+                          className={`reports-trend${session.focusTrend ? ` ${session.focusTrend}` : " not-evaluated"}`}
                         >
 
                           {session.focusTrend === "improving" ? (
@@ -426,14 +464,18 @@ export default function Reports() {
 
                               Improving
                             </>
-                          ) : (
+                          ) : session.focusTrend === "declining" ? (
                             <>
-                              <span className="stable-line">
-                                —
-                              </span>
-
+                              <ArrowDownRight size={15} strokeWidth={2} />
+                              Declining
+                            </>
+                          ) : session.focusTrend === "stable" ? (
+                            <>
+                              <span className="stable-line">—</span>
                               Stable
                             </>
+                          ) : (
+                            "Not evaluated"
                           )}
 
                         </span>
@@ -552,8 +594,9 @@ function mapSession(session) {
     date: new Date(session.startedAtUtc).toLocaleString(),
     durationMinutes: session.actualDurationMinutes || 0,
     format: session.mode || "Study session",
+    sessionType: session.sessionType || "",
     status: String(session.status || "").toLowerCase(),
-    focusTrend: String(session.focusState || "").toLowerCase().includes("improv") ? "improving" : null,
+    focusTrend: String(session.withinSessionFocusTrend ?? session.focusTrend ?? "").toLowerCase() || null,
   };
 }
 
@@ -563,14 +606,17 @@ function ReportsUnavailable({ childName, onAction }) {
   return (
     <main className="reports-page reports-unavailable-page">
       <header className="reports-heading">
-        <div className="reports-title-content">
-          <span className="reports-eyebrow">✣ Parent learning view</span>
-          <h1>Reports</h1>
-          <p>
-            {isPending
-              ? `Reports will appear after ${childName} confirms the connection.`
-              : "Connect with your child to view shared study reports."}
-          </p>
+        <div className="reports-title-group">
+          <ReportsHeadingIcon />
+          <div className="reports-title-content">
+            <span className="reports-eyebrow">✣ Parent learning view</span>
+            <h1>Reports</h1>
+            <p>
+              {isPending
+                ? `Reports will appear after ${childName} confirms the connection.`
+                : "Connect with your child to view shared study reports."}
+            </p>
+          </div>
         </div>
       </header>
       <section className="reports-unavailable-card" aria-labelledby="reports-unavailable-title">
@@ -595,5 +641,13 @@ function ReportsUnavailable({ childName, onAction }) {
         </button>
       </section>
     </main>
+  );
+}
+
+function ReportsHeadingIcon() {
+  return (
+    <span className="reports-heading-icon" aria-hidden="true">
+      <FileText size={31} strokeWidth={2.2} />
+    </span>
   );
 }

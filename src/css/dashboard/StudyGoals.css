@@ -322,6 +322,19 @@
   padding: 24px;
 }
 
+.goal-cancel-proposal {
+  margin-top: 14px;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: #7130dc;
+  font: 700 13px "Nunito", sans-serif;
+  cursor: pointer;
+}
+
+.goal-cancel-proposal:disabled { opacity: 0.6; cursor: wait; }
+.goal-pending-state .goal-form-error { margin: 10px 0 0; color: #ba2f45; font-size: 13px; }
+
 .goal-pending-header {
   display: flex;
   align-items: center;

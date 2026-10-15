@@ -118,8 +118,11 @@
   background: #ffffff;
   color: #74747e;
   cursor: pointer;
+  text-decoration: none;
   transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
+
+.dashboard-notification-wrap { position: relative; flex: 0 0 auto; }
 
 .dashboard-notification:hover {
   color: #8138f4;
@@ -292,6 +295,7 @@
     height: 36px;
     flex: 0 0 36px;
   }
+
 
   .dashboard-user-pill {
     width: 42px;

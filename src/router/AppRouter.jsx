@@ -39,6 +39,7 @@ import StudyGoals from "../pages/dashboard/StudyGoals";
 import Children from "../pages/dashboard/Children";
 import ProfileAccount from "../pages/dashboard/ProfileAccount";
 import SessionInsight from "../pages/dashboard/SessionInsight";
+import Notifications from "../pages/dashboard/Notifications";
 import LegalDocument from "../pages/legal/LegalDocument";
 
 function RequireAuth({ children }) {
@@ -138,6 +139,7 @@ export default function AppRouter() {
 
         <Route path="/overview" element={<RequireAuth><Overview /></RequireAuth>} />
         <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
+        {import.meta.env.DEV && <Route path="/progress-preview" element={<Progress />} />}
         <Route
           path="/reports/session/:sessionId"
           element={<RequireAuth><SessionInsight /></RequireAuth>}
@@ -147,6 +149,7 @@ export default function AppRouter() {
 
         <Route path="/children" element={<RequireAuth><Children /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><ProfileAccount /></RequireAuth>} />
+        <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
         <Route path="/privacy-policy" element={<RequireAuth><LegalDocument type="privacy" /></RequireAuth>} />
         <Route path="/terms-of-use" element={<RequireAuth><LegalDocument type="terms" /></RequireAuth>} />
 

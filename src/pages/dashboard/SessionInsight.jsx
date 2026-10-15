@@ -156,12 +156,14 @@ export default function SessionInsight() {
     return chartHeight - normalized * chartHeight;
   };
 
-  const chartPoints = chartData
-    .map(
-      (point, index) =>
-        `${getX(index)},${getY(point.score)}`
-    )
-    .join(" ");
+  const chartCoordinates = chartData.map((point, index) => ({
+    x: getX(index),
+    y: getY(point.score),
+  }));
+  const chartLinePath = buildSmoothChartPath(chartCoordinates);
+  const chartAreaPath = chartCoordinates.length
+    ? `${chartLinePath} L ${chartCoordinates.at(-1).x} ${chartHeight} L ${chartCoordinates[0].x} ${chartHeight} Z`
+    : "";
 
   const lastPoint =
     chartData[chartData.length - 1];
@@ -254,7 +256,7 @@ export default function SessionInsight() {
               </div>
 
               <p>
-                {session.date} · {session.format}
+                {session.date} · {session.format}{session.sessionType ? ` · ${session.sessionType}` : ""}
               </p>
             </div>
           </section>
@@ -283,11 +285,7 @@ export default function SessionInsight() {
                 </div>
 
                 <p
-                  className={
-                    session.focusTrend === "improving"
-                      ? "positive"
-                      : ""
-                  }
+                  className={session.focusTrend === "improving" ? "positive" : session.focusTrend === "declining" ? "declining" : ""}
                 >
                   {session.focusTrend === "improving" ? (
                     <>
@@ -298,12 +296,24 @@ export default function SessionInsight() {
                       Improving compared with recent
                       sessions
                     </>
+                  ) : session.focusTrend === "declining" ? (
+                    "Focus score declined compared with recent sessions"
+                  ) : session.focusTrend === "stable" ? (
+                    "Focus score is stable compared with recent sessions"
+                  ) : session.focusScore != null ? (
+                    "Recent-session comparison is not available yet"
                   ) : (
                     "Focus score was not evaluated"
                   )}
                 </p>
 
-                {session.focusScore && (
+                {session.withinSessionFocusTrend && (
+                  <small className="metric-subtext">
+                    Within-session trend: {session.withinSessionFocusTrend.charAt(0).toUpperCase() + session.withinSessionFocusTrend.slice(1)}
+                  </small>
+                )}
+
+                {session.focusScore != null && (
                   <div className="metric-progress">
                     <span
                       style={{
@@ -418,6 +428,15 @@ export default function SessionInsight() {
                     viewBox={`0 0 ${chartWidth} ${chartHeight}`}
                     preserveAspectRatio="none"
                   >
+                    <defs>
+                      <linearGradient id="sessionFocusArea" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8138f4" stopOpacity="0.24" />
+                        <stop offset="100%" stopColor="#8138f4" stopOpacity="0.015" />
+                      </linearGradient>
+                      <filter id="sessionFocusGlow" x="-10%" y="-30%" width="120%" height="170%">
+                        <feGaussianBlur stdDeviation="8" />
+                      </filter>
+                    </defs>
                     <line
                       x1="0"
                       x2={chartWidth}
@@ -446,14 +465,15 @@ export default function SessionInsight() {
                       y2={getY(25)}
                     />
 
-                    <polygon
-                      className="chart-area"
-                      points={`0,${chartHeight} ${chartPoints} ${chartWidth},${chartHeight}`}
-                    />
-
-                    <polyline
-                      points={chartPoints}
-                    />
+                    {chartAreaPath && (
+                      <path className="chart-area-glow" d={chartAreaPath} />
+                    )}
+                    {chartAreaPath && (
+                      <path className="chart-area" d={chartAreaPath} />
+                    )}
+                    {chartLinePath && (
+                      <path className="chart-line" d={chartLinePath} />
+                    )}
 
                     {lastPoint && (
                       <>
@@ -565,8 +585,7 @@ export default function SessionInsight() {
           )}
 
           {/* LEARNING RESULTS */}
-          {session.learningResults?.available && (
-            <section className="session-learning-card">
+          <section className="session-learning-card">
               <div className="session-card-top">
                 <div>
                   <small>
@@ -578,21 +597,24 @@ export default function SessionInsight() {
                   </h2>
 
                   <p>
-                    Processed quiz results available
-                    after guardian confirmation.
+                    {session.learningResults?.available
+                      ? "Processed quiz results available after guardian confirmation."
+                      : "Learning results will appear after guardian confirmation."}
                   </p>
                 </div>
 
-                <span className="learning-available">
-                  <Check
-                    size={12}
-                    strokeWidth={2.5}
-                  />
-                  Available
-                </span>
+                {session.learningResults?.available ? (
+                  <span className="learning-available">
+                    <Check size={12} strokeWidth={2.5} />
+                    Available
+                  </span>
+                ) : (
+                  <span className="learning-pending">Waiting for confirmation</span>
+                )}
               </div>
 
-              <div className="session-learning-content">
+              {session.learningResults?.available ? (
+                <div className="session-learning-content">
                 <article className="mcq-score">
                   <div className="mcq-circle">
                     <b>
@@ -659,9 +681,14 @@ export default function SessionInsight() {
                     {session.summary || "Learning results were processed for this session."}
                   </p>
                 </div>
-              </div>
+                </div>
+              ) : (
+                <div className="learning-empty-state">
+                  <span className="learning-empty-icon"><LockKeyhole size={15} /></span>
+                  <p>Processed quiz results will be shared here when they’re available.</p>
+                </div>
+              )}
             </section>
-          )}
 
           {/* PRIVACY */}
           <div className="session-privacy-footer">
@@ -688,19 +715,43 @@ export default function SessionInsight() {
   );
 }
 
+function buildSmoothChartPath(points) {
+  if (!points.length) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+  return points.reduce((path, point, index) => {
+    if (index === 0) return `M ${point.x} ${point.y}`;
+
+    const previous = points[index - 1];
+    const beforePrevious = points[index - 2] || previous;
+    const next = points[index + 1] || point;
+    const control1X = previous.x + (point.x - beforePrevious.x) / 6;
+    const control1Y = previous.y + (point.y - beforePrevious.y) / 6;
+    const control2X = point.x - (next.x - previous.x) / 6;
+    const control2Y = point.y - (next.y - previous.y) / 6;
+
+    return `${path} C ${control1X} ${control1Y}, ${control2X} ${control2Y}, ${point.x} ${point.y}`;
+  }, "");
+}
+
 function mapReport(report) {
-  const questionsCompleted = report.questionsGenerated || 0;
+  const questionsGenerated = report.questionsGenerated || 0;
+  const questionsCompleted = report.questionsAnswered ?? questionsGenerated;
   const correctAnswers = report.correctQuestions || 0;
   return {
     id: report.sessionId,
     subject: report.subject || "Study session",
     date: new Date(report.startedAtUtc).toLocaleString(),
     format: report.mode || "Study session",
+    sessionType: report.sessionType || "",
     status: String(report.status || "").toLowerCase() === "completed" ? "completed" : "paused",
     focusScore: report.focusScore,
-    focusTrend: String(report.focusTrend || "").toLowerCase(),
+    focusTrend: String(report.recentSessionsFocusTrend || "").toLowerCase(),
+    withinSessionFocusTrend: String(report.withinSessionFocusTrend || report.focusTrend || "").toLowerCase(),
     focusQuality: report.focusState?.replaceAll("_", " ") || "Not evaluated",
-    focusChart: [],
+    focusChart: (report.focusQuality || [])
+      .filter((point) => point.focusScore != null)
+      .map((point) => ({ score: point.focusScore, date: point.windowStartLocal })),
     durationMinutes: report.actualDurationMinutes || 0,
     completionPercent: report.completionPercentage || 0,
     learningResults: questionsCompleted > 0 ? {

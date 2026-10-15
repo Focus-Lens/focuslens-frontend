@@ -712,6 +712,31 @@
   cursor: pointer;
 }
 
+.overview-week-picker {
+  height: 38px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e7e4ee;
+  border-radius: 21px;
+  background: #fff;
+  color: #35323f;
+  font: 600 13px "Nunito", sans-serif;
+}
+
+.overview-week-picker svg { color: #8138f4; }
+.overview-week-picker select {
+  max-width: 145px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.overview-export-error { margin: 8px 0; color: #a12c38; font-size: 12px; }
+
 .figma-heading-actions button:hover {
   border-color: #d6cdf0;
   background: #faf8ff;
@@ -872,6 +897,22 @@
   stroke: #8138f4;
   stroke-width: 2.2;
   stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.line-chart .chart-area-glow {
+  opacity: .42;
+  filter: blur(8px);
+}
+
+.line-chart .chart-line-glow {
+  fill: none;
+  stroke: #8138f4;
+  stroke-width: 6px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .32;
+  filter: blur(4px);
 }
 
 .line-chart .chart-dot {
@@ -987,7 +1028,9 @@
   height: 20px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
+  box-sizing: border-box;
+  border: 1px solid #e7e5ec;
+  border-radius: 999px;
   background: #f4f3f7;
   color: #fff;
   font-size: 10px;
@@ -995,14 +1038,17 @@
 }
 
 .heat-row .level-1 {
+  border-color: #eee5fb;
   background: #ece0ff;
 }
 
 .heat-row .level-2 {
+  border-color: #d1b9f7;
   background: #c9a9fb;
 }
 
 .heat-row .level-3 {
+  border-color: #8138f4;
   background: #8138f4;
 }
 
@@ -1042,7 +1088,8 @@
 .insight {
   margin: 10px 0 0;
   padding: 10px 12px;
-  border-radius: 10px;
+  border: 1px solid #e8e6ec;
+  border-radius: 13px;
   background: #f6f5f8;
   color: #63606d;
   font-size: 10px;
@@ -1396,6 +1443,7 @@
   }
 
   .figma-heading-actions button,
+  .figma-heading-actions .overview-week-picker,
   .view-report-button {
     flex: 1;
     justify-content: center;
