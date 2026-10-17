@@ -297,50 +297,59 @@
 .child-goal-actions {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 10px;
 
   margin-top: 28px;
 }
 
 .child-goal-back {
-  width: 170px;
-  height: 50px;
-
-  border: 0;
-  background: transparent;
-
-  color: #7130dc;
+  width: 60px;
+  height: 40px;
+  border: 1px solid #8a42ff;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f0ff 100%);
+  box-shadow: 0 4px 9px rgba(125, 57, 235, 0.2);
+  color: #823cf0;
   font-family: "Nunito", sans-serif;
   font-size: 15px;
   font-weight: 500;
-
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .child-goal-back:hover {
-  color: #5f22c4;
+  background: linear-gradient(180deg, #ffffff 0%, #f1e5ff 100%);
+  box-shadow: 0 5px 12px rgba(125, 57, 235, 0.28);
 }
 
 .child-goal-actions .button {
   flex: 1;
-  height: 50px;
+  height: 40px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  border-radius: 999px ;
-border: rgba(108, 47, 208, 1);
-  background: rgba(108, 47, 208, 1);
+  border-radius: 999px;
+  border: 1px solid #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
 
   font-family: "Nunito", sans-serif;
   font-size: 15px;
   font-weight: 600;
+  box-sizing: border-box;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .child-goal-actions .button:hover {
-  background: #7130dc;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
+  border-color: #7130dc;
 }
 
 /* Tablet */
@@ -435,13 +444,12 @@ border: rgba(108, 47, 208, 1);
   }
 
   .child-goal-back {
-    width: 100px;
-    height: 44px;
-    font-size: 14px;
+    width: 58px;
+    height: 40px;
   }
 
   .child-goal-actions .button {
-    height: 44px;
+    height: 40px;
     font-size: 14px;
   }
 }

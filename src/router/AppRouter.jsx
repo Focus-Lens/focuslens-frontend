@@ -33,6 +33,9 @@ import WaitingForChild from "../pages/onboarding/WaitingForChild";
 
 import Overview from "../pages/dashboard/Overview";
 import Reports from "../pages/dashboard/Reports";
+import Plans from "../pages/dashboard/Plans";
+import PurchaseCheckout from "../pages/dashboard/PurchaseCheckout";
+import SecurePayment from "../pages/dashboard/SecurePayment";
 import Progress from "../pages/dashboard/Progress";
 import StudyGoals from "../pages/dashboard/StudyGoals";
 
@@ -139,6 +142,12 @@ export default function AppRouter() {
 
         <Route path="/overview" element={<RequireAuth><Overview /></RequireAuth>} />
         <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
+        <Route path="/plans" element={<RequireAuth><Plans /></RequireAuth>} />
+        {import.meta.env.DEV && <Route path="/plans-preview" element={<Plans previewOnly />} />}
+        <Route path="/checkout" element={<RequireAuth><PurchaseCheckout /></RequireAuth>} />
+        {import.meta.env.DEV && <Route path="/checkout-preview" element={<PurchaseCheckout previewOnly />} />}
+        <Route path="/checkout/payment" element={<RequireAuth><SecurePayment /></RequireAuth>} />
+        {import.meta.env.DEV && <Route path="/checkout-payment-preview" element={<SecurePayment previewOnly />} />}
         {import.meta.env.DEV && <Route path="/progress-preview" element={<Progress />} />}
         <Route
           path="/reports/session/:sessionId"

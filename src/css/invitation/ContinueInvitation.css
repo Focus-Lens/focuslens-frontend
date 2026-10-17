@@ -119,26 +119,30 @@
 
 .continue-invitation-button1 .button {
   border: 1px solid #7c35e9;
-  background: #7c35e9;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .continue-invitation-button1 .button:hover {
-  background: #6d28d9;
+  background: var(--focuslens-button-primary-hover-gradient);
   transform: translateY(-1px);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 /* زر Sign in: أبيض + إطار وكتابة بنفسجي */
 .continue-invitation-button2 .button.button-secondary {
-  border: 1px solid #7d39eb !important;
-  background: #ffffff !important;
-  color: #6c2fd0 !important;
+  border: 1px solid var(--focuslens-button-soft-border) !important;
+  background: var(--focuslens-button-soft-gradient) !important;
+  color: var(--focuslens-button-soft-text) !important;
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 .continue-invitation-button2 .button.button-secondary:hover {
-  background: #f5efff !important;
-  color: #6c2fd0 !important;
+  background: var(--focuslens-button-soft-hover-gradient) !important;
+  color: var(--focuslens-button-soft-text) !important;
   transform: translateY(-1px);
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 /* Tablet */

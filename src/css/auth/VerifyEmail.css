@@ -145,13 +145,15 @@
 
 .open-email-button {
   border: 1px solid #7d35e8;
-  background: #7d35e8;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .open-email-button:hover {
   border-color: #6b24d4;
-  background: #6b24d4;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .open-email-button:disabled {
@@ -160,13 +162,15 @@
 }
 
 .resend-email-button {
-  border: 1px solid #7832e9;
-  background: #ffffff;
-  color: #7130df;
+  border: 1px solid var(--focuslens-button-soft-border);
+  background: var(--focuslens-button-soft-gradient);
+  color: var(--focuslens-button-soft-text);
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 .resend-email-button:hover {
-  background: #fbf9ff;
+  background: var(--focuslens-button-soft-hover-gradient);
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 .different-email-button {

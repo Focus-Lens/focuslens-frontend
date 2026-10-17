@@ -74,7 +74,7 @@
   display: flex;
   align-items: center;
 
-  gap: 37px;
+  gap: 10px;
 }
 
 .sign-in-nav {
@@ -87,7 +87,9 @@
 
   border-radius: 999px;
 
-  background: #7c35e9;
+  border: 0;
+  background: var(--focuslens-button-primary-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
   color: #ffffff;
 
   font-size: 14px;
@@ -95,24 +97,67 @@
 
   text-decoration: none;
 
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .sign-in-nav:hover {
-  background: #6d28d9;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
+  transform: translateY(-1px);
 }
 
 .register-nav {
-  color: #7734e5;
-
+  width: 147px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid rgb(137 93 190 / 10%);
+  border-radius: 999px;
+  background: var(--focuslens-button-soft-gradient);
+  box-shadow: var(--focuslens-button-soft-shadow);
+  color: var(--focuslens-button-soft-text);
   font-size: 14px;
   font-weight: 500;
-
   text-decoration: none;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .register-nav:hover {
-  text-decoration: underline;
+  background: var(--focuslens-button-soft-hover-gradient);
+}
+
+#root .button:not(.button-secondary):not(:disabled) {
+  background: var(--focuslens-button-primary-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
+  color: #ffffff;
+}
+
+#root .button:not(.button-secondary):not(:disabled):hover {
+  background: var(--focuslens-button-primary-hover-gradient);
+}
+
+#root .button.button-secondary {
+  border: 1px solid var(--focuslens-button-soft-border);
+  background: var(--focuslens-button-soft-gradient);
+  box-shadow: var(--focuslens-button-soft-shadow);
+  color: var(--focuslens-button-soft-text);
+}
+
+#root .button.button-secondary:hover {
+  background: var(--focuslens-button-soft-hover-gradient);
+}
+
+#root button.button:disabled,
+#root button.button:disabled:hover {
+  border: 1px solid #ececf0;
+  background: linear-gradient(180deg, #f1f1f4 0%, #e8e8ed 100%);
+  color: #62616b;
+  opacity: 1;
+  cursor: not-allowed !important;
+  transform: none;
+  box-shadow: 0 3px 10px rgb(50 45 65 / 7%);
 }
 
 

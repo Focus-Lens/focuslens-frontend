@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   Check,
+  ChevronLeft,
   ChevronDown,
   CircleAlert,
   Mail,
@@ -147,6 +148,7 @@ export default function InviteChild() {
   ].find((value) => typeof value === "string" && value.trim())?.trim() || "Parent";
 
   const initialMethod = searchParams.get("method") === "email" ? "email" : "link";
+  const isCopiedPreview = searchParams.get("preview") === "copied";
   const [method, setMethod] = useState(initialMethod);
 
   const [email, setEmail] = useState(
@@ -161,7 +163,7 @@ export default function InviteChild() {
   const [isDraftReady, setIsDraftReady] = useState(
     () => !sessionStorage.getItem("childSetupDraftId"),
   );
-  const [showCopiedModal, setShowCopiedModal] = useState(false);
+  const [showCopiedModal, setShowCopiedModal] = useState(isCopiedPreview);
   const [showEmailMessage, setShowEmailMessage] = useState(false);
   const [showLinkMessage, setShowLinkMessage] = useState(initialMethod === "link");
 
@@ -225,7 +227,7 @@ export default function InviteChild() {
   }
 
   useEffect(() => {
-    if (method !== "link" || !isDraftReady) return;
+    if (isCopiedPreview || method !== "link" || !isDraftReady) return;
     let active = true;
     queueMicrotask(() => {
       // This request updates loading/error state after its asynchronous network response.
@@ -239,6 +241,7 @@ export default function InviteChild() {
   }, [method, isDraftReady]);
 
   useEffect(() => {
+    if (isCopiedPreview) return;
     const draftId = sessionStorage.getItem("childSetupDraftId");
     if (!draftId) return;
 
@@ -634,11 +637,11 @@ export default function InviteChild() {
                 <button
                   type="button"
                   aria-label="Back to review"
-                  className="invite-back"
+                  className="invite-back back-button-style"
                   disabled={isSending}
                   onClick={() => navigate("/setup/review")}
                 >
-                  ‹
+                  <ChevronLeft size={21} strokeWidth={1.8} />
                 </button>
 
                 {method === "link" ? (

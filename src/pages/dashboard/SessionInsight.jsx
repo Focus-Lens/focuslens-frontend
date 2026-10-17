@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
+  ChevronLeft,
   ArrowRight,
   ArrowUp,
   Check,
@@ -195,10 +195,7 @@ export default function SessionInsight() {
               onClick={() => navigate("/reports")}
               type="button"
             >
-              <ArrowLeft
-                size={16}
-                strokeWidth={2}
-              />
+              <ChevronLeft size={16} strokeWidth={2} />
 
               <span>Back to Reports</span>
             </button>

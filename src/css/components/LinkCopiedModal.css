@@ -71,7 +71,7 @@
 
   border-radius: 27px;
 
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
 
   color: #ffffff;
 
@@ -86,12 +86,16 @@
   transition:
     background 0.18s ease,
     border-color 0.18s ease;
+
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .confirm-cancel-button:hover {
-  background: #7130dc;
+  background: var(--focuslens-button-primary-hover-gradient);
 
   border-color: #7130dc;
+
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 

@@ -106,15 +106,17 @@
   padding: 0 20px;
   border: 0;
   border-radius: 21px;
-  background: rgba(125, 57, 235, 1);
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
   font: 700 12px "Nunito", sans-serif;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .goal-empty-content button:hover,
 .goal-form-actions button:last-child:hover {
-  background: rgba(113, 48, 220, 1);
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 /* No child has been added yet */
@@ -189,14 +191,18 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   color: #fff;
   font-size: 10px;
   font-weight: 700;
   text-decoration: none;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
-.study-goals-unavailable-card a:hover { background: #7130dc; }
+.study-goals-unavailable-card a:hover {
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
+}
 
 .study-goals-pending-note {
   margin-top: 17px;
@@ -325,11 +331,18 @@
 .goal-cancel-proposal {
   margin-top: 14px;
   padding: 8px 0;
-  border: 0;
-  background: transparent;
-  color: #7130dc;
+  border: 1px solid var(--focuslens-button-danger-border);
+  border-radius: 999px;
+  background: var(--focuslens-button-danger-gradient);
+  box-shadow: var(--focuslens-button-danger-shadow);
+  color: var(--focuslens-button-danger-text);
   font: 700 13px "Nunito", sans-serif;
   cursor: pointer;
+}
+
+.goal-cancel-proposal:hover {
+  background: var(--focuslens-button-danger-hover-gradient);
+  box-shadow: var(--focuslens-button-danger-shadow);
 }
 
 .goal-cancel-proposal:disabled { opacity: 0.6; cursor: wait; }
@@ -427,17 +440,19 @@
   width: 100%;
   height: 36px;
   margin-top: 18px;
-  border: 1px solid rgba(125, 57, 235, 1);
+  border: 1px solid var(--focuslens-button-soft-border);
   border-radius: 18px;
-  background: #ffffff;
-  color: rgba(125, 57, 235, 1);
+  background: var(--focuslens-button-soft-gradient);
+  color: var(--focuslens-button-soft-text);
   font: 700 11px "Nunito", sans-serif;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 .demo-accept-button:hover {
-  background: rgba(125, 57, 235, 1);
-  color: #ffffff;
+  background: var(--focuslens-button-soft-hover-gradient);
+  color: var(--focuslens-button-soft-text);
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 /* Active goal */
@@ -880,18 +895,20 @@
 
 .study-goals-create-page .goal-form-actions button:first-child {
   flex: 0 0 40%;
-  background: linear-gradient(180deg, #fff 0%, #f9f7fc 100%);
-  box-shadow: 0 7px 16px rgba(125, 57, 235, 0.1);
+  border: 1px solid var(--focuslens-button-soft-border);
+  background: var(--focuslens-button-soft-gradient);
+  color: var(--focuslens-button-soft-text);
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 .study-goals-create-page .goal-form-actions button:last-child {
   flex: 1;
-  background: linear-gradient(110deg, #5f22c2 0%, #7832dc 48%, #a04cf4 100%);
-  box-shadow: 0 4px 0 #caa7ff inset, 0 8px 18px rgba(125, 57, 235, 0.2);
+  background: var(--focuslens-button-primary-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .study-goals-create-page .goal-form-actions button:last-child:hover {
-  background: linear-gradient(110deg, #511ba9 0%, #6926cd 48%, #8c39e7 100%);
+  background: var(--focuslens-button-primary-hover-gradient);
 }
 
 .study-goals-create-page .goal-form-error {

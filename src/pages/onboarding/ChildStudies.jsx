@@ -64,6 +64,12 @@ export default function ChildStudies() {
   );
   const [otherSubjectInput, setOtherSubjectInput] = useState("");
   const [errors, setErrors] = useState({});
+  const canContinue = Boolean(
+    grade &&
+      (grade !== "Other" || otherGrade.trim()) &&
+      selectedSubjects.length > 0 &&
+      (!selectedSubjects.includes("Other") || otherSubjects.length > 0 || otherSubjectInput.trim()),
+  );
 
   function addOtherSubject(value = otherSubjectInput) {
     const cleanValue = value.trim();
@@ -318,14 +324,14 @@ export default function ChildStudies() {
             <div className="child-studies-actions">
               <button
                 type="button"
-                className="child-studies-back"
+                className="child-studies-back back-button-style"
                 onClick={handleBack}
                 aria-label="Go back"
               >
                 <ChevronLeft size={21} strokeWidth={1.8} />
               </button>
 
-              <Button onClick={handleContinue}>Continue</Button>
+              <Button onClick={handleContinue} disabled={!canContinue}>Continue</Button>
             </div>
 
           </div>

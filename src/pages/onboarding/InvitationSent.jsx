@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useChildProfile } from "../../context/useChildProfile";
 import {
   AuthLayout,
@@ -16,18 +16,23 @@ import { copyText } from "../../services/clipboard";
 
 export default function InvitationSent() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isPreview = searchParams.get("preview") === "sent";
   const { child } = useChildProfile();
   const [showCopiedModal, setShowCopiedModal] = useState(false);
   // When the child sets up their own profile there is no name yet, and the
   // email only exists on the invitation that was just sent.
   const [sentInvitation] = useState(() => {
+    if (searchParams.get("preview") === "sent") {
+      return { childEmail: "youssef@example.com", delivery: "email" };
+    }
     try {
       return JSON.parse(sessionStorage.getItem("childSetupInvitation") || "null");
     } catch {
       return null;
     }
   });
-  const childName = child.preferredName;
+  const childName = isPreview ? "Youssef" : child.preferredName;
   const displayedName = childName || "your child";
   // The same confirmation is shown after copying the link instead of emailing.
   const isLinkDelivery = sentInvitation?.delivery === "link";

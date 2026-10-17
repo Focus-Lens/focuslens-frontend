@@ -139,29 +139,35 @@
   font-size: 17px;
   font-weight: 500;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .invitation-sent-primary,
 .sent-link-modal button {
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .invitation-sent-primary:hover,
 .sent-link-modal button:hover {
   border-color: #7130dc;
-  background: #7130dc;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .invitation-sent-secondary {
   margin-top: 9px;
-  background: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(180deg, #ffffff 0%, #f6f0ff 100%);
   color: #7130dc;
+  box-shadow: 0 5px 12px rgba(125, 57, 235, 0.2);
 }
 
 .invitation-sent-secondary:hover {
-  background: #f7f1ff;
+  background: linear-gradient(180deg, #ffffff 0%, #efe4ff 100%);
   color: #5f22c4;
+  box-shadow: 0 6px 14px rgba(125, 57, 235, 0.27);
 }
 
 .invitation-sent-secondary:disabled {

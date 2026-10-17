@@ -8,7 +8,7 @@ import {
 } from "../../components/ui/CommonUI";
 import { useChildProfile } from "../../context/useChildProfile";
 import { api } from "../../services/api";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, ChevronLeft } from "lucide-react";
 import "../../css/onboarding/ChildStudyGoal.css";
 
 const steps = [
@@ -256,10 +256,10 @@ export default function ChildStudyGoal() {
               <div className="child-goal-actions">
                 <button
                   type="button"
-                  className="child-goal-back"
+                  className="child-goal-back back-button-style"
                   onClick={handleBack}
                 >
-                  Back
+                  <ChevronLeft size={19} strokeWidth={1.8} aria-hidden="true" />
                 </button>
 
                 <Button onClick={saveGoal} disabled={isSaving}>

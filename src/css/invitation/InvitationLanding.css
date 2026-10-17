@@ -45,20 +45,48 @@
 }
 
 .invitation-landing-signin {
-  min-width: 92px;
-  padding: 11px 20px;
+  width: 147px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   border-radius: 44px;
-  color: rgba(255, 255, 255, 1);
-  background:rgba(125, 57, 235, 1);
+  color: #ffffff;
+  background: var(--focuslens-button-primary-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
   text-align: center;
-  font-size: 10px;
-  font-weight:400;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.invitation-landing-signin:hover {
+  background: var(--focuslens-button-primary-hover-gradient);
+  transform: translateY(-1px);
 }
 
 .invitation-landing-register {
+  width: 147px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid rgb(137 93 190 / 10%);
+  border-radius: 999px;
+  background: var(--focuslens-button-soft-gradient);
+  box-shadow: var(--focuslens-button-soft-shadow);
   color: rgba(108, 47, 208, 1);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.invitation-landing-register:hover {
+  background: var(--focuslens-button-soft-hover-gradient);
 }
 
 .invitation-landing-main {
@@ -124,17 +152,21 @@
   justify-content: center;
   gap: 9px;
   border-radius: 44px;
+  border: 1px solid rgb(255 255 255 / 25%);
   color: rgba(255, 255, 255, 1);
-  background: rgba(125, 57, 235, 1);
+  background: var(--focuslens-button-primary-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
   padding-left: 28px;
   padding-right: 28px;
   font-size: 12px;
   font-weight: 700;
   font-family: "Nunito";
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .invitation-landing-continue:hover {
-  background: #6d27d1;
+  background: var(--focuslens-button-primary-hover-gradient);
+  transform: translateY(-1px);
 }
 
 .invitation-landing-card small {
@@ -157,7 +189,7 @@
 .invitation-landing-desktop-links {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 10px;
 }
 
 .invitation-landing-menu-button {

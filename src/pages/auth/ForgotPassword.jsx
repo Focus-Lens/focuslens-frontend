@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ChevronLeft } from "lucide-react";
 import { AuthLayout, Button, Card, Field } from "../../components/ui/CommonUI";
 import { api } from "../../services/api";
 import "../../css/auth/ForgotPassword.css";
@@ -76,11 +77,11 @@ export default function ForgotPassword() {
           <div className="password-actions">
             <button
               type="button"
-              className="back-password-button"
+              className="back-password-button back-button-style"
               onClick={() => navigate(-1)}
               aria-label="Go back"
             >
-              ←
+              <ChevronLeft size={21} strokeWidth={1.8} />
             </button>
 
             <Button

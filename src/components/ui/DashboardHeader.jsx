@@ -23,7 +23,7 @@ import logo from "../../assets/logo.png";
 
 import "../../css/dashboard/DashboardHeader.css";
 
-export default function DashboardHeader({ activePage = "overview" }) {
+export default function DashboardHeader({ activePage = "overview", previewData = null }) {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -43,10 +43,11 @@ export default function DashboardHeader({ activePage = "overview" }) {
   const cachedChildren = getCachedParentChildren();
   // Only the server's children list (cached after it loads) is trusted, so a
   // cancelled invitation never flashes here.
-  const child =
+  const child = previewData?.child ||
     findConnectedChild(cachedChildren) || findPendingChild(cachedChildren);
   const childName = getStudentDisplayName(child, "Your children");
   const childImage = useChildSetupImage(child?.childSetupDraftId);
+  const displayUser = previewData?.parent || user;
   const navItems = [
     {
       key: "overview",
@@ -160,10 +161,10 @@ export default function DashboardHeader({ activePage = "overview" }) {
           className="dashboard-user-pill parent-pill"
         >
           <span className="dashboard-user-avatar parent-avatar">
-            {user?.firstName?.[0] ?? "M"}
+            {displayUser?.firstName?.[0] ?? "M"}
           </span>
 
-          <span>{user?.firstName || "Account"}</span>
+          <span>{displayUser?.firstName || "Account"}</span>
 
           <ChevronDown
             size={17}

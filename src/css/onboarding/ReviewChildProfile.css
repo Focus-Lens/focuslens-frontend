@@ -249,7 +249,7 @@ font-family: "Nunito";
   align-items: center;
   justify-content: center;
 
-  border: 1px solid #7d39eb;
+  border: 1px solid transparent;
 
   border-radius: 26px;
 
@@ -277,7 +277,8 @@ font-family: "Nunito";
 
   border-radius: 26px;
 
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 
   color: #ffffff;
 
@@ -295,8 +296,7 @@ font-family: "Nunito";
 }
 
 .review-child-confirm:hover {
-  background: #7130dc;
-  border-color: #7130dc;
+  background: var(--focuslens-button-primary-hover-gradient);
 }
 
 

@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment variants stay private; the base .env is intentionally tracked.
+.env.*
+!.env.example

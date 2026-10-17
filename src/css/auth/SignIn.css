@@ -196,7 +196,7 @@
   box-sizing: border-box;
   border: none;
   border-radius: 999px;
-  background: #7c35e9;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
   font-family: "Nunito", sans-serif;
   font-size: 17px;
@@ -206,14 +206,25 @@
   transition:
     background-color 0.2s ease,
     transform 0.15s ease;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .actions .button:hover {
-  background: #7130df;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .actions .button:active {
   transform: scale(0.99);
+}
+
+#root .actions .button:disabled {
+  border: 1px solid #ececf0;
+  background: linear-gradient(180deg, #f1f1f4 0%, #e8e8ed 100%);
+  box-shadow: 0 3px 10px rgb(50 45 65 / 7%);
+  color: #62616b;
+  opacity: 1;
+  cursor: not-allowed;
 }
 
 /* =========================================
@@ -222,7 +233,7 @@
 
 .google-button {
   width: 100%;
-  height: 54px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,10 +274,28 @@
 ========================================= */
 
 .password-error {
-  margin: -10px 0 15px;
+  margin: -18px 0 8px;
   color: #dc2626;
   font-size: 13px;
   text-align: left;
+}
+
+.signin-email-error {
+  margin: -21px 0 10px !important;
+  color: #dc2626;
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.auth-main:has(.signin-actions) .page-card > p.password-error {
+  margin: -21px 0 8px !important;
+}
+
+@media (min-width: 751px) {
+  .auth-main:has(.signin-actions) .page-card > p.password-error {
+    margin-top: -9px !important;
+  }
 }
 
 /* =========================================
@@ -346,6 +375,10 @@
 }
 
 @media (min-width: 751px) {
+  .auth-main:has(.signin-actions) .page-card > p.signin-email-error {
+    margin-top: -9px !important;
+  }
+
   .auth-main:has(.signin-actions) {
     padding: 0;
     overflow: hidden;
@@ -380,7 +413,7 @@
   }
 
   .auth-main:has(.signin-actions) .actions .button {
-    height: 39px;
+    height: 52px;
     font-size: 13px;
   }
 
@@ -457,4 +490,113 @@
 
 .signin-remembered-note + .form-row {
   margin-bottom: 10px;
+}
+
+.unverified-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  background: rgba(22, 20, 31, 0.52);
+}
+
+.unverified-modal {
+  position: relative;
+  width: min(100%, 480px);
+  padding: 36px 32px 30px;
+  box-sizing: border-box;
+  border: 1px solid #ece7f5;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 18px 50px rgba(41, 24, 73, 0.2);
+  text-align: center;
+}
+
+.unverified-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: #f6f1ff;
+  color: #6f35d5;
+  cursor: pointer;
+}
+
+.unverified-modal-icon {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: #f1e8ff;
+  color: #7839e9;
+}
+
+.unverified-modal h2 {
+  margin: 0 0 10px;
+  color: #22212a;
+  font-size: 23px;
+}
+
+.unverified-modal > p {
+  margin: 0 0 22px;
+  color: #686875;
+  font-size: 15px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.unverified-modal > .unverified-modal-error {
+  margin-top: -10px;
+  color: #c62828;
+  font-size: 13px;
+}
+
+.unverified-modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.unverified-modal-actions button {
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.unverified-resend-button {
+  background: var(--focuslens-button-primary-gradient);
+  color: #ffffff;
+  box-shadow: 0 5px 13px rgba(111, 48, 207, 0.2);
+}
+
+.unverified-cancel-button {
+  background: linear-gradient(180deg, #ffffff 0%, #f6f0ff 100%);
+  color: #7130df;
+  box-shadow: 0 4px 12px rgba(98, 55, 157, 0.12);
+}
+
+.unverified-modal-actions button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+@media (max-width: 520px) {
+  .unverified-modal {
+    padding: 34px 22px 24px;
+    border-radius: 20px;
+  }
 }

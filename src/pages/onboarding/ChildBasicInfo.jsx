@@ -33,6 +33,7 @@ export default function ChildBasicInfo() {
   const [profileImageError, setProfileImageError] = useState("");
   const profileImageObjectUrl = useRef("");
   const draftId = sessionStorage.getItem("childSetupDraftId");
+  const canContinue = Boolean(name.trim() && lastName.trim() && dateOfBirth);
 
   function displayProfileImage(imageBlob) {
     if (profileImageObjectUrl.current) {
@@ -306,7 +307,7 @@ export default function ChildBasicInfo() {
               <div className="child-basic-actions">
                 <button
                   type="button"
-                  className="child-basic-back"
+                  className="child-basic-back back-button-style"
                   disabled={isSavingProfileImage}
                   onClick={handleBack}
                   aria-label="Go back"
@@ -314,7 +315,10 @@ export default function ChildBasicInfo() {
                   <ChevronLeft size={21} strokeWidth={1.8} />
                 </button>
 
-                <Button onClick={() => handleContinue()} disabled={isWaitingForUpload}>
+                <Button
+                  onClick={() => handleContinue()}
+                  disabled={isWaitingForUpload || !canContinue}
+                >
                   {isWaitingForUpload ? "Waiting for photo upload..." : "Continue"}
                 </Button>
               </div>

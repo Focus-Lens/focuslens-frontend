@@ -225,7 +225,7 @@
   border: none;
   border-radius: 28px;
 
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
 
   font-family: "Nunito";
@@ -239,11 +239,14 @@
   transition:
     background 0.2s ease,
     transform 0.1s ease;
+
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .profile-setup-actions > a:hover,
 .profile-setup-actions > button:first-child:hover {
-  background: #7130d8;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .profile-setup-actions > a:active,
@@ -269,20 +272,34 @@
 ========================= */
 
 .profile-setup-later {
-  margin-top: 17px;
-
-  padding: 0;
-
-  border: none;
-
-  background: transparent;
-  color: #7d39eb;
+  width: 100%;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 0 16px;
+  border: 1px solid var(--focuslens-button-soft-border);
+  border-radius: 28px;
+  background: var(--focuslens-button-soft-gradient);
+  box-shadow: var(--focuslens-button-soft-shadow);
+  color: var(--focuslens-button-soft-text);
 
   font-family: "Nunito";
   font-size: 16px;
   font-weight: 400;
 
   cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.profile-setup-later:hover {
+  background: var(--focuslens-button-soft-hover-gradient);
+  box-shadow: var(--focuslens-button-soft-shadow);
+}
+
+.profile-setup-later:active {
+  transform: scale(0.99);
 }
 
 /* =========================

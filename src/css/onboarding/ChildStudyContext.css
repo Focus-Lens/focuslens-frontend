@@ -170,6 +170,7 @@ font-family: "Nunito";
 }
 
 .child-context-option-icon {
+  position: relative;
   width: 48px;
   height: 48px;
 
@@ -183,6 +184,14 @@ font-family: "Nunito";
 
   background: #eee4ff;
   color: #823cf0;
+}
+
+.child-context-icon-accent {
+  position: absolute;
+  top: 8px;
+  right: 7px;
+  color: #b5e629;
+  filter: drop-shadow(0 0 1px rgba(181, 230, 41, 0.35));
 }
 
 .child-context-option.selected
@@ -273,7 +282,7 @@ font-family: "Nunito";
 
   border-radius: 28px;
 
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   border: 1px solid #7d39eb;
 
   color: #ffffff;
@@ -284,11 +293,14 @@ font-family: "Nunito";
   cursor: pointer;
 
   box-sizing: border-box;
+
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .child-context-actions > button:last-child:hover {
-  background: #7130dc;
+  background: var(--focuslens-button-primary-hover-gradient);
   border-color: #7130dc;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 /* =========================

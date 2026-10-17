@@ -574,13 +574,19 @@
   gap: 13px;
   margin-top: 11px;
   padding: 0 13px;
-  border: 1px solid #eeeaf4;
+  border: 1px solid var(--focuslens-button-soft-border);
   border-radius: 13px;
-  background: #ffffff;
-  color: #4a4550;
+  background: var(--focuslens-button-soft-gradient);
+  color: var(--focuslens-button-soft-text);
   text-align: left;
   font-size: 14px;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-soft-shadow);
+}
+
+.quick-links-panel > button:hover {
+  background: var(--focuslens-button-soft-hover-gradient);
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 .quick-link-icon {
@@ -747,15 +753,16 @@
   height: 37px;
   border: 0;
   border-radius: 999px;
-  background: #8138f4;
+  background: var(--focuslens-button-primary-gradient);
   color: #fff;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
-.children-unavailable-card button:hover { background: #7433e9; }
+.children-unavailable-card button:hover { background: var(--focuslens-button-primary-hover-gradient); box-shadow: var(--focuslens-button-primary-shadow); }
 
 .children-unavailable-card small {
   margin-top: 18px;
@@ -787,20 +794,22 @@
   padding: 0 18px;
   border: 0;
   border-radius: 10px;
-  background: #8138f4;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .children-invitation-actions button:nth-child(2) {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid #d8c6ff;
-  background: #ffffff;
-  color: #8138f4;
+  border: 1px solid var(--focuslens-button-soft-border);
+  background: var(--focuslens-button-soft-gradient);
+  color: var(--focuslens-button-soft-text);
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 .copy-icon {
@@ -809,9 +818,18 @@
 
 .children-invitation-actions .children-danger-button {
   margin-left: auto;
-  padding-right: 0;
-  background: transparent;
-  color: #e23c39;
+  padding-right: 18px;
+  border: 1px solid var(--focuslens-button-danger-border);
+  border-radius: 999px;
+  background: var(--focuslens-button-danger-gradient);
+  color: var(--focuslens-button-danger-text);
+  box-shadow: var(--focuslens-button-danger-shadow);
+}
+
+.children-invitation-actions .children-danger-button:hover,
+.cancel-confirm:hover {
+  background: var(--focuslens-button-danger-hover-gradient);
+  box-shadow: var(--focuslens-button-danger-shadow);
 }
 
 /* =========================================================
@@ -936,16 +954,25 @@
 }
 
 .keep-invitation {
-  border: 1px solid #d9c8ff;
-  background: #ffffff;
-  color: #8138f4;
+  border: 1px solid var(--focuslens-button-soft-border);
+  border-radius: 999px;
+  background: var(--focuslens-button-soft-gradient);
+  color: var(--focuslens-button-soft-text);
+  box-shadow: var(--focuslens-button-soft-shadow);
+}
+
+.keep-invitation:hover {
+  background: var(--focuslens-button-soft-hover-gradient);
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 .cancel-confirm {
   margin-left: auto;
-  border: 0;
-  background: transparent;
-  color: #e23c39;
+  border: 1px solid var(--focuslens-button-danger-border);
+  border-radius: 999px;
+  background: var(--focuslens-button-danger-gradient);
+  color: var(--focuslens-button-danger-text);
+  box-shadow: var(--focuslens-button-danger-shadow);
 }
 
 /* =========================================================
@@ -1032,11 +1059,12 @@
   margin-top: 11px;
   border: 0;
   border-radius: 10px;
-  background: #8138f4;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
   font-size: 13px;
   font-weight: 700;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 /* =========================================================
@@ -1107,9 +1135,10 @@
   height: 37px;
   border: 0;
   border-radius: 999px;
-  background: #8138f4;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 /* =========================================================
@@ -1316,21 +1345,22 @@
   justify-content: center;
   gap: 8px;
 
-  border: 1.5px solid #8138f4;
+  border: 1px solid var(--focuslens-button-soft-border);
   border-radius: 999px;
-  background: #ffffff;
-  color: #7130dc;
+  background: var(--focuslens-button-soft-gradient);
+  color: var(--focuslens-button-soft-text);
 
   font-family: inherit;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 .children-add-button:hover {
-  background: #8138f4;
-  color: #ffffff;
+  background: var(--focuslens-button-soft-hover-gradient);
+  color: var(--focuslens-button-soft-text);
   box-shadow: 0 8px 20px rgba(129, 56, 244, 0.22);
 }
 

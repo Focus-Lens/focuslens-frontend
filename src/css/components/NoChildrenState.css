@@ -48,14 +48,15 @@
   align-items: center;
   justify-content: center;
   border-radius: 22px;
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   color: #fff;
   font-size: 14px;
   font-weight: 700;
   text-decoration: none;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
-.no-children-button:hover { background: #7130dc; }
+.no-children-button:hover { background: var(--focuslens-button-primary-hover-gradient); box-shadow: var(--focuslens-button-primary-shadow); }
 
 .no-children-hint {
   margin: 16px 0 0;

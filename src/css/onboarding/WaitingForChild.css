@@ -180,19 +180,21 @@
 
   border: 1px solid #7d39eb;
   border-radius: 22px;
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
 
   font-family: inherit;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .waiting-actions > :first-child:hover,
 .setup-actions > :first-child:hover {
   border-color: #6d2ed8;
-  background: #6d2ed8;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 /* Copy link */
@@ -418,24 +420,27 @@
 }
 
 .confirm-decline-link {
-  border: 1px solid #f0d5d5;
-  background: #ffffff;
-  color: #df1616;
+  border: 1px solid var(--focuslens-button-danger-border);
+  background: var(--focuslens-button-danger-gradient);
+  box-shadow: var(--focuslens-button-danger-shadow);
+  color: var(--focuslens-button-danger-text);
 }
 
 .confirm-decline-link:hover {
-  background: #fff8f8;
+  background: var(--focuslens-button-danger-hover-gradient);
 }
 
 .confirm-cancel-button {
   margin-top: 10px;
   border: 0;
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .confirm-cancel-button:hover {
-  background: #7130dc;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 /* =========================

@@ -55,7 +55,7 @@
 
 .field-error-message,
 .terms-error {
-  margin: 6px 0 0;
+  margin: 2px 0 0;
   color: #c81e1e;
   font-size: 11px;
   line-height: 1.4;
@@ -63,7 +63,7 @@
 }
 
 .create-parent-account .page-card .terms-error {
-  margin-top: 6px;
+  margin-top: 2px;
   color: #c81e1e !important;
   font-size: 11px !important;
   font-weight: 400;
@@ -88,11 +88,20 @@
 }
 
 .email-error {
-  margin: 6px 0 16px;
+  margin: 2px 0 10px;
   color: #c81e1e;
   font-size: 11px;
   line-height: 1.4;
   text-align: left;
+}
+
+/* Override the generic page-card paragraph margins for inline form errors. */
+.create-parent-account .page-card p.email-error {
+  margin: -12px 0 10px !important;
+}
+
+.create-parent-account .page-card p.field-error-message {
+  margin: -12px 0 0 !important;
 }
 
 .email-error a {
@@ -188,7 +197,7 @@
 .register-actions .button,
 .continue-disabled {
   width: 100%;
-  height: 39px;
+  height: 52px;
 
   display: flex;
   align-items: center;
@@ -204,13 +213,25 @@
   text-decoration: none;
 }
 
-.register-actions .button {
-  background: #7c35e9;
+#root .register-actions .button {
+  border: 0;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
-.register-actions .button:hover {
-  background: #6d28d9;
+#root .register-actions .button:hover {
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
+}
+
+#root .register-actions .button:disabled {
+  border: 1px solid #ececf0;
+  background: linear-gradient(180deg, #f1f1f4 0%, #e8e8ed 100%);
+  box-shadow: 0 3px 10px rgb(50 45 65 / 7%);
+  color: #62616b;
+  opacity: 1;
+  cursor: not-allowed;
 }
 
 .continue-disabled {
@@ -235,7 +256,7 @@
 
 .create-parent-account .google-button {
   width: 100%;
-  height: 39px;
+  height: 52px;
 
   display: flex;
   align-items: center;

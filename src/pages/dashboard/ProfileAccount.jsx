@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ShieldCheck } from "lucide-react";
+import { ArrowRight, CreditCard, ShieldCheck } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
@@ -348,6 +348,21 @@ export default function ProfileAccount() {
                     />
                   </label>
                 </div>
+              </section>
+
+              <section className="profile-card profile-payment-card">
+                <div className="profile-payment-copy">
+                  <span className="profile-payment-icon" aria-hidden="true">
+                    <CreditCard size={18} />
+                  </span>
+                  <div>
+                    <h2>Plans &amp; payment</h2>
+                    <p>Explore plans for your family and continue to secure payment.</p>
+                  </div>
+                </div>
+                <Link className="profile-payment-button" to="/plans">
+                  Go to plans &amp; payment <ArrowRight size={16} aria-hidden="true" />
+                </Link>
               </section>
 
               <section className="profile-card security-card">

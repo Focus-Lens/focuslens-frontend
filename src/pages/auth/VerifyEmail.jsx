@@ -19,14 +19,36 @@ export default function VerifyEmail() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
+  const deliveryErrorPreview = new URLSearchParams(location.search).get("preview") === "delivery-error";
+  const deliveryError = Boolean(location.state?.deliveryError || deliveryErrorPreview);
 
   const [toast, setToast] = useState(() =>
     location.state?.codeResent ? "Verification code sent" : "",
   );
   const [isOpening, setIsOpening] = useState(false);
   const [otp, setOtp] = useState("");
-  const [errorToast, setErrorToast] = useState("");
+  const [errorToast, setErrorToast] = useState(() =>
+    deliveryError
+      ? "We couldn’t send your verification code because of a server issue. You can resend it after signing in."
+      : "",
+  );
   const errorToastTimer = useRef(null);
+  const email =
+    sessionStorage.getItem("pendingParentEmail") ||
+    (deliveryErrorPreview ? "sample@example.com" : "");
+
+  useEffect(() => {
+    if (!deliveryError) return undefined;
+
+    const redirectTimer = window.setTimeout(() => {
+      navigate("/sign-in", {
+        replace: true,
+        state: { email },
+      });
+    }, 6500);
+
+    return () => window.clearTimeout(redirectTimer);
+  }, [deliveryError, email, navigate]);
 
   useEffect(() => () => window.clearTimeout(errorToastTimer.current), []);
 
@@ -36,9 +58,6 @@ export default function VerifyEmail() {
     window.clearTimeout(errorToastTimer.current);
     errorToastTimer.current = window.setTimeout(() => setErrorToast(""), 3000);
   }
-
-  const email =
-    sessionStorage.getItem("pendingParentEmail") || "";
 
   async function verifyCode() {
     if (isOpening) return;
@@ -144,7 +163,9 @@ export default function VerifyEmail() {
           </div>
 
           <div className="toast-content">
-            <div className="toast-title">Couldn’t complete verification</div>
+            <div className="toast-title">
+              {deliveryError ? "Verification code wasn’t sent" : "Couldn’t complete verification"}
+            </div>
             <div className="toast-description">{errorToast}</div>
           </div>
 

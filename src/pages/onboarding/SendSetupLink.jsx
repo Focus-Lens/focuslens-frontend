@@ -6,7 +6,7 @@ import {
   Card,
   AuthLayout,
 } from "../../components/ui/CommonUI";
-import { RiArrowLeftLine } from "react-icons/ri";
+import { ChevronLeft } from "lucide-react";
 import { api } from "../../services/api";
 import {
   createEmailChildSetupInvitation,
@@ -232,11 +232,11 @@ export default function SendSetupLink() {
             <div className="send-setup-link-actions">
               <button
                 type="button"
-                className="send-setup-link-back"
+                className="send-setup-link-back back-button-style"
                 onClick={() => navigate("/profile-setup-choice")}
                 aria-label="Go back"
               >
-                <RiArrowLeftLine />
+                <ChevronLeft size={21} strokeWidth={1.8} />
               </button>
 
               <Button

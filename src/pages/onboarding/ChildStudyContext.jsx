@@ -2,13 +2,15 @@ import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
-  AlarmClock,
+  Sprout,
   Target,
-  BookOpen,
+  BookCopy,
   GraduationCap,
   ListChecks,
   Check,
   ChevronLeft,
+  Sparkles,
+  ArrowUpRight,
 } from "lucide-react";
 
 import {
@@ -25,23 +27,28 @@ import "../../css/onboarding/ChildStudyContext.css";
 const supportOptions = [
   {
     name: "Help my child build a study routine",
-    icon: AlarmClock,
+    icon: Sprout,
+    accent: Sparkles,
   },
   {
     name: "Help my child stay focused",
     icon: Target,
+    accent: ArrowUpRight,
   },
   {
     name: "Help my child understand difficult topics",
-    icon: BookOpen,
+    icon: BookCopy,
+    accent: Check,
   },
   {
     name: "Support my child’s exam preparation",
     icon: GraduationCap,
+    accent: Sparkles,
   },
   {
     name: "Encourage my child to reach study goals",
     icon: ListChecks,
+    accent: Check,
   },
 ];
 
@@ -63,6 +70,7 @@ export default function ChildStudyContext() {
     child.studyPriorities ?? []
   );
   const [error, setError] = useState("");
+  const canContinue = selectedSupport.length > 0;
 
   function toggleSupport(option) {
     const nextSupport = selectedSupport.includes(option)
@@ -147,6 +155,7 @@ export default function ChildStudyContext() {
               <div className={`child-context-options ${error ? "invalid" : ""}`}>
                 {supportOptions.map((option) => {
                   const Icon = option.icon;
+                  const Accent = option.accent;
                   const isSelected = selectedSupport.includes(option.name);
 
                   return (
@@ -160,6 +169,7 @@ export default function ChildStudyContext() {
                     >
                       <span className="child-context-option-icon">
                         <Icon size={22} strokeWidth={1.9} />
+                        <Accent className="child-context-icon-accent" size={10} strokeWidth={2.8} />
                       </span>
 
                       <span className="child-context-option-text">
@@ -181,14 +191,14 @@ export default function ChildStudyContext() {
               <div className="child-context-actions">
                 <button
                   type="button"
-                  className="child-context-back"
+                  className="child-context-back back-button-style"
                   onClick={handleBack}
                   aria-label="Go back"
                 >
                   <ChevronLeft size={21} strokeWidth={1.8} />
                 </button>
 
-                <Button onClick={handleContinue}>Continue</Button>
+                <Button onClick={handleContinue} disabled={!canContinue}>Continue</Button>
               </div>
 
             </div>

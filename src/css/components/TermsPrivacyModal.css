@@ -240,11 +240,12 @@
 
   margin-top: 0;
 
-  border: none;
+  border: 1px solid #ececf0;
   border-radius: 28px;
 
-  background: #a1a1aa;
-  color: #ffffff;
+  background: linear-gradient(180deg, #f1f1f4 0%, #e8e8ed 100%);
+  box-shadow: 0 3px 10px rgb(50 45 65 / 7%);
+  color: #62616b;
 
   font-family: "Nunito";
   font-size: 16px;
@@ -256,16 +257,19 @@
 }
 
 .terms-agree:not(:disabled) {
-  background: #2563eb;
+  border-color: transparent;
+  background: var(--focuslens-button-primary-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
+  color: #ffffff;
   cursor: pointer;
 }
 
 .terms-agree:hover {
-  background: #1d4ed8;
+  background: var(--focuslens-button-primary-hover-gradient);
 }
 
 .terms-agree:disabled:hover {
-  background: #a1a1aa;
+  background: linear-gradient(180deg, #f1f1f4 0%, #e8e8ed 100%);
 }
 
 .terms-document {
@@ -367,16 +371,18 @@
 ========================================= */
 
 .terms-decline {
-  display: block;
-
+  width: 100%;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 15px auto 0;
-
-  padding: 0;
-
-  border: none;
-
-  background: transparent;
-  color: #ef2d24;
+  padding: 0 20px;
+  border: 1px solid var(--focuslens-button-danger-border);
+  border-radius: 999px;
+  background: var(--focuslens-button-danger-gradient);
+  box-shadow: var(--focuslens-button-danger-shadow);
+  color: var(--focuslens-button-danger-text);
 
   font-family: "Nunito";
   font-size: 16px;
@@ -386,7 +392,7 @@
 }
 
 .terms-decline:hover {
-  color: #c9211b;
+  background: var(--focuslens-button-danger-hover-gradient);
 }
 
 

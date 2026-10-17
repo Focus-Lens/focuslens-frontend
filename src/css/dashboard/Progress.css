@@ -98,15 +98,16 @@
   height: 34px;
   border: 0;
   border-radius: 999px;
-  background: #8138f4;
+  background: var(--focuslens-button-primary-gradient);
   color: #fff;
   font: inherit;
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
-.progress-unavailable-card button:hover { background: #7433e9; }
+.progress-unavailable-card button:hover { background: var(--focuslens-button-primary-hover-gradient); box-shadow: var(--focuslens-button-primary-shadow); }
 
 .progress-pending-note {
   margin-top: 17px;
@@ -153,9 +154,9 @@
 }
 
 .progress-ranges button.active {
-  background: #7433e9;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
-  box-shadow: 0 2px 5px rgba(116, 51, 233, 0.22);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 /* =========================
@@ -609,16 +610,18 @@
   margin-top: 25px;
   border: 0;
   border-radius: 999px;
-  background: #8138f4;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   transition: transform 0.15s ease;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .progress-report-button:hover {
-  background: #7433e9;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .progress-report-button:active {
@@ -801,10 +804,11 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  border: 1px solid #eee2ff;
+  border: 1px solid var(--focuslens-button-soft-border);
   border-radius: 15px;
-  background: #fcf9ff;
-  color: #6d6676;
+  background: var(--focuslens-button-soft-gradient);
+  color: var(--focuslens-button-soft-text);
+  box-shadow: var(--focuslens-button-soft-shadow);
   cursor: pointer;
   transition:
     background 0.18s ease,
@@ -814,7 +818,8 @@
 }
 
 .time-pattern-options button:hover {
-  border-color: #cdb1ff;
+  border-color: var(--focuslens-button-soft-border);
+  background: var(--focuslens-button-soft-hover-gradient);
 }
 
 .time-pattern-options button:active {
@@ -1628,7 +1633,8 @@
 }
 
 .progress-ranges button.active {
-  background: #6425d9;
+  background: var(--focuslens-button-primary-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .progress-main-grid {
@@ -1770,13 +1776,13 @@
 .progress-report-button {
   height: 52px;
   margin-top: 27px;
-  background: linear-gradient(180deg, #6826d7 0%, #9450f4 100%);
-  box-shadow: 0 9px 18px rgba(126, 56, 230, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  background: var(--focuslens-button-primary-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
   font-size: 15px;
 }
 
 .progress-report-button:hover {
-  background: linear-gradient(180deg, #5f1ecb 0%, #8843eb 100%);
+  background: var(--focuslens-button-primary-hover-gradient);
 }
 
 .progress-comparison-card {

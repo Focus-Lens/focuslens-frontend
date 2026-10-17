@@ -261,7 +261,7 @@
 }
 
 .other-subject-input .setup-required-error {
-  margin: 8px 0 0;
+  margin: 3px 0 0;
   color: #c81e1e;
   font-size: 12px;
   line-height: 1.4;
@@ -399,18 +399,20 @@
   box-sizing: border-box;
   border: none;
   border-radius: 28px;
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
   font-family: "Nunito";
   font-size: 16px;
   font-weight: 400;
   text-decoration: none;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .child-studies-actions > button:not(.child-studies-back):hover,
 .child-studies-actions > a:hover {
-  background: #7130d8;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 @media (min-width: 601px) and (max-width: 900px) {

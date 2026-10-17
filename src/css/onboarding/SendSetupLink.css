@@ -250,8 +250,8 @@
   border: none;
   border-radius: 28px;
 
-  background: #7d39eb;
-  color: #ffffff;
+  background: var(--focuslens-button-soft-gradient);
+  color: var(--focuslens-button-soft-text);
 
   font-family: "Nunito";
   font-size: 16px;
@@ -263,11 +263,14 @@
   transition:
     background 0.2s ease,
     transform 0.1s ease;
+
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 .send-setup-link-actions > a:hover,
 .send-setup-link-actions > button:not(.send-setup-link-back):hover {
-  background: #7130d8;
+  background: var(--focuslens-button-soft-hover-gradient);
+  box-shadow: var(--focuslens-button-soft-shadow);
 }
 
 .send-setup-link-actions > a:active,

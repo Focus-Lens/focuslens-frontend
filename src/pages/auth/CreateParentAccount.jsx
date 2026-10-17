@@ -44,6 +44,17 @@ export default function CreateParentAccount() {
   const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
 
   const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const canContinue = Boolean(
+    firstName.trim() &&
+    lastName.trim() &&
+    emailIsValid &&
+    acceptedTerms &&
+    !emailError &&
+    !fieldErrors.firstName &&
+    !fieldErrors.lastName &&
+    !fieldErrors.email &&
+    !fieldErrors.terms,
+  );
 
   const emailHasError =
     (emailTouched && email.trim().length > 0 && !emailIsValid) ||
@@ -246,7 +257,7 @@ export default function CreateParentAccount() {
           )}
 
           <div className="register-actions">
-            <Button onClick={handleContinue} disabled={isCheckingEmail}>
+            <Button onClick={handleContinue} disabled={isCheckingEmail || !canContinue}>
               {isCheckingEmail ? "Checking email..." : "Continue"}
             </Button>
           </div>

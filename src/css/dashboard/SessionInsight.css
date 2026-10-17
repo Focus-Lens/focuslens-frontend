@@ -619,7 +619,7 @@
   border: 0;
   border-radius: 999px;
 
-  background: #8138f4;
+  background: var(--focuslens-button-primary-gradient);
   color: #fff;
 
   font-size: 9px;
@@ -630,11 +630,13 @@
   transition:
     transform 0.2s ease,
     background 0.2s ease;
+
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .session-context-card button:hover {
-  background: linear-gradient(180deg, #5e1dbb 0%, #742be6 58%, #9955ed 100%);
-  box-shadow: 0 9px 19px rgb(129 56 244 / 38%), inset 0 1px 1px rgb(255 255 255 / 34%);
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
   transform: translateY(-1px);
 }
 
@@ -938,11 +940,12 @@
   border: 0;
   border-radius: 999px;
 
-  background: #8138f4;
+  background: var(--focuslens-button-primary-gradient);
   color: #fff;
 
   font-size: 10px;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 /* =========================================================

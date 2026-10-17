@@ -99,12 +99,17 @@
 ========================= */
 
 .confirm-decline-link {
-  padding: 0;
-
-  border: none;
-  background: transparent;
-
-  color: #ef1f16;
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border: 1px solid var(--focuslens-button-danger-border);
+  border-radius: 999px;
+  background: var(--focuslens-button-danger-gradient);
+  box-shadow: var(--focuslens-button-danger-shadow);
+  color: var(--focuslens-button-danger-text);
 
   font-family: inherit;
   font-size: 13px;
@@ -113,11 +118,15 @@
   cursor: pointer;
 }
 
+.confirm-decline-link:hover {
+  background: var(--focuslens-button-danger-hover-gradient);
+}
+
 /* =========================
    Cancel
 ========================= */
 
-.confirm-cancel-button {
+.confirm-modal .confirm-cancel-button {
   width: 100%;
   height: 42px;
 
@@ -132,7 +141,7 @@
   border: none;
   border-radius: 28px;
 
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
 
   font-family: inherit;
@@ -144,10 +153,13 @@
   transition:
     background 0.2s ease,
     transform 0.1s ease;
+
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
-.confirm-cancel-button:hover {
-  background: #7130d8;
+.confirm-modal .confirm-cancel-button:hover {
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .confirm-cancel-button:active {

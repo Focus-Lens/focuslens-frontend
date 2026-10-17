@@ -7,8 +7,8 @@ import {
   RiEyeLine,
   RiEyeCloseLine,
   RiCheckLine,
-  RiArrowLeftLine,
 } from "react-icons/ri";
+import { ChevronLeft } from "lucide-react";
 
 import "../../css/auth/ResetPassword.css";
 
@@ -253,11 +253,11 @@ export default function ResetPassword() {
         <div className="password-actions">
           <button
             type="button"
-            className="back-password-button"
+            className="back-password-button back-button-style"
             onClick={() => navigate(-1)}
             aria-label="Go back"
           >
-            <RiArrowLeftLine />
+            <ChevronLeft size={21} strokeWidth={1.8} />
           </button>
 
           {canReset && (isAccountPasswordChange || otp.length === 6) ? (

@@ -1,0 +1,91 @@
+.focus-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #fff;
+  animation: focus-splash-fade-in 300ms ease-out both;
+}
+
+.focus-splash__logo {
+  display: block;
+  width: clamp(220px, 42vw, 320px);
+  height: auto;
+  object-fit: contain;
+  transform-origin: center;
+  backface-visibility: visible;
+  opacity: 0;
+  will-change: transform, opacity, filter;
+  animation: focus-logo-appear 900ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.focus-splash__logo.is-moving {
+  opacity: 1;
+  animation:
+    focus-logo-spin 4s linear forwards,
+    focus-logo-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes focus-logo-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.16);
+  }
+  76% {
+    opacity: 1;
+    transform: scale(1.14);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes focus-logo-spin {
+  0% {
+    transform: perspective(1000px) rotateY(0deg) rotateX(0deg) scale(1);
+  }
+  50% {
+    transform: perspective(1000px) rotateY(180deg) rotateX(4deg) scale(1.05);
+  }
+  100% {
+    transform: perspective(1000px) rotateY(360deg) rotateX(0deg) scale(1);
+  }
+}
+
+@keyframes focus-logo-glow {
+  0%,
+  100% {
+    filter: drop-shadow(0 10px 18px rgb(118 44 238 / 10%));
+  }
+  50% {
+    filter: drop-shadow(0 16px 28px rgb(118 44 238 / 22%));
+  }
+}
+
+@keyframes focus-splash-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-splash {
+    animation: none;
+  }
+
+  .focus-splash__logo {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+
+  .focus-splash__logo.is-moving {
+    animation: focus-logo-spin 4s linear forwards;
+  }
+}

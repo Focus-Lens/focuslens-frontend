@@ -146,7 +146,7 @@
   border: none;
   border-radius: 28px;
 
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
 
   font-family: "Nunito";
@@ -159,11 +159,14 @@
   transition:
     background 0.2s ease,
     transform 0.1s ease;
+
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .setup-intro-actions > a:hover,
 .setup-intro-actions > button:first-child:hover {
-  background: #7130d8;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .setup-intro-actions > a:active,
@@ -177,17 +180,21 @@
 
 .setup-intro-actions > a:last-child,
 .setup-intro-actions > button:last-child {
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  margin-top: 10px;
+  padding: 0 16px;
 
-  margin-top: 17px;
-  padding: 0;
+  border: 1px solid var(--focuslens-button-soft-border);
+  border-radius: 28px;
 
-  border: none;
-  border-radius: 0;
-
-  background: transparent;
-  color: #7d39eb;
+  background: var(--focuslens-button-soft-gradient);
+  box-shadow: var(--focuslens-button-soft-shadow);
+  color: var(--focuslens-button-soft-text);
 
   font-family: inherit;
   font-size: 16px;
@@ -199,8 +206,13 @@
 
 .setup-intro-actions > a:last-child:hover,
 .setup-intro-actions > button:last-child:hover {
-  background: transparent;
-  color: #7130d8;
+  background: var(--focuslens-button-soft-hover-gradient);
+  box-shadow: var(--focuslens-button-soft-shadow);
+}
+
+.setup-intro-actions > a:last-child:active,
+.setup-intro-actions > button:last-child:active {
+  transform: scale(0.99);
 }
 
 /* =========================================

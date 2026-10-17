@@ -4,6 +4,19 @@
   font-family: "Nunito", sans-serif;
   color: #28252d;
   background: #ffffff;
+  --focuslens-button-primary-gradient: linear-gradient(180deg, #5513b5 0%, #7822dc 48%, #aa43fa 100%);
+  --focuslens-button-primary-hover-gradient: linear-gradient(180deg, #6119c3 0%, #852ce9 48%, #b54cff 100%);
+  --focuslens-button-primary-shadow: 0 9px 20px rgb(105 31 194 / 40%), inset 0 1px 1px rgb(255 255 255 / 58%);
+  --focuslens-button-soft-gradient: linear-gradient(180deg, #f3edfc 0%, #ffffff 52%, #f5efff 100%);
+  --focuslens-button-soft-hover-gradient: linear-gradient(180deg, #eee5fb 0%, #ffffff 52%, #f0e7fd 100%);
+  --focuslens-button-soft-border: rgb(137 93 190 / 16%);
+  --focuslens-button-soft-shadow: 0 7px 18px rgb(102 63 151 / 16%), inset 0 1px 1px rgb(255 255 255 / 95%);
+  --focuslens-button-soft-text: #7734e5;
+  --focuslens-button-danger-gradient: linear-gradient(180deg, #fff5f4 0%, #ffffff 52%, #fff0ef 100%);
+  --focuslens-button-danger-hover-gradient: linear-gradient(180deg, #ffefed 0%, #fffafa 52%, #ffe9e7 100%);
+  --focuslens-button-danger-border: rgb(226 102 93 / 30%);
+  --focuslens-button-danger-shadow: 0 7px 18px rgb(210 69 58 / 20%), inset 0 1px 1px rgb(255 255 255 / 95%);
+  --focuslens-button-danger-text: #e52b21;
 }
 
 * {
@@ -25,6 +38,29 @@ textarea {
 
 button {
   cursor: pointer;
+}
+
+/* Shared lavender capsule treatment for back controls; page styles keep each size. */
+button.back-button-style {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, #fcfaff 0%, #f2eaff 100%) padding-box,
+    linear-gradient(135deg, #a65cff 0%, #7628e8 100%) border-box;
+  color: #7628e8;
+  box-shadow: 0 5px 11px rgb(118 40 232 / 24%), inset 0 1px 1px rgb(255 255 255 / 95%);
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+button.back-button-style:hover:not(:disabled) {
+  background:
+    linear-gradient(180deg, #f7f0ff 0%, #ebddff 100%) padding-box,
+    linear-gradient(135deg, #9b4cff 0%, #6720d2 100%) border-box;
+  box-shadow: 0 6px 14px rgb(118 40 232 / 30%), inset 0 1px 1px rgb(255 255 255 / 95%);
+}
+
+button.back-button-style:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 a {

@@ -279,7 +279,7 @@
 }
 
 .child-basic-page > .setup-required-error {
-  margin: -10px 0 10px !important;
+  margin: -13px 0 10px !important;
   color: #c81e1e !important;
   font-size: 11px !important;
   line-height: 1.4 !important;
@@ -394,7 +394,7 @@
   border: none;
   border-radius: 28px;
 
-  background: #7d39eb;
+  background: var(--focuslens-button-primary-gradient);
   color: #ffffff;
 
   font-family: "Nunito";
@@ -403,11 +403,13 @@
 
   text-decoration: none;
   cursor: pointer;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .child-basic-actions > a:hover,
 .child-basic-actions > button:not(.child-basic-back):hover {
-  background: #7130d8;
+  background: var(--focuslens-button-primary-hover-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 /* =========================

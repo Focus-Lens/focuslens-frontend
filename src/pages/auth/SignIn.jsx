@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { MailWarning, X } from "lucide-react";
 import GoogleAuthButton from "../../components/ui/GoogleAuthButton";
 import EmailStatusAlert from "../../components/ui/EmailStatusAlert";
 import {
@@ -16,6 +17,7 @@ import {
   restoreRememberedSession,
 } from "../../services/api";
 import { useAuth } from "../../context/useAuth";
+import { holdRegistrationPassword } from "../../services/pendingRegistration";
 import { getGoogleProfile } from "../../services/googleIdentity";
 import { continueWithGoogleParent } from "../../services/googleParentAuth";
 import {
@@ -28,10 +30,27 @@ import "../../css/auth/SignIn.css";
 
 const REMEMBERED_EMAIL_KEY = "focusLensRememberedSignInEmail";
 
+function isEmailVerificationRequired(error) {
+  const values = [
+    error?.code,
+    error?.message,
+    error?.details?.code,
+    error?.details?.title,
+    error?.details?.detail,
+    error?.details?.message,
+  ];
+  const message = values
+    .filter((value) => typeof value === "string")
+    .join(" ")
+    .replace(/[_-]+/g, " ");
+  return /(email|account).{0,60}(not verified|unverified|not (?:been )?confirmed|verification required)|(?:verify|confirm) (?:your )?email/i.test(message);
+}
+
 export default function SignIn({ restoreAccount = false }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, setUser } = useAuth();
+  const unverifiedPreview = new URLSearchParams(location.search).get("preview") === "unverified-email";
   const hasPendingInvitation = Boolean(
     sessionStorage.getItem("pendingInvitationToken"),
   );
@@ -39,16 +58,19 @@ export default function SignIn({ restoreAccount = false }) {
   // A session saved by "Remember me": the form is filled in from it and
   // Sign in continues it without asking for the password again.
   const [rememberedSession, setRememberedSession] = useState(() =>
-    restoreAccount ? null : getRememberedSession(),
+    restoreAccount || unverifiedPreview ? null : getRememberedSession(),
   );
   const [email, setEmail] = useState(() =>
     restoreAccount
       ? ""
-      : rememberedSession?.user?.email || localStorage.getItem(REMEMBERED_EMAIL_KEY) || "",
+      : unverifiedPreview
+        ? "sample@example.com"
+        : location.state?.email || rememberedSession?.user?.email || localStorage.getItem(REMEMBERED_EMAIL_KEY) || "",
   );
+  const [emailTouched, setEmailTouched] = useState(false);
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(() =>
-    !restoreAccount &&
+    !restoreAccount && !unverifiedPreview &&
       Boolean(rememberedSession || localStorage.getItem(REMEMBERED_EMAIL_KEY)),
   );
   const [error, setError] = useState("");
@@ -56,6 +78,12 @@ export default function SignIn({ restoreAccount = false }) {
   const [success, setSuccess] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [googleSigningIn, setGoogleSigningIn] = useState(false);
+  const [showUnverifiedModal, setShowUnverifiedModal] = useState(unverifiedPreview);
+  const [resendingCode, setResendingCode] = useState(false);
+  const [resendError, setResendError] = useState("");
+  const emailIsValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const emailHasFormatError = emailTouched && Boolean(email.trim()) && !emailIsValid;
+  const canContinue = rememberedSession || (emailIsValid && Boolean(password.trim()));
 
   function nextPathAfterSignIn() {
     if (restoreAccount) return "/overview";
@@ -114,6 +142,13 @@ export default function SignIn({ restoreAccount = false }) {
       return;
     }
 
+    if (email.trim() && !emailIsValid) {
+      setEmailTouched(true);
+      setError("");
+      setErrorLink(null);
+      return;
+    }
+
     if (!email.trim() || !password.trim()) {
       setError("Please enter your email and password.");
       return;
@@ -151,7 +186,13 @@ export default function SignIn({ restoreAccount = false }) {
       saveRememberMe(account);
       navigate(nextPathAfterSignIn());
     } catch (requestError) {
-      if (isStudentEmailError(requestError)) {
+      if (isEmailVerificationRequired(requestError)) {
+        sessionStorage.setItem("pendingParentEmail", email.trim());
+        setError("");
+        setErrorLink(null);
+        setResendError("");
+        setShowUnverifiedModal(true);
+      } else if (isStudentEmailError(requestError)) {
         setError("This email belongs to a student account. Please use the student sign-in page.");
       } else if (isEmailNotFoundError(requestError)) {
         setError("No parent account was found with this email.");
@@ -161,6 +202,30 @@ export default function SignIn({ restoreAccount = false }) {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function resendVerificationCode() {
+    if (resendingCode) return;
+    if (unverifiedPreview) {
+      setResendError("Preview only. No verification code was sent.");
+      return;
+    }
+    try {
+      setResendingCode(true);
+      setResendError("");
+      await api("/api/auth/resend-verification", {
+        method: "POST",
+        auth: false,
+        body: { email: email.trim() },
+      });
+      sessionStorage.setItem("pendingParentEmail", email.trim());
+      holdRegistrationPassword(password);
+      navigate("/verify-email", { state: { codeResent: true } });
+    } catch (requestError) {
+      setResendError(requestError.message || "Could not resend the code. Please try again.");
+    } finally {
+      setResendingCode(false);
     }
   }
 
@@ -244,10 +309,13 @@ export default function SignIn({ restoreAccount = false }) {
           autoComplete="username"
           label="Email address"
           type="email"
+          className={emailHasFormatError ? "field-error" : ""}
+          aria-invalid={emailHasFormatError}
           value={email}
           onChange={(event) => {
             const nextEmail = event.target.value;
             setEmail(nextEmail);
+            setEmailTouched(true);
             // Typing another email means signing in to a different account.
             if (
               rememberedSession &&
@@ -263,7 +331,14 @@ export default function SignIn({ restoreAccount = false }) {
             setError("");
             setErrorLink(null);
           }}
+          onBlur={() => setEmailTouched(true)}
         />
+
+        {emailHasFormatError && (
+          <p className="signin-email-error" role="alert">
+            Please enter a valid email address.
+          </p>
+        )}
 
         {rememberedSession ? (
           <>
@@ -311,7 +386,8 @@ export default function SignIn({ restoreAccount = false }) {
 
         {success && (
           <p className="signin-subtitle">
-            {success} <Link to="/sign-in">Sign in</Link>
+            {success}
+            <> <Link to="/sign-in">Sign in</Link></>
           </p>
         )}
 
@@ -343,7 +419,7 @@ export default function SignIn({ restoreAccount = false }) {
         )}
 
         <div className="actions signin-actions">
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || !canContinue}>
             {restoreAccount
               ? isSubmitting
                 ? "Restoring..."
@@ -389,6 +465,47 @@ export default function SignIn({ restoreAccount = false }) {
           </p>
         )}
       </Card>
+      {showUnverifiedModal && (
+        <div className="unverified-modal-overlay" role="presentation">
+          <section
+            className="unverified-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="unverified-title"
+          >
+            <button
+              type="button"
+              className="unverified-modal-close"
+              aria-label="Close"
+              onClick={() => setShowUnverifiedModal(false)}
+            >
+              <X size={20} />
+            </button>
+            <div className="unverified-modal-icon"><MailWarning size={25} /></div>
+            <h2 id="unverified-title">Email not verified</h2>
+            <p>We haven’t verified {email.trim()} yet. Resend the verification code to continue.</p>
+            {resendError && <p className="unverified-modal-error" role="alert">{resendError}</p>}
+            <div className="unverified-modal-actions">
+              <button
+                type="button"
+                className="unverified-resend-button"
+                onClick={resendVerificationCode}
+                disabled={resendingCode}
+              >
+                {resendingCode ? "Sending code…" : "Resend verification code"}
+              </button>
+              <button
+                type="button"
+                className="unverified-cancel-button"
+                onClick={() => setShowUnverifiedModal(false)}
+                disabled={resendingCode}
+              >
+                Cancel
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </AuthLayout>
   );
 }

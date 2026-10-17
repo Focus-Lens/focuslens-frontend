@@ -118,8 +118,9 @@
 }
 
 .notifications-tabs button.active {
-  background: #8138f4;
+  background: var(--focuslens-button-primary-gradient);
   color: #fff;
+  box-shadow: var(--focuslens-button-primary-shadow);
 }
 
 .notifications-mark-all {

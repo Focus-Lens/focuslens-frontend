@@ -8,8 +8,8 @@ import {
   RiEyeLine,
   RiEyeCloseLine,
   RiCheckLine,
-  RiArrowLeftLine,
 } from "react-icons/ri";
+import { ChevronLeft } from "lucide-react";
 
 import "../../css/auth/CreatePassword.css";
 
@@ -84,12 +84,20 @@ export default function CreatePassword() {
           error.status >= 500 ||
           backendMessage.includes("gmail") ||
           backendMessage.includes("smtp") ||
-          backendMessage.includes("verification email");
-        setRequestError(
-          emailDeliveryFailed
-            ? "Unable to send verification email. Please try again later."
-            : error.message,
-        );
+          backendMessage.includes("verification email") ||
+          (error instanceof TypeError && /failed to fetch|network/i.test(backendMessage));
+        if (emailDeliveryFailed) {
+          // The account may have been created before delivery failed. Keep the
+          // email/password so a resend can complete verification and sign in.
+          sessionStorage.setItem("pendingParentEmail", pending?.email || "");
+          holdRegistrationPassword(password);
+          navigate("/verify-email", {
+            replace: true,
+            state: { deliveryError: true },
+          });
+          return;
+        }
+        setRequestError(error.message || "We couldn’t create your account. Please try again.");
       }
     } finally {
       setIsSubmitting(false);
@@ -298,11 +306,11 @@ export default function CreatePassword() {
 
           <button
             type="button"
-            className="back-password-button"
+            className="back-password-button back-button-style"
             onClick={() => navigate(-1)}
             aria-label="Go back"
           >
-            <RiArrowLeftLine />
+            <ChevronLeft size={21} strokeWidth={1.8} />
           </button>
 
           {/* Confirm */}

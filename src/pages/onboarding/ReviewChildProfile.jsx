@@ -177,7 +177,7 @@ export default function ReviewChildProfile() {
               <div className="review-child-actions">
                 <button
                   type="button"
-                  className="review-child-back"
+                  className="review-child-back back-button-style"
                   onClick={() => navigate(returnTo === "waiting" ? "/setup/goal?returnTo=waiting" : "/setup/goal")}
                   aria-label="Go back"
                 >
