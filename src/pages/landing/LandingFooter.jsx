@@ -70,7 +70,7 @@ export default function LandingFooter() {
           </nav>
         </div>
         {columns.map(({ title, links }) => (
-          <div className="landing-footer-column" key={title}>
+          <div className={`landing-footer-column${title === "Legal & account" ? " landing-footer-column--legal" : ""}`} key={title}>
             <h2>{title}</h2>
             {links.map((item) => {
               const [label, href] = Array.isArray(item) ? item : [item, null];
@@ -91,5 +91,3 @@ export default function LandingFooter() {
     </footer>
   );
 }
-
-
