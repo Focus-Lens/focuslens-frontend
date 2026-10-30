@@ -11,6 +11,9 @@ import {
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
+import ChildSwitchLoading from "../../components/ui/ChildSwitchLoading";
+import ChildSwitchError, { ChildNoData } from "../../components/ui/ChildSwitchError";
+import useChildSwitchReload from "../../services/useChildSwitchReload";
 import { api } from "../../services/api";
 import {
   cacheParentChildren,
@@ -125,11 +128,13 @@ export default function StudyGoals() {
   const [pendingChild, setPendingChild] = useState(
     () => findPendingChild(getCachedParentChildren()) || getPendingInvitationForUser(user?.email)
   );
+  const { reloadKey: childSwitchReloadKey, isLoading: isChildSwitchLoading, isError: isChildSwitchError, finishLoading: finishChildSwitchLoading, failLoading: failChildSwitchLoading, retry: retryChildSwitchLoading } = useChildSwitchReload();
 
   useEffect(() => {
     let active = true;
 
     async function loadStudyGoals() {
+      setLoadError("");
       try {
         const children = await api("/api/parents/overview/children");
         if (!active) return;
@@ -161,15 +166,19 @@ export default function StudyGoals() {
       } catch (error) {
         if (active) {
           setLoadError(error.message || "We couldn’t load study goals. Please try again.");
+          failChildSwitchLoading();
         }
       } finally {
-        if (active) setIsLoading(false);
+        if (active) {
+          setIsLoading(false);
+          finishChildSwitchLoading();
+        }
       }
     }
 
     loadStudyGoals();
     return () => { active = false; };
-  }, [user?.email]);
+  }, [user?.email, childSwitchReloadKey, finishChildSwitchLoading, failChildSwitchLoading]);
 
   async function submitGoal(event) {
     event.preventDefault();
@@ -224,6 +233,25 @@ export default function StudyGoals() {
     displayName,
   );
   const percentage = Math.min(100, Math.round(goal?.completionPercentage || 0));
+  const showChildDataEmptyPreview = new URLSearchParams(window.location.search).get("childDataState") === "empty";
+
+  if (isChildSwitchLoading) {
+    return (
+      <div className="study-goals-page-shell">
+        <DashboardHeader activePage="study-goals" />
+        <ParentLayout><ChildSwitchLoading title="Study Goals" /></ParentLayout>
+      </div>
+    );
+  }
+
+  if (isChildSwitchError) {
+    return (
+      <div className="study-goals-page-shell">
+        <DashboardHeader activePage="study-goals" />
+        <ParentLayout><ChildSwitchError title="Study Goals" onRetry={retryChildSwitchLoading} /></ParentLayout>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -270,6 +298,19 @@ export default function StudyGoals() {
       <div className="study-goals-page-shell">
         <DashboardHeader activePage="study-goals" />
         <ParentLayout><StudyGoalsUnavailable childName={pendingChild?.firstName} /></ParentLayout>
+      </div>
+    );
+  }
+
+  if (view === "empty" || showChildDataEmptyPreview) {
+    return (
+      <div className="study-goals-page-shell">
+        <DashboardHeader activePage="study-goals" />
+        <ParentLayout><ChildNoData
+          title="Study Goals"
+          heading="No shared study goals yet"
+          description="This child has not shared a study goal yet. New goal information will appear here; missing information is not a zero score."
+        /></ParentLayout>
       </div>
     );
   }

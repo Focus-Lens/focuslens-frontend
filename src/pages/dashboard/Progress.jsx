@@ -16,6 +16,9 @@ import {
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
+import ChildSwitchLoading from "../../components/ui/ChildSwitchLoading";
+import ChildSwitchError, { ChildNoData } from "../../components/ui/ChildSwitchError";
+import useChildSwitchReload from "../../services/useChildSwitchReload";
 import { api } from "../../services/api";
 import {
   cacheParentChildren,
@@ -63,10 +66,11 @@ export default function Progress() {
   const [progressData, setProgressData] = useState(null);
   const [behaviorData, setBehaviorData] = useState(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const { reloadKey: childSwitchReloadKey, isLoading: isChildSwitchLoading, isError: isChildSwitchError, finishLoading: finishChildSwitchLoading, failLoading: failChildSwitchLoading, retry: retryChildSwitchLoading } = useChildSwitchReload();
   const customRangeReady = isCompleteDate(dateFrom) && isCompleteDate(dateTo) && dateFrom <= dateTo;
 
   useEffect(() => {
-    if (range === "custom" && !customRangeReady) {
+    if (range === "custom" && !customRangeReady && childSwitchReloadKey === 0) {
       setIsLoadingData(false);
       return;
     }
@@ -97,6 +101,11 @@ export default function Progress() {
           setIsLoadingData(false);
           return;
         }
+        if (range === "custom" && !customRangeReady) {
+          setProgressData(null);
+          setBehaviorData(null);
+          return;
+        }
         const rangeQuery = range === "7" ? "Last7Days" : range === "30" ? "Last30Days" : "Custom";
         const params = new URLSearchParams({ studentId: connectedChild.studentId, range: rangeQuery });
         if (range === "custom") {
@@ -109,20 +118,25 @@ export default function Progress() {
           behavioralParams.set("dateTo", dateTo);
         }
         const [progress, behavior] = await Promise.all([
-          api(`/api/progress?${params.toString()}`).catch(() => null),
-          api(`/api/progress/behavioral?${behavioralParams.toString()}`).catch(() => null),
+          api(`/api/progress?${params.toString()}`),
+          api(`/api/progress/behavioral?${behavioralParams.toString()}`),
         ]);
         if (active) {
           setProgressData(progress);
           setBehaviorData(behavior);
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (active) failChildSwitchLoading();
+      })
       .finally(() => {
-        if (active) setIsLoadingData(false);
+        if (active) {
+          setIsLoadingData(false);
+          finishChildSwitchLoading();
+        }
       });
     return () => { active = false; };
-  }, [user?.email, range, dateFrom, dateTo]);
+  }, [user?.email, range, dateFrom, dateTo, childSwitchReloadKey, finishChildSwitchLoading, failChildSwitchLoading]);
 
   const subjects = useMemo(() => (progressData?.subjects || []).map((subject) => {
     const insight = (behaviorData?.subjects || []).find((item) =>
@@ -175,6 +189,25 @@ export default function Progress() {
     return index === 0 || index === pulseDays.length - 1 || index % stride === 0;
   });
   const hasActivity = (progressData?.sessionCount || 0) > 0 || (progressData?.actualStudyMinutes || 0) > 0;
+  const showChildDataEmptyPreview = new URLSearchParams(window.location.search).get("childDataState") === "empty";
+
+  if (isChildSwitchLoading) {
+    return (
+      <div className="progress-page-shell">
+        <DashboardHeader activePage="progress" />
+        <ParentLayout><ChildSwitchLoading title="Progress" /></ParentLayout>
+      </div>
+    );
+  }
+
+  if (isChildSwitchError) {
+    return (
+      <div className="progress-page-shell">
+        <DashboardHeader activePage="progress" />
+        <ParentLayout><ChildSwitchError title="Progress" onRetry={retryChildSwitchLoading} /></ParentLayout>
+      </div>
+    );
+  }
 
   if (!childInfo) {
     return (
@@ -231,45 +264,15 @@ export default function Progress() {
     );
   }
 
-  if (!hasActivity) {
+  if (!hasActivity || showChildDataEmptyPreview) {
     return (
       <div className="progress-page-shell">
         <DashboardHeader activePage="progress" />
-        <ParentLayout>
-          <main className="progress-page progress-empty-connected-page">
-            <header className="progress-heading">
-              <div>
-                <h1>Progress</h1>
-                <p>See how focus quality and study patterns change over time.</p>
-              </div>
-            </header>
-            <section className="progress-connected-empty-card">
-              <div className="progress-empty-intro">
-                <span className="progress-empty-spark"><TrendingUp size={26} strokeWidth={2.1} /></span>
-                <span className="progress-empty-eyebrow">PROGRESS OVERVIEW</span>
-                <h2>{childInfo.firstName || "Your child"}&apos;s progress will grow here</h2>
-                <p>
-                  There&apos;s no shared study activity yet. Once {childInfo.firstName || "your child"} records a session,
-                  this page will show study time, focus quality, and subject progress.
-                </p>
-              </div>
-              <div className="progress-empty-stats" aria-label="Progress summary">
-                <article>
-                  <span>Study time</span>
-                  <b>0<span>m</span></b>
-                </article>
-                <article>
-                  <span>Focus quality</span>
-                  <b className="progress-empty-unavailable">Not available yet</b>
-                </article>
-                <article>
-                  <span>Sessions</span>
-                  <b>0</b>
-                </article>
-              </div>
-            </section>
-          </main>
-        </ParentLayout>
+        <ParentLayout><ChildNoData
+          title="Progress"
+          heading="No shared progress yet"
+          description="This child has not shared study activity yet. New progress information will appear here; missing information is not a zero score."
+        /></ParentLayout>
       </div>
     );
   }
