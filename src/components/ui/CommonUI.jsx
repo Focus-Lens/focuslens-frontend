@@ -72,7 +72,7 @@ export function AuthLayout({
           isOnboardingHeader ? "auth-header-onboarding" : ""
         }`}
       >
-        <Link className="brand" to={isOnboardingHeader ? "/overview" : "/"}>
+        <Link className="brand" to="/">
           <img
             src={logo}
             alt="FocusLens Logo"
