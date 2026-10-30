@@ -950,7 +950,7 @@
 
   .progress-subject-card h2 {
     margin-top: 18px;
-    font-size: 20px;
+    font-size: 21px;
   }
 
   .progress-report-button {
@@ -1193,9 +1193,7 @@
     height: 34px;
   }
 
-  .dashboard-brand span {
-    font-size: 20px;
-  }
+.dashboard-brand span { font-size: 21px; font-weight: 800; letter-spacing: -.55px; }
 
   .dashboard-header-right {
     gap: 7px;

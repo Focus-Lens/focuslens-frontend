@@ -1,0 +1,182 @@
+.payment-attention-shell {
+  min-height: 100vh;
+  background: #fff;
+  color: #29272e;
+  font-family: "Nunito", sans-serif;
+}
+
+.payment-attention-page {
+  width: min(100% - 36px, 1480px);
+  margin: 0 auto;
+  padding: 20px 0 10px;
+  box-sizing: border-box;
+}
+
+.payment-attention-heading h1 {
+  margin: 0;
+  font-size: clamp(20px, 2vw, 25px);
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.payment-attention-heading p {
+  margin: 5px 0 0;
+  color: #77737e;
+  font-size: 11px;
+}
+
+.payment-attention-card {
+  width: min(100%, 620px);
+  height: auto;
+  margin: 24px auto 0;
+  padding: 24px 24px 34px;
+  border: 1px solid #e7e5eb;
+  border-radius: 15px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.payment-past-due-badge {
+  min-height: 20px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: #ffe3e0;
+  color: #b6382d;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.payment-attention-card h2 {
+  margin: 15px 0 12px;
+  font-size: 20px;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+.payment-attention-description {
+  margin: 0;
+  color: #77737e;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.payment-attention-facts {
+  display: grid;
+  gap: 14px;
+  margin: 18px 0 0;
+}
+
+.payment-attention-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 12px;
+}
+
+.payment-attention-facts dt {
+  color: #77737e;
+}
+
+.payment-attention-facts dd {
+  margin: 0;
+  color: #29272e;
+  text-align: right;
+  font-weight: 700;
+}
+
+.payment-family-warning {
+  display: grid;
+  gap: 5px;
+  margin-top: 18px;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: #fff2c5;
+  color: #a84a00;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.payment-family-warning span {
+  color: #8d6a45;
+}
+
+.payment-attention-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.payment-attention-back,
+.payment-attention-resolve {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 15px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 11px;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.payment-attention-back {
+  border: 1px solid #eee8f7;
+  background: #fff;
+  color: #7830dc;
+  box-shadow: 0 4px 10px rgba(60, 23, 100, 0.12);
+}
+
+.payment-attention-resolve {
+  border: 1px solid #8128e8;
+  background: linear-gradient(135deg, #6715d8, #a235f0);
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(118, 33, 209, 0.28);
+}
+
+@media (max-width: 540px) {
+  .payment-attention-page {
+    width: calc(100% - 32px);
+    padding-top: 22px;
+  }
+
+  .payment-attention-card {
+    height: auto;
+    margin-top: 24px;
+    padding: 22px 18px;
+  }
+}
+
+@media (min-width: 761px) and (max-height: 700px) {
+  .payment-attention-page {
+    padding-top: 14px;
+    padding-bottom: 0;
+  }
+
+  .payment-attention-card {
+    margin-top: 18px;
+    padding: 20px 24px 26px;
+  }
+
+  .payment-attention-card h2 {
+    margin: 12px 0 10px;
+  }
+
+  .payment-attention-facts {
+    gap: 11px;
+    margin-top: 14px;
+  }
+
+  .payment-family-warning {
+    margin-top: 14px;
+    padding: 10px 13px;
+  }
+
+  .payment-attention-actions {
+    margin-top: 16px;
+  }
+}
