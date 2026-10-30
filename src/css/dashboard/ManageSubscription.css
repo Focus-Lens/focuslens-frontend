@@ -1,0 +1,612 @@
+.manage-subscription-shell {
+  min-height: 100vh;
+  background: #f9f9fb;
+}
+
+.manage-subscription-page {
+  width: min(100% - 32px, 1450px);
+  margin: 0 auto;
+  padding: 30px 0 44px;
+  color: #29272e;
+  font-family: "Nunito", sans-serif;
+}
+
+.manage-subscription-heading {
+  margin-bottom: 22px;
+}
+
+.manage-subscription-heading h1 {
+  margin: 0;
+  font-size: clamp(23px, 2.3vw, 30px);
+  line-height: 1.2;
+  font-weight: 800;
+  letter-spacing: -0.55px;
+}
+
+.manage-subscription-heading p,
+.manage-subscription-page > p {
+  margin: 7px 0 0;
+  color: #77737e;
+  font-size: 14px;
+}
+
+.manage-subscription-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.manage-left-stack {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.manage-card {
+  min-width: 0;
+  border: 1px solid #e5e3e9;
+  border-radius: 20px;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.current-plan-card {
+  padding: 17px;
+}
+
+.manage-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.manage-card-title-row h2 {
+  margin: 0;
+  color: #302d34;
+  font-size: 18px;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+.manage-status-badge,
+.manage-reset-badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 23px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #dcf8e9;
+  color: #21824a;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.manage-status-badge.scheduled {
+  background: #fff2d6;
+  color: #9a6414;
+}
+
+.manage-plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.manage-plan-price strong {
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.45px;
+}
+
+.manage-plan-price span {
+  color: #7f7b85;
+  font-size: 13px;
+}
+
+.manage-plan-subtitle {
+  margin: 11px 0 12px;
+  color: #77737e;
+  font-size: 13px;
+}
+
+.manage-plan-facts {
+  display: grid;
+  gap: 9px;
+  padding: 10px 0 9px;
+  border-top: 1px solid #ebe9ee;
+}
+
+.manage-plan-facts > div,
+.manage-last-payment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  font-size: 12px;
+}
+
+.manage-plan-facts span,
+.manage-last-payment span {
+  color: #827d88;
+}
+
+.manage-plan-facts strong,
+.manage-last-payment strong {
+  color: #514d57;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.manage-plan-allowance {
+  margin: 0;
+  color: #7541d3;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.manage-plan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 13px;
+}
+
+.manage-plan-actions .manage-primary-button,
+.manage-plan-actions .manage-secondary-button {
+  min-height: 33px;
+  padding: 0 13px;
+  font-size: 11px;
+}
+
+.manage-primary-button,
+.manage-secondary-button,
+.manage-soft-button,
+.manage-danger-button,
+.manage-edit-button {
+  min-height: 39px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.manage-primary-button {
+  background: var(--focuslens-button-primary-gradient);
+  box-shadow: var(--focuslens-button-primary-shadow);
+  color: #ffffff;
+}
+
+.current-plan-card .manage-plan-actions .manage-primary-button {
+  border: 0;
+  box-shadow: 0 9px 20px rgb(105 31 194 / 40%);
+}
+
+.manage-secondary-button,
+.manage-soft-button,
+.manage-edit-button {
+  border-color: #eee9f5;
+  background: #ffffff;
+  box-shadow: 0 3px 12px rgba(78, 48, 118, 0.1);
+  color: #7741da;
+}
+
+.manage-soft-button {
+  min-height: 35px;
+  margin-top: 13px;
+  padding: 0 14px;
+}
+
+.manage-edit-button {
+  min-height: 33px;
+  padding: 0 13px;
+}
+
+.manage-edit-button {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.manage-primary-button:hover,
+.manage-secondary-button:hover,
+.manage-soft-button:hover,
+.manage-edit-button:hover {
+  transform: translateY(-1px);
+}
+
+.manage-danger-button {
+  border-color: #f3d4d4;
+  background: #fff6f6;
+  color: #b64343;
+}
+
+.manage-primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.manage-side-stack {
+  display: grid;
+  grid-template-rows: max-content max-content;
+  align-content: start;
+  gap: 14px;
+}
+
+.payment-method-card,
+.billing-info-card {
+  padding: 16px;
+}
+
+.payment-method-card .manage-card-title-row,
+.billing-info-card .manage-card-title-row {
+  margin-bottom: 14px;
+}
+
+.payment-method-card > strong,
+.billing-info-card > strong {
+  display: block;
+  color: #45414a;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.payment-method-card > p,
+.billing-info-card > p {
+  margin: 8px 0 0;
+  color: #827d88;
+  font-size: 11px;
+}
+
+.manage-last-payment {
+  margin-top: 13px;
+}
+
+.billing-info-card > small {
+  display: block;
+  margin-top: 12px;
+  color: #918c97;
+  font-size: 10px;
+}
+
+.manage-family-callout {
+  margin-top: 12px;
+  padding: 12px 11px;
+  display: grid;
+  gap: 2px;
+  border-radius: 15px;
+  background: #f0e7ff;
+  color: #4e3b6e;
+  font-size: 11px;
+}
+
+.manage-family-callout strong {
+  font-size: 11px;
+}
+
+.manage-family-callout:not(.family-slots-callout) span {
+  font-size: 10px;
+}
+
+.manage-left-stack > .manage-family-callout:not(.family-slots-callout) {
+  margin-top: 8px;
+  min-height: 60px;
+}
+
+.family-slots-callout {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: 6px;
+  padding: 12px 11px;
+}
+
+.family-slots-callout > div {
+  display: grid;
+  gap: 4px;
+}
+
+.family-slots-callout strong {
+  font-size: 11px;
+}
+
+.family-slots-callout > div > span {
+  display: block;
+  color: #81788e;
+  font-size: 10px;
+}
+
+.family-slots-callout .manage-soft-button {
+  margin: 0;
+  justify-self: start;
+  min-height: 33px;
+  padding: 0 13px;
+  font-size: 11px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.usage-card {
+  margin-top: 15px;
+  padding: 20px;
+}
+
+.usage-card > p {
+  margin: 7px 0 13px;
+  color: #817c87;
+  font-size: 11px;
+}
+
+.manage-reset-badge {
+  min-height: 22px;
+  background: #f2f1f4;
+  color: #6f6b75;
+  font-size: 10px;
+}
+
+.manage-usage-child {
+  padding: 13px 15px 11px;
+  border-radius: 15px;
+  background: #f5f5f7;
+}
+
+.manage-usage-children {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.family-usage-children {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.family-usage-children .manage-status-badge {
+  text-transform: capitalize;
+}
+
+.manage-usage-child-heading,
+.manage-meter-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.manage-usage-child-heading {
+  margin-bottom: 11px;
+}
+
+.manage-usage-child-heading > strong {
+  font-size: 12px;
+}
+
+.manage-meter-label {
+  margin-top: 8px;
+  color: #78737e;
+  font-size: 10px;
+}
+
+.manage-meter-label strong {
+  color: #56515c;
+  font-size: 10px;
+}
+
+.manage-meter {
+  height: 5px;
+  margin-top: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e0dfe4;
+}
+
+.manage-meter span {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #8138f4, #a04dff);
+}
+
+.manage-usage-child > small,
+.manage-usage-footnote {
+  display: block;
+  margin-top: 9px;
+  color: #817c87;
+  font-size: 10px;
+}
+
+.manage-usage-footnote {
+  margin: 10px 0 0;
+}
+
+.manage-subscription-notice {
+  margin: 0 0 14px !important;
+  padding: 11px 14px;
+  border: 1px solid #d9efdf;
+  border-radius: 12px;
+  background: #f0fbf3;
+  color: #287345 !important;
+  font-size: 12px !important;
+}
+
+.manage-subscription-empty {
+  padding-top: 70px;
+}
+
+.manage-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  padding: 20px;
+  display: grid;
+  place-items: center;
+  background: rgba(25, 20, 32, 0.48);
+}
+
+.manage-modal {
+  position: relative;
+  width: min(100%, 430px);
+  padding: 28px;
+  box-sizing: border-box;
+  border: 1px solid #e6e1ec;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 22px 70px rgba(30, 19, 48, 0.2);
+}
+
+.manage-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #f4f2f6;
+  color: #716b78;
+  cursor: pointer;
+}
+
+.manage-modal-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #f1e9ff;
+  color: #7839dc;
+}
+
+.manage-modal h2 {
+  margin: 14px 0 8px;
+  color: #302d34;
+  font-size: 20px;
+}
+
+.manage-modal > p,
+.manage-modal form > p {
+  color: #77727d;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.manage-modal form {
+  display: grid;
+  gap: 14px;
+}
+
+.manage-modal form label {
+  display: grid;
+  gap: 7px;
+  color: #615c67;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.manage-modal form label strong {
+  color: #37333c;
+}
+
+.manage-modal input {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #e4e0e9;
+  border-radius: 10px;
+  outline: none;
+  font: inherit;
+}
+
+.manage-modal input:focus {
+  border-color: #9d6be9;
+  box-shadow: 0 0 0 3px rgba(129, 56, 244, 0.11);
+}
+
+.manage-modal-note {
+  margin: -5px 0 0;
+  font-size: 10px !important;
+}
+
+.manage-modal-actions {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+@media (max-width: 820px) {
+  .manage-subscription-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .manage-side-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto;
+  }
+
+  .family-usage-children {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .manage-subscription-page {
+    width: min(100% - 28px, 1180px);
+    padding-top: 23px;
+  }
+
+  .current-plan-card,
+  .payment-method-card,
+  .billing-info-card,
+  .usage-card {
+    padding: 17px;
+  }
+
+  .manage-side-stack {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .family-usage-children {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .family-slots-callout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .manage-plan-actions > * {
+    flex: 1 1 auto;
+  }
+
+  .manage-card-title-row h2 {
+    font-size: 16px;
+  }
+
+  .manage-last-payment {
+    align-items: flex-start;
+  }
+
+  .manage-last-payment strong {
+    max-width: 58%;
+  }
+
+  .manage-modal-actions > * {
+    flex: 1 1 100%;
+  }
+}

@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import ChildProfileModal from "../../components/ui/ChildProfileModal";
 import DashboardHeader from "../../components/ui/DashboardHeader";
+import ChildSwitchLoading from "../../components/ui/ChildSwitchLoading";
+import ChildSwitchError, { ChildNoData } from "../../components/ui/ChildSwitchError";
+import useChildSwitchReload from "../../services/useChildSwitchReload";
 import { api } from "../../services/api";
 import { mapParentDashboard, mapParentStudyGoals } from "../../services/parentDashboard";
-import { cacheParentChildren, cacheStudentPreferredName, findConnectedChild, findPendingChild, getCachedParentChildren } from "../../services/parentChildrenCache";
+import { cacheParentChildren, cacheStudentPreferredName, findConnectedChild, findPendingChild, getActiveParentChildId, getCachedParentChildren, isConnectedParentChild } from "../../services/parentChildrenCache";
 import { getStudentDisplayName } from "../../services/studentDisplayName";
 import { useChildProfile } from "../../context/useChildProfile";
 import { clearChildInvitationDraft } from "../../services/childInvitationDraft";
@@ -53,56 +56,118 @@ function ChildrenUnavailable({ onAction }) {
   );
 }
 
-export default function Children() {
+const previewChildren = [
+  { studentId: "preview-youssef", preferredName: "Youssef", grade: "Grade 10", status: "Connected" },
+  { id: "preview-salma-invitation", preferredName: "Salma", grade: "Grade 8", type: "ChildSetup", childSetupInvitationStatus: "Pending" },
+  { studentId: "preview-omar", preferredName: "Omar", grade: "Grade 5", status: "Paused" },
+];
+
+const previewChildDetails = {
+  "preview-youssef": { preferredName: "Youssef", grade: "Grade 10" },
+  "preview-salma": { preferredName: "Salma", grade: "Grade 8" },
+  "preview-omar": { preferredName: "Omar", grade: "Grade 5" },
+};
+
+export default function Children({ previewOnly = false }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { resetChild } = useChildProfile();
-  const [childInfo, setChildInfo] = useState(() => findConnectedChild(getCachedParentChildren()));
-  const [pendingChild, setPendingChild] = useState(() => findPendingChild(getCachedParentChildren()));
+  const [children, setChildren] = useState(() => previewOnly ? previewChildren : getCachedParentChildren() || []);
+  const [selectedChildId, setSelectedChildId] = useState(() => {
+    const firstChild = findConnectedChild(previewOnly ? previewChildren : getCachedParentChildren());
+    return firstChild?.studentId ? String(firstChild.studentId) : "";
+  });
   const [studentDetails, setStudentDetails] = useState(null);
   const [dashboard, setDashboard] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!previewOnly);
+  const { reloadKey: childSwitchReloadKey, isLoading: isChildSwitchLoading, isError: isChildSwitchError, finishLoading: finishChildSwitchLoading, failLoading: failChildSwitchLoading, retry: retryChildSwitchLoading } = useChildSwitchReload(!previewOnly);
   const [showProfile, setShowProfile] = useState(false);
   const [showCancel, setShowCancel] = useState(false);
   const [feedback, setFeedback] = useState(null);
   const feedbackTimer = useRef(null);
 
   useEffect(() => {
+    const syncActiveChild = () => setSelectedChildId(getActiveParentChildId());
+    window.addEventListener("focuslens:active-child-changed", syncActiveChild);
+    return () => window.removeEventListener("focuslens:active-child-changed", syncActiveChild);
+  }, []);
+
+  useEffect(() => {
+    if (previewOnly) return undefined;
     let active = true;
     api("/api/parents/overview/children")
-      .then(async (children) => {
+      .then((nextChildren) => {
         if (!active) return;
-        cacheParentChildren(children);
-        const connectedChild = findConnectedChild(children);
-        setChildInfo(connectedChild);
-        setPendingChild(findPendingChild(children));
-        if (connectedChild?.studentId) {
-          const [details, dashboardData, goalsData] = await Promise.all([
-            api(`/api/access/students/${connectedChild.studentId}`).catch(() => null),
-            api(`/api/parents/students/${connectedChild.studentId}/dashboard`).catch(() => null),
-            api(`/api/parents/students/${connectedChild.studentId}/study-goals`).catch(() => null),
-          ]);
-          if (active) {
-            setStudentDetails(details);
-            setDashboard({ ...mapParentDashboard(dashboardData), ...mapParentStudyGoals(goalsData) });
-            if (details?.preferredName) {
-              cacheStudentPreferredName(connectedChild.studentId, details.preferredName);
-            }
-          }
-        }
+        cacheParentChildren(nextChildren);
+        setChildren(nextChildren);
+        const firstConnectedChild = findConnectedChild(nextChildren);
+        setSelectedChildId((currentId) => (
+          nextChildren.some((item) => isConnectedParentChild(item) && String(item.studentId || "") === currentId)
+            ? currentId
+            : String(firstConnectedChild?.studentId || "")
+        ));
       })
-      .catch(() => {})
+      .catch(() => {
+        if (active) failChildSwitchLoading();
+      })
       .finally(() => {
         if (active) setIsLoading(false);
       });
     return () => { active = false; };
-  }, []);
+  }, [previewOnly, childSwitchReloadKey, failChildSwitchLoading]);
 
+  const connectedChildren = children.filter(isConnectedParentChild);
+  const childInfo = connectedChildren.find((item) => String(item.studentId) === selectedChildId)
+    || connectedChildren[0]
+    || null;
+  const pendingChild = findPendingChild(children);
   const isConnected = Boolean(childInfo?.studentId);
   const isPending = !isConnected && Boolean(pendingChild);
   const child = buildChildView(studentDetails, childInfo, pendingChild, dashboard);
   const childImage = useChildSetupImage(
     pendingChild?.childSetupDraftId || childInfo?.childSetupDraftId,
   );
+  const previewChildrenError = previewOnly && new URLSearchParams(location.search).get("childrenState") === "error";
+  const showChildDataEmptyPreview = new URLSearchParams(window.location.search).get("childDataState") === "empty";
+  const headerPreview = previewOnly
+    ? { previewOnly: true, subscription: { planId: "family" }, children, child: childInfo, childrenError: previewChildrenError }
+    : null;
+
+  useEffect(() => {
+    if (!childInfo?.studentId) {
+      setStudentDetails(null);
+      setDashboard(null);
+      return undefined;
+    }
+
+    if (previewOnly) {
+      setStudentDetails(previewChildDetails[String(childInfo.studentId)] || null);
+      setDashboard(null);
+      return undefined;
+    }
+
+    let active = true;
+    const studentId = childInfo.studentId;
+    setStudentDetails(null);
+    setDashboard(null);
+    Promise.all([
+      api(`/api/access/students/${studentId}`),
+      api(`/api/parents/students/${studentId}/dashboard`),
+      api(`/api/parents/students/${studentId}/study-goals`),
+    ]).then(([details, dashboardData, goalsData]) => {
+      if (!active) return;
+      setStudentDetails(details);
+      setDashboard({ ...mapParentDashboard(dashboardData), ...mapParentStudyGoals(goalsData) });
+      if (details?.preferredName) {
+        cacheStudentPreferredName(studentId, details.preferredName);
+      }
+    }).catch(() => {
+      if (active) failChildSwitchLoading();
+    }).finally(() => {
+      if (active) finishChildSwitchLoading();
+    });
+    return () => { active = false; };
+  }, [childInfo?.studentId, previewOnly, childSwitchReloadKey, finishChildSwitchLoading, failChildSwitchLoading]);
 
   function showFeedback(type) {
     window.clearTimeout(feedbackTimer.current);
@@ -138,9 +203,11 @@ export default function Children() {
     try {
       await api(`/api/parents/child-setups/${pendingChild.childSetupDraftId || pendingChild.id}/invite/cancel`, { method: "POST" });
       const cancelledId = pendingChild.childSetupDraftId || pendingChild.id;
-      cacheParentChildren((getCachedParentChildren() || []).filter((item) =>
+      const remainingChildren = (getCachedParentChildren() || []).filter((item) =>
         (item.childSetupDraftId || item.id) !== cancelledId,
-      ));
+      );
+      cacheParentChildren(remainingChildren);
+      setChildren(remainingChildren);
       clearPendingInvitation();
       clearChildInvitationDraft();
       resetChild();
@@ -163,11 +230,29 @@ export default function Children() {
       )
     : 0;
 
+  if (isChildSwitchLoading) {
+    return (
+      <div className="children-page-shell">
+        <DashboardHeader activePage="children" previewData={headerPreview} />
+        <ParentLayout><ChildSwitchLoading title="Children" /></ParentLayout>
+      </div>
+    );
+  }
+
+  if (isChildSwitchError) {
+    return (
+      <div className="children-page-shell">
+        <DashboardHeader activePage="children" previewData={headerPreview} />
+        <ParentLayout><ChildSwitchError title="Children" onRetry={retryChildSwitchLoading} /></ParentLayout>
+      </div>
+    );
+  }
+
   if (!childInfo && !pendingChild) {
     if (isLoading) {
       return (
         <div className="children-page-shell">
-          <DashboardHeader activePage="children" />
+          <DashboardHeader activePage="children" previewData={headerPreview} />
           <ParentLayout>
             <main className="children-page" aria-busy="true">
               <header className="children-heading">
@@ -180,7 +265,7 @@ export default function Children() {
     }
     return (
       <div className="children-page-shell">
-        <DashboardHeader activePage="children" />
+        <DashboardHeader activePage="children" previewData={headerPreview} />
         <ParentLayout>
           <ChildrenUnavailable onAction={() => navigate("/choose-start")} />
         </ParentLayout>
@@ -191,7 +276,7 @@ export default function Children() {
   if (isLoading) {
     return (
       <div className="children-page-shell">
-        <DashboardHeader activePage="children" />
+        <DashboardHeader activePage="children" previewData={headerPreview} />
         <ParentLayout>
           <main className="children-page" aria-busy="true">
             <header className="children-heading">
@@ -203,9 +288,22 @@ export default function Children() {
     );
   }
 
+  if (isConnected && (!studentDetails || showChildDataEmptyPreview)) {
+    return (
+      <div className="children-page-shell">
+        <DashboardHeader activePage="children" previewData={headerPreview} />
+        <ParentLayout><ChildNoData
+          title="Children"
+          heading="No shared child profile yet"
+          description="This child has not shared profile information yet. Choose another child to see their available details."
+        /></ParentLayout>
+      </div>
+    );
+  }
+
   return (
     <div className="children-page-shell">
-      <DashboardHeader activePage="children" />
+      <DashboardHeader activePage="children" previewData={headerPreview} />
 
       <ParentLayout>
         <main className="children-page">
@@ -511,6 +609,19 @@ export default function Children() {
                   </section>
                 </div>
               </div>
+
+              {!previewOnly && (
+                <footer className="children-add-footer">
+                  <button
+                    type="button"
+                    className="children-add-button"
+                    onClick={() => navigate("/choose-start")}
+                  >
+                    <Plus size={18} strokeWidth={2.4} aria-hidden="true" />
+                    Add another child
+                  </button>
+                </footer>
+              )}
             </>
           )}
 

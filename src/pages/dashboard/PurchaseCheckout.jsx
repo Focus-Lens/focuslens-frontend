@@ -25,7 +25,7 @@ export default function PurchaseCheckout({ previewOnly = false }) {
 
   return (
     <div className="purchase-checkout-shell">
-      <DashboardHeader activePage="children" previewData={previewData} />
+      <DashboardHeader activePage="payment" previewData={previewData} />
       <main className="purchase-checkout-page">
         <header className="purchase-checkout-heading">
           <h1>Complete your purchase</h1>

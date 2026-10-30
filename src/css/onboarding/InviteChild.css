@@ -28,17 +28,17 @@
 .invite-brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 9px;
   color: #24232a;
-  font-size: 24px;
-  font-weight: 700;
-  letter-spacing: -0.6px;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -.55px;
   text-decoration: none;
 }
 
 .invite-brand img {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   object-fit: contain;
 }
 
@@ -462,15 +462,9 @@
     padding: 0 18px;
   }
 
-  .invite-brand {
-    gap: 7px;
-    font-size: 18px;
-  }
+.invite-brand { display: inline-flex; align-items: center; gap: 6px; color: #24232a; font-size: 18px; font-weight: 800; letter-spacing: -.55px; text-decoration: none; }
 
-  .invite-brand img {
-    width: 30px;
-    height: 30px;
-  }
+.invite-brand img { width: 30px; height: 30px; object-fit: contain; }
 
   .invite-parent-profile {
     min-height: 30px;

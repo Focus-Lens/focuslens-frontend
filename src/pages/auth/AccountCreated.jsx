@@ -1,11 +1,19 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
 import { useAuth } from "../../context/useAuth";
+import { getPaidPlanCheckoutPath } from "../../data/subscriptionPlans";
 import { markSetupDeferred } from "../../services/setupDeferral";
+import logo from "../../assets/logo.png";
 import "../../css/auth/AccountCreated.css"
 export default function AccountCreated() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const checkoutPath = getPaidPlanCheckoutPath();
+
+  useEffect(() => {
+    if (checkoutPath) navigate(checkoutPath, { replace: true });
+  }, [checkoutPath, navigate]);
 
   function handleContinue() {
     // ChooseStart enables the invitation path when an invitation is present,
@@ -26,7 +34,7 @@ export default function AccountCreated() {
 
         <div className="account-created-logo">
           <img
-            src="/images/Focuslens logo animation - success 2.png"
+            src={logo}
             alt="FocusLens"
           />
         </div>
@@ -57,3 +65,4 @@ export default function AccountCreated() {
 </AuthLayout>
   );
 }
+

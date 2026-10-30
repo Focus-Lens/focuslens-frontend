@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { CalendarDays, Check, CreditCard, Crown, LockKeyhole, RefreshCw, ShieldCheck, Smartphone, Upload } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import DashboardHeader from "../../components/ui/DashboardHeader";
 import { dashboardMockData } from "../../data/mockData";
-import { getPlanPrice, planCatalog, readPlanSelection } from "../../data/subscriptionPlans";
+import { getPlanPrice, planCatalog, readPlanSelection, saveActiveSubscription } from "../../data/subscriptionPlans";
 import visaLogo from "../../assets/payments/visa.svg";
 import mastercardLogo from "../../assets/payments/mastercard.svg";
 import meezaLogo from "../../assets/payments/meeza.svg";
 import vodafoneCashLogo from "../../assets/payments/vodafone-cash.svg";
 import vodafoneCashIcon from "../../assets/payments/vodafone-cash-icon.svg";
 import orangeCashLogo from "../../assets/payments/orange-cash.svg";
-import etisalatCashLogo from "../../assets/payments/etisalat-cash.svg";
+import etisalatLogo from "../../assets/payments/etisalat-logo.png";
 import paymentPendingArt from "../../assets/payments/payment-pending.svg";
 import paymentSuccessArt from "../../assets/payments/payment-success.svg";
 import paymentFailedArt from "../../assets/payments/payment-failed.svg";
@@ -46,7 +46,7 @@ const paymentMethods = [
     id: "etisalat",
     title: "Etisalat Cash",
     description: "Pay using your Etisalat Cash wallet",
-    providerLogo: etisalatCashLogo,
+    providerLogo: etisalatLogo,
     walletLabel: 'etisalat cash',
   },
 ];
@@ -63,6 +63,7 @@ function getRenewalDate(value, billingCycle) {
 }
 
 export default function SecurePayment({ previewOnly = false }) {
+  const [params] = useSearchParams();
 const requestedCardStatus = previewOnly ? new URLSearchParams(window.location.search).get("card-status") : null;
   const forcedCardStatus = ["success", "pending", "failed"].includes(requestedCardStatus) ? requestedCardStatus : null;
   const [selectedMethod, setSelectedMethod] = useState(() => (forcedCardStatus ? "card" : null));
@@ -77,9 +78,14 @@ const requestedCardStatus = previewOnly ? new URLSearchParams(window.location.se
   const [receiptPreview, setReceiptPreview] = useState("");
   const [receiptName, setReceiptName] = useState("");
   const [paymentUnderReview, setPaymentUnderReview] = useState(false);
+  const managingPaymentMethod = params.get("from") === "manage-payment";
   const selection = readPlanSelection();
-  const plan = planCatalog.find((item) => item.id === selection?.planId && item.id !== "free") || planCatalog[1];
-  const billingCycle = selection?.billingCycle || "monthly";
+  const requestedPlanId = params.get("plan") || selection?.planId;
+  const plan = planCatalog.find((item) => item.id === requestedPlanId && item.id !== "free") || planCatalog[1];
+  const requestedCycle = params.get("cycle");
+  const billingCycle = requestedCycle === "monthly" || requestedCycle === "yearly"
+    ? requestedCycle
+    : selection?.billingCycle || "monthly";
   const price = getPlanPrice(plan, billingCycle);
   const cardholderValid = cardholderInput.trim().split(/\s+/).filter(Boolean).length >= 4;
   const cardDigits = cardNumberInput.replace(/\D/g, "");
@@ -93,11 +99,18 @@ const requestedCardStatus = previewOnly ? new URLSearchParams(window.location.se
   const cardFormValid = cardholderValid && cardNumberValid && expiryValid && securityCodeValid;
   const previewData = previewOnly
     ? {
+        previewOnly: true,
+        subscription: { planId: plan.id, billingCycle, status: "active" },
         parent: { firstName: dashboardMockData.profile.fullName.split(/\s+/)[0] },
         child: { preferredName: dashboardMockData.child.preferredName, grade: "Grade 10" },
       }
     : null;
-  const backPath = previewOnly ? "/checkout-preview" : "/checkout";
+  const backPath = managingPaymentMethod
+    ? (previewOnly ? `/manage-payment-method-preview?plan=${plan.id}` : `/manage-payment-method?plan=${plan.id}`)
+    : (previewOnly ? "/checkout-preview" : "/checkout");
+  const completionPath = managingPaymentMethod
+    ? (previewOnly ? (plan.id === "family" ? "/manage-subscription-family-preview" : "/manage-subscription-preview") : "/manage-subscription")
+    : "/overview";
 
   function chooseMethod(methodId) {
     setSelectedMethod(methodId);
@@ -127,9 +140,23 @@ const requestedCardStatus = previewOnly ? new URLSearchParams(window.location.se
     if (selectedMethod === "card") setShowCardForm(true);
   }
 
+  function activateSubscription(record = cardPaymentRecord) {
+    if (previewOnly) return;
+    const paidAt = record?.paidAt || new Date();
+    saveActiveSubscription({
+      planId: plan.id,
+      billingCycle,
+      status: "active",
+      paidAt: paidAt.toISOString(),
+      nextRenewalAt: getRenewalDate(paidAt, billingCycle).toISOString(),
+      paymentBrand: "Visa",
+      lastFour: record?.lastFour || "4242",
+    });
+  }
+
   return (
     <div className="secure-payment-shell">
-      <DashboardHeader activePage="children" previewData={previewData} />
+      <DashboardHeader activePage="payment" previewData={previewData} />
       <main className="secure-payment-page">
         <header className="secure-payment-heading">
           <h1>Secure payment</h1>
@@ -165,7 +192,7 @@ const requestedCardStatus = previewOnly ? new URLSearchParams(window.location.se
                     {id === "card" && <CreditCard size={18} strokeWidth={2.1} />}
                     {id === "vodafone" && <img className="secure-payment-brand-mark vodafone-brand-mark" src={vodafoneCashIcon} alt="" />}
                     {id === "orange" && <span className="orange-mark" aria-hidden="true">orange</span>}
-                    {id === "etisalat" && <img className="secure-payment-brand-mark" src={etisalatCashLogo} alt="" />}
+                    {id === "etisalat" && <img className="secure-payment-brand-mark" src={etisalatLogo} alt="" />}
                   </span>
                   <span className="secure-payment-copy">
                     <strong>{title}</strong>
@@ -200,7 +227,9 @@ const requestedCardStatus = previewOnly ? new URLSearchParams(window.location.se
                   setCardFieldTouched({ cardholder: true, cardNumber: true, expiry: true, securityCode: true });
                   return;
                 }
-                setCardPaymentRecord({ paidAt, lastFour: cardNumber.slice(-4) || "4242" });
+                const paymentRecord = { paidAt, lastFour: cardNumber.slice(-4) || "4242" };
+                setCardPaymentRecord(paymentRecord);
+                activateSubscription(paymentRecord);
                 setCardPaymentStatus("success");
               }}
             >
@@ -308,7 +337,7 @@ const requestedCardStatus = previewOnly ? new URLSearchParams(window.location.se
                   <div><span><span className="card-payment-summary-icon"><CalendarDays size={15} /></span>Renewal date</span><strong>{formatPaymentDate(getRenewalDate(cardPaymentRecord?.paidAt || new Date(), billingCycle))}</strong></div>
                   <div><span><span className="card-payment-summary-icon"><ShieldCheck size={15} /></span>Payment method</span><strong>•••• {cardPaymentRecord?.lastFour || "4242"}</strong></div>
                 </div>
-                <Link className="card-payment-modal-primary" to="/overview">Go to Dashboard</Link>
+                <Link className="card-payment-modal-primary" to={completionPath}>{managingPaymentMethod ? "Back to billing" : "Go to Dashboard"}</Link>
               </>
             )}
 
@@ -322,8 +351,8 @@ const requestedCardStatus = previewOnly ? new URLSearchParams(window.location.se
                   <div><span><span className="card-payment-summary-icon"><CreditCard size={15} /></span>Amount</span><strong>{price.toLocaleString("en-US")} EGP</strong></div>
                 </div>
                 <div className="card-payment-modal-actions">
-                  <button className="card-payment-modal-primary" type="button" onClick={() => setCardPaymentStatus("success")}><RefreshCw size={14} /> Refresh Status</button>
-                  <Link className="card-payment-modal-secondary" to="/overview">Back to Dashboard</Link>
+                  <button className="card-payment-modal-primary" type="button" onClick={() => { activateSubscription(); setCardPaymentStatus("success"); }}><RefreshCw size={14} /> Refresh Status</button>
+                  <Link className="card-payment-modal-secondary" to={completionPath}>{managingPaymentMethod ? "Back to billing" : "Back to Dashboard"}</Link>
                 </div>
               </>
             )}

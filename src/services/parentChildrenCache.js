@@ -1,4 +1,23 @@
 const cacheKey = "focusLensOverviewChildren";
+const activeChildKey = "focusLensActiveParentChildId";
+
+export function getActiveParentChildId() {
+  try {
+    return sessionStorage.getItem(activeChildKey) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setActiveParentChild(studentId) {
+  if (!studentId) return;
+  try {
+    sessionStorage.setItem(activeChildKey, String(studentId));
+    window.dispatchEvent(new Event("focuslens:active-child-changed"));
+  } catch {
+    // Keep the current page usable if browser storage is unavailable.
+  }
+}
 
 function currentParentEmail() {
   try {
@@ -52,8 +71,53 @@ export function cacheStudentPreferredName(studentId, preferredName) {
   ));
 }
 
+function parentChildStatuses(child) {
+  return [
+    child?.connectionStatus,
+    child?.relationshipStatus,
+    child?.parentConnectionStatus,
+    child?.accessStatus,
+    child?.invitationStatus,
+    child?.childSetupInvitationStatus,
+    child?.status,
+    child?.relationship?.status,
+    child?.connection?.status,
+    child?.access?.status,
+  ]
+    .filter((value) => typeof value === "string")
+    .map((value) => value.toLowerCase().replace(/[^a-z]/g, ""));
+}
+
+export function isPausedParentChild(child) {
+  return Boolean(
+    child?.isPaused ||
+    child?.isConnectionPaused ||
+    child?.pausedAtUtc ||
+    parentChildStatuses(child).some((status) => status.includes("paused") || status.includes("suspended")),
+  );
+}
+
+export function isPendingParentChild(child) {
+  const statuses = parentChildStatuses(child);
+  return Boolean(
+    (!child?.studentId && child?.type === "ChildSetup" && child?.childSetupInvitationStatus === "Pending") ||
+    statuses.some((status) =>
+      status.includes("pending") || status.includes("awaitingchildapproval") || status.includes("awaitingapproval")
+    ),
+  );
+}
+
+export function isConnectedParentChild(child) {
+  return Boolean(child?.studentId) && !isPausedParentChild(child) && !isPendingParentChild(child);
+}
+
 export function findConnectedChild(children) {
-  return children?.find((item) => item.studentId) || null;
+  const activeStudentId = getActiveParentChildId();
+  return (
+    children?.find((item) => isConnectedParentChild(item) && String(item.studentId) === activeStudentId) ||
+    children?.find(isConnectedParentChild) ||
+    null
+  );
 }
 
 export function findPendingChild(children) {

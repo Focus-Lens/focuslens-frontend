@@ -333,68 +333,6 @@
   min-height: 198px;
 }
 
-.profile-payment-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.profile-payment-copy {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  min-width: 0;
-}
-
-.profile-payment-icon {
-  display: grid;
-  flex: 0 0 42px;
-  width: 42px;
-  height: 42px;
-  place-items: center;
-  border-radius: 13px;
-  background: #f1e9ff;
-  color: #7d39eb;
-}
-
-.profile-payment-copy h2 {
-  margin: 0;
-  color: #302b34;
-  font-family: "Nunito", sans-serif;
-  font-size: 17px;
-}
-
-.profile-payment-copy p {
-  margin: 5px 0 0;
-  color: #817b87;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.profile-payment-button {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  gap: 9px;
-  min-height: 42px;
-  padding: 0 18px;
-  border-radius: 999px;
-  background: var(--focuslens-button-primary-gradient);
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 600;
-  text-decoration: none;
-  box-shadow: var(--focuslens-button-primary-shadow);
-  transition: transform 160ms ease, background 160ms ease;
-}
-
-.profile-payment-button:hover {
-  background: var(--focuslens-button-primary-hover-gradient);
-  transform: translateY(-1px);
-}
-
 .profile-row,
 .profile-toggle-row {
   display: flex;
@@ -1101,17 +1039,6 @@
 
   .profile-card-heading {
     gap: 14px;
-  }
-
-  .profile-payment-card {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 16px;
-  }
-
-  .profile-payment-button {
-    width: 100%;
-    box-sizing: border-box;
   }
 
   .profile-primary-button {

@@ -20,6 +20,9 @@ import {
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
+import ChildSwitchLoading from "../../components/ui/ChildSwitchLoading";
+import ChildSwitchError, { ChildNoData } from "../../components/ui/ChildSwitchError";
+import useChildSwitchReload from "../../services/useChildSwitchReload";
 import { useAuth } from "../../context/useAuth";
 import { api } from "../../services/api";
 import { durationToMinutes, mapParentDashboard, mapParentStudyGoals } from "../../services/parentDashboard";
@@ -62,6 +65,7 @@ export default function Overview() {
   // browser (e.g. a cancelled invitation) show without a manual refresh.
   const tabReturnCount = useTabReturnRefresh();
   const userKey = user?.userId || user?.id;
+  const { reloadKey: childSwitchReloadKey, isLoading: isChildSwitchLoading, isError: isChildSwitchError, finishLoading: finishChildSwitchLoading, failLoading: failChildSwitchLoading, retry: retryChildSwitchLoading } = useChildSwitchReload();
 
   useEffect(() => {
     let active = true;
@@ -139,10 +143,15 @@ export default function Overview() {
       setSessionHistory(data.history?.sessions || data.dashboardData.recentStudySessions || []);
       setSessionPagination(data.history?.pagination || null);
     }).catch(() => {
-      if (active) setIsChildrenLoaded(true);
+      if (active) {
+        setIsChildrenLoaded(true);
+        failChildSwitchLoading();
+      }
+    }).finally(() => {
+      if (active) finishChildSwitchLoading();
     });
     return () => { active = false; };
-  }, [user?.email, userKey, tabReturnCount, dashboardRefreshKey]);
+  }, [user?.email, userKey, tabReturnCount, dashboardRefreshKey, childSwitchReloadKey, finishChildSwitchLoading, failChildSwitchLoading]);
 
   async function changeOverviewWeek(weekStart) {
     if (!childInfo?.studentId || !weekStart || weekStart === overviewWeekStart) return;
@@ -238,6 +247,25 @@ export default function Overview() {
     (pulse?.actualStudyMinutes || 0) > 0 ||
     dashboard?.focusQuality != null ||
     Boolean(goal);
+  const showChildDataEmptyPreview = new URLSearchParams(window.location.search).get("childDataState") === "empty";
+
+  if (isChildSwitchLoading) {
+    return (
+      <div className="overview-page">
+        <DashboardHeader activePage="overview" />
+        <ParentLayout><ChildSwitchLoading title="Overview" /></ParentLayout>
+      </div>
+    );
+  }
+
+  if (isChildSwitchError) {
+    return (
+      <div className="overview-page">
+        <DashboardHeader activePage="overview" />
+        <ParentLayout><ChildSwitchError title="Overview" onRetry={retryChildSwitchLoading} /></ParentLayout>
+      </div>
+    );
+  }
 
   if (!isChildrenLoaded) {
     return (
@@ -302,86 +330,15 @@ export default function Overview() {
 
   // A connection only gives the parent permission to see shared data. Until the
   // child records a session, never populate this view with sample statistics.
-  if (!hasStudyData) {
+  if (!hasStudyData || showChildDataEmptyPreview) {
     return (
       <div className="overview-page">
         <DashboardHeader activePage="overview" />
-        <ParentLayout>
-          <main className="overview-content">
-            <header className="overview-heading">
-              <h1>Welcome, {user?.firstName || "Parent"}</h1>
-              <p>
-                {childName} is connected. Shared study activity will appear
-                here.
-              </p>
-            </header>
-
-            <section className="overview-metrics">
-              <article className="overview-metric-card">
-                <CardTitle
-                  icon={<LineChart size={17} />}
-                  title="Weekly Study Pulse & Trend"
-                  subtitle="Cumulative focus rhythm"
-                />
-                <div className="overview-card-empty">
-                  <img className="overview-empty-mascot" src={logo} alt="" />
-                  <h2>A fresh start for {childName}</h2>
-                  <p>
-                    Once {childName} records and shares a study session, their
-                    weekly study rhythm will appear here.
-                  </p>
-                </div>
-              </article>
-
-              <article className="overview-metric-card">
-                <CardTitle
-                  icon={<img src={elementIcon} alt="" />}
-                  title="Focus pattern"
-                  subtitle="Recorded session density by time block"
-                />
-                <div className="overview-card-empty">
-                  <img
-                    className="overview-empty-pattern-icon"
-                    src={elementIcon}
-                    alt=""
-                  />
-                  <h2>Patterns take a little time</h2>
-                  <p>
-                    As shared sessions build up, you&apos;ll see when {childName}
-                    tends to study. AI insights need recorded activity first.
-                  </p>
-                </div>
-              </article>
-
-              <article className="overview-metric-card">
-                <CardTitle icon={<Flag size={17} />} title="Active Goal" />
-                <div className="overview-card-empty">
-                  <Flag size={38} />
-                  <h2>No shared goal yet</h2>
-                  <p>Suggest a gentle study-time goal. {childName} stays in control of accepting it.</p>
-                  <Link to="/study-goals" state={{ openCreateGoal: true }} className="button">Suggest a goal</Link>
-                </div>
-              </article>
-            </section>
-
-            <section className="overview-sessions">
-              <CardTitle
-                icon={<BookOpenCheck size={17} />}
-                title="Recent study sessions"
-                subtitle={`Verified study session records shared by ${childName}`}
-              />
-              <div className="overview-sessions-empty">
-                <BookOpenCheck size={38} />
-                <h2>No study sessions shared yet</h2>
-                <p>
-                  Sessions will appear here when {childName} records them and
-                  chooses to share them with you.
-                </p>
-                <small>They stay in control of what you can see.</small>
-              </div>
-            </section>
-          </main>
-        </ParentLayout>
+        <ParentLayout><ChildNoData
+          title="Overview"
+          heading="No shared study data yet"
+          description="This child has not shared study activity yet. New shared sessions will appear here; missing information is not a zero score."
+        /></ParentLayout>
       </div>
     );
   }

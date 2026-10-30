@@ -16,6 +16,9 @@ import {
 
 import { ParentLayout } from "../../components/ui/CommonUI";
 import DashboardHeader from "../../components/ui/DashboardHeader";
+import ChildSwitchLoading from "../../components/ui/ChildSwitchLoading";
+import ChildSwitchError, { ChildNoData } from "../../components/ui/ChildSwitchError";
+import useChildSwitchReload from "../../services/useChildSwitchReload";
 import { api } from "../../services/api";
 import {
   cacheParentChildren,
@@ -45,7 +48,9 @@ export default function Reports() {
   );
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const showChildDataEmptyPreview = new URLSearchParams(window.location.search).get("childDataState") === "empty";
   const sessionsPerPage = 4;
+  const { reloadKey: childSwitchReloadKey, isLoading: isChildSwitchLoading, isError: isChildSwitchError, finishLoading: finishChildSwitchLoading, failLoading: failChildSwitchLoading, retry: retryChildSwitchLoading } = useChildSwitchReload();
 
   const filteredSessions = useMemo(() => {
     return sessions.filter((session) => {
@@ -100,7 +105,7 @@ export default function Reports() {
         if (connectedChild?.studentId) {
           const history = await api(
             `/api/reports/sessions?studentId=${encodeURIComponent(connectedChild.studentId)}&page=1&pageSize=100`,
-          ).catch(() => null);
+          );
           if (active) {
             setSessions((history?.items || []).map(mapSession));
           }
@@ -108,15 +113,36 @@ export default function Reports() {
           setSessions([]);
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (active) failChildSwitchLoading();
+      })
       .finally(() => {
         if (!active) return;
         // A dashboard endpoint may be unavailable or privacy-restricted; once
         // the request settles, render the appropriate empty state.
         setIsLoading(false);
+        finishChildSwitchLoading();
       });
     return () => { active = false; };
-  }, [user?.email]);
+  }, [user?.email, childSwitchReloadKey, finishChildSwitchLoading, failChildSwitchLoading]);
+
+  if (isChildSwitchLoading) {
+    return (
+      <div className="reports-page-shell">
+        <DashboardHeader activePage="reports" />
+        <ParentLayout><ChildSwitchLoading title="Reports" /></ParentLayout>
+      </div>
+    );
+  }
+
+  if (isChildSwitchError) {
+    return (
+      <div className="reports-page-shell">
+        <DashboardHeader activePage="reports" />
+        <ParentLayout><ChildSwitchError title="Reports" onRetry={retryChildSwitchLoading} /></ParentLayout>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -172,33 +198,15 @@ export default function Reports() {
     );
   }
 
-  if (sessions.length === 0) {
+  if (sessions.length === 0 || showChildDataEmptyPreview) {
     return (
       <div className="reports-page-shell">
         <DashboardHeader activePage="reports" />
-        <ParentLayout>
-          <main className="reports-page reports-empty-connected-page">
-            <header className="reports-heading">
-              <div className="reports-title-group">
-                <ReportsHeadingIcon />
-                <div className="reports-title-content">
-                  <span className="reports-eyebrow">✣ Parent learning view</span>
-                  <h1>Reports</h1>
-                  <p>Completed sessions shared by {childInfo.firstName || "your child"} will appear here.</p>
-                </div>
-              </div>
-            </header>
-            <section className="reports-connected-empty-card">
-              <span className="reports-connected-empty-icon"><Clock3 size={28} /></span>
-              <h2>No reports shared yet</h2>
-              <p>
-                {childInfo.firstName || "Your child"} is connected, but hasn&apos;t shared any study sessions yet.
-                Reports will appear automatically after their first recorded session.
-              </p>
-              <span>Shared data stays under {childInfo.firstName || "your child"}&apos;s control.</span>
-            </section>
-          </main>
-        </ParentLayout>
+        <ParentLayout><ChildNoData
+          title="Reports"
+          heading="No shared reports yet"
+          description="This child has not shared study sessions yet. New reports will appear here; missing information is not a zero score."
+        /></ParentLayout>
       </div>
     );
   }

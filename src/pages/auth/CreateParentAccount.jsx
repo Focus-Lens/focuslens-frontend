@@ -5,6 +5,7 @@ import EmailStatusAlert from "../../components/ui/EmailStatusAlert";
 import { AuthLayout, Button, Card, Field } from "../../components/ui/CommonUI";
 import { api } from "../../services/api";
 import { useAuth } from "../../context/useAuth";
+import { getPaidPlanCheckoutPath } from "../../data/subscriptionPlans";
 import { getGoogleProfile } from "../../services/googleIdentity";
 import { STUDENT_EMAIL_MESSAGE, continueWithGoogleParent } from "../../services/googleParentAuth";
 import {
@@ -93,7 +94,7 @@ export default function CreateParentAccount() {
 
       const { nextPath } = await continueWithGoogleParent(credentialResponse.credential, login);
       sessionStorage.removeItem("pendingParentRegistration");
-      navigate(nextPath);
+      navigate(getPaidPlanCheckoutPath(nextPath));
     } catch (error) {
       if (error.message === STUDENT_EMAIL_MESSAGE) setEmailError(error.message);
       else setGoogleError(error.message || "Google sign-in failed. Please try again.");
@@ -290,3 +291,4 @@ export default function CreateParentAccount() {
     </AuthLayout>
   );
 }
+

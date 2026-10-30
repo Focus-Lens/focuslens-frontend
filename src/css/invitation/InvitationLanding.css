@@ -20,20 +20,20 @@
 .invitation-landing-brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   color: rgb(30, 30, 30);
   font-family: "Nunito";
-  font-size: 24px;
-  font-weight: 700;
-  line-height: 32px;
-  letter-spacing: -0.6px;
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.55px;
 }
 
 
 
 .focuslens-logo {
-  width: 40px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -222,9 +222,7 @@
     padding: 0 clamp(18px, 5vw, 32px);
   }
 
-  .invitation-landing-brand {
-    font-size: 20px;
-  }
+.invitation-landing-brand { font-size: 21px; font-weight: 800; line-height: 1; letter-spacing: -.55px; }
 
   .invitation-landing-card {
     width: min(100%, 460px);
@@ -244,17 +242,9 @@
     padding: 0 14px;
   }
 
-  .focuslens-logo {
-    width: 30px;
-    height: 28px;
-  }
+.focuslens-logo { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
 
-  .invitation-landing-brand {
-    gap: 5px;
-    font-size: 17px;
-    line-height: 1;
-    letter-spacing: -0.4px;
-  }
+.invitation-landing-brand { gap: 6px; font-size: 18px; font-weight: 800; line-height: 1; letter-spacing: -.55px; }
 
   .invitation-landing-nav {
     position: relative;
@@ -316,7 +306,7 @@
   }
 
   .invitation-landing-card h1 {
-    font-size: 20px;
+    font-size: 21px;
     line-height: 1.3;
   }
 
@@ -337,14 +327,9 @@
     padding: 0 10px;
   }
 
-  .invitation-landing-brand {
-    font-size: 15px;
-  }
+.invitation-landing-brand { font-size: 18px; font-weight: 800; }
 
-  .focuslens-logo {
-    width: 26px;
-    height: 25px;
-  }
+.focuslens-logo { width: 30px; height: 30px; object-fit: contain; flex-shrink: 0; }
 
   .invitation-landing-menu-button {
     width: 34px;

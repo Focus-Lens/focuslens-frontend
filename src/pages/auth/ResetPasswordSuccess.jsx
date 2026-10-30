@@ -1,4 +1,5 @@
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
+import logo from "../../assets/logo.png";
 import "../../css/auth/ResetPasswordSuccess.css";
 
 export default function ResetPasswordSuccess() {
@@ -10,7 +11,7 @@ export default function ResetPasswordSuccess() {
 
             <div className="reset-password-success-logo">
               <img
-                src="/images/Focuslens logo animation - success 2.png"
+                src={logo}
                 alt="FocusLens"
               />
             </div>

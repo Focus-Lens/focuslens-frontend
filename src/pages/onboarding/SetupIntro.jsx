@@ -1,5 +1,6 @@
 import { AuthLayout, Button, Card } from "../../components/ui/CommonUI";
 import { Clock3 } from "lucide-react";
+import logo from "../../assets/logo.png";
 import "../../css/onboarding/SetupIntro.css";
 
 export default function SetupIntro() {
@@ -12,7 +13,7 @@ export default function SetupIntro() {
             {/* Logo */}
             <div className="setup-intro-logo">
               <img
-                src="/images/Focuslens logo animation - success 2.png"
+                src={logo}
                 alt="FocusLens"
               />
             </div>
