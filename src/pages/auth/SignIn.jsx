@@ -17,6 +17,7 @@ import {
   restoreRememberedSession,
 } from "../../services/api";
 import { useAuth } from "../../context/useAuth";
+import { getPaidPlanCheckoutPath } from "../../data/subscriptionPlans";
 import { holdRegistrationPassword } from "../../services/pendingRegistration";
 import { getGoogleProfile } from "../../services/googleIdentity";
 import { continueWithGoogleParent } from "../../services/googleParentAuth";
@@ -87,8 +88,9 @@ export default function SignIn({ restoreAccount = false }) {
 
   function nextPathAfterSignIn() {
     if (restoreAccount) return "/overview";
-    return (location.state?.returnTo !== "/account-created" && location.state?.returnTo) ||
+    const defaultPath = (location.state?.returnTo !== "/account-created" && location.state?.returnTo) ||
       (sessionStorage.getItem("pendingInvitationToken") ? "/choose-start" : "/overview");
+    return getPaidPlanCheckoutPath(defaultPath);
   }
 
   function saveRememberMe(account) {
@@ -270,9 +272,8 @@ export default function SignIn({ restoreAccount = false }) {
         login,
       );
       saveRememberMe(account);
-      navigate(
-        (location.state?.returnTo !== "/account-created" && location.state?.returnTo) || nextPath,
-      );
+      const defaultPath = (location.state?.returnTo !== "/account-created" && location.state?.returnTo) || nextPath;
+      navigate(getPaidPlanCheckoutPath(defaultPath));
     } catch (requestError) {
       setError(requestError.message || "Google sign-in failed. Please try again.");
       setIsSubmitting(false);
@@ -509,3 +510,6 @@ export default function SignIn({ restoreAccount = false }) {
     </AuthLayout>
   );
 }
+
+
+
