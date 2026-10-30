@@ -3387,3 +3387,10 @@
 
 
 }
+
+/* Keep the brand row above the two link columns at mobile widths. */
+@media (max-width: 700px) {
+  .landing-footer-brand-block {
+    grid-column: 1 / -1;
+  }
+}
