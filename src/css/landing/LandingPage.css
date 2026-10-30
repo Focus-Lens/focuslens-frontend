@@ -3373,3 +3373,43 @@
   .guide-nav,
   .guide-menu-toggle span { transition-duration: .01ms; }
 }
+
+/* Mobile landing-page refinements. */
+@media (max-width: 700px) {
+  .landing-page:not(.landing-compatibility-page) .landing-student-link {
+    display: flex;
+    width: fit-content;
+    justify-content: center;
+    margin: 16px auto 0;
+  }
+
+  .landing-footer-brand-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .landing-footer-brand-block p {
+    margin: 8px 0 14px;
+  }
+
+  .landing-footer-socials {
+    justify-content: center;
+  }
+
+  .landing-footer-column--legal {
+    align-items: center;
+    padding-top: 2px;
+    text-align: center;
+  }
+
+  .landing-footer-column--legal > a {
+    text-align: center;
+  }
+
+  .landing-footer-bottom {
+    margin-top: 0;
+    text-align: center;
+  }
+}
