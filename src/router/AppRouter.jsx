@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { useLayoutEffect, useRef } from "react";
 import { useAuth } from "../context/useAuth";
 import { isSetupDeferred } from "../services/setupDeferral";
 
@@ -36,6 +37,11 @@ import Reports from "../pages/dashboard/Reports";
 import Plans from "../pages/dashboard/Plans";
 import PurchaseCheckout from "../pages/dashboard/PurchaseCheckout";
 import SecurePayment from "../pages/dashboard/SecurePayment";
+import ManageSubscription, { FamilyManageSubscription } from "../pages/dashboard/ManageSubscription";
+import CancelSubscription from "../pages/dashboard/CancelSubscription";
+import EditBillingInformation from "../pages/dashboard/EditBillingInformation";
+import ManagePaymentMethod from "../pages/dashboard/ManagePaymentMethod";
+import PaymentNeedsAttention from "../pages/dashboard/PaymentNeedsAttention";
 import Progress from "../pages/dashboard/Progress";
 import StudyGoals from "../pages/dashboard/StudyGoals";
 
@@ -44,6 +50,10 @@ import ProfileAccount from "../pages/dashboard/ProfileAccount";
 import SessionInsight from "../pages/dashboard/SessionInsight";
 import Notifications from "../pages/dashboard/Notifications";
 import LegalDocument from "../pages/legal/LegalDocument";
+import LandingPage from "../pages/landing/LandingPage";
+import LandingFaqPage from "../pages/landing/LandingFaqPage";
+import LandingCompatibilityPage from "../pages/landing/LandingCompatibilityPage";
+import GettingStartedGuidePage from "../pages/landing/GettingStartedGuidePage";
 
 function RequireAuth({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -59,24 +69,44 @@ function RequireAuth({ children }) {
     : <Navigate replace to="/sign-in" />;
 }
 
-function EntryRoute() {
-  const invitationToken = sessionStorage.getItem("pendingInvitationToken");
+function ScrollToTopOnRouteChange() {
+  const { pathname, hash } = useLocation();
+  const previousLocation = useRef({ pathname, hash });
 
-  return (
-    <Navigate
-      replace
-      to={invitationToken
-        ? `/invite/${encodeURIComponent(invitationToken)}`
-        : "/invite/continue"}
-    />
-  );
+  useLayoutEffect(() => {
+    const previous = previousLocation.current;
+    if (previous.pathname === pathname && previous.hash === hash) return;
+    previousLocation.current = { pathname, hash };
+
+    if (hash && (pathname !== previous.pathname || hash !== previous.hash)) {
+      const frame = window.requestAnimationFrame(() => {
+        const target = document.getElementById(decodeURIComponent(hash.slice(1)));
+        if (!target) {
+          window.scrollTo(0, 0);
+          return;
+        }
+        const headerHeight = document.querySelector(".landing-header, .guide-header")?.getBoundingClientRect().height || 0;
+        const top = Math.max(0, window.scrollY + target.getBoundingClientRect().top - headerHeight);
+        window.scrollTo({ top, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    if (pathname !== previous.pathname) window.scrollTo(0, 0);
+  }, [pathname, hash]);
+
+  return null;
 }
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
+      <ScrollToTopOnRouteChange />
       <Routes>
-        <Route path="/" element={<EntryRoute />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/faqs" element={<LandingFaqPage />} />
+        <Route path="/compatibility" element={<LandingCompatibilityPage />} />
+        <Route path="/get-started-connected" element={<GettingStartedGuidePage />} />
 
         <Route path="/invite/:token" element={<InvitationLanding />} />
         {/* The backend's invitation email links to /invitations/parent/{token}. */}
@@ -144,6 +174,22 @@ export default function AppRouter() {
         <Route path="/reports" element={<RequireAuth><Reports /></RequireAuth>} />
         <Route path="/plans" element={<RequireAuth><Plans /></RequireAuth>} />
         {import.meta.env.DEV && <Route path="/plans-preview" element={<Plans previewOnly />} />}
+        <Route path="/manage-subscription" element={<RequireAuth><ManageSubscription /></RequireAuth>} />
+        <Route path="/cancel-subscription" element={<RequireAuth><CancelSubscription /></RequireAuth>} />
+        <Route path="/billing-information" element={<RequireAuth><EditBillingInformation /></RequireAuth>} />
+        <Route path="/manage-payment-method" element={<RequireAuth><ManagePaymentMethod /></RequireAuth>} />
+        <Route path="/payment-needs-attention" element={<RequireAuth><PaymentNeedsAttention /></RequireAuth>} />
+        {import.meta.env.DEV && <Route path="/manage-subscription-preview" element={<ManageSubscription previewOnly />} />}
+        {import.meta.env.DEV && <Route path="/manage-subscription-family-preview" element={<FamilyManageSubscription previewOnly />} />}
+        {import.meta.env.DEV && <Route path="/children-preview" element={<Children previewOnly />} />}
+        {import.meta.env.DEV && <Route path="/overview-preview" element={<Overview />} />}
+        {import.meta.env.DEV && <Route path="/reports-preview" element={<Reports />} />}
+        {import.meta.env.DEV && <Route path="/progress-child-preview" element={<Progress />} />}
+        {import.meta.env.DEV && <Route path="/study-goals-preview" element={<StudyGoals />} />}
+        {import.meta.env.DEV && <Route path="/cancel-subscription-preview" element={<CancelSubscription previewOnly />} />}
+        {import.meta.env.DEV && <Route path="/billing-information-preview" element={<EditBillingInformation previewOnly />} />}
+        {import.meta.env.DEV && <Route path="/manage-payment-method-preview" element={<ManagePaymentMethod previewOnly />} />}
+        {import.meta.env.DEV && <Route path="/payment-needs-attention-preview" element={<PaymentNeedsAttention previewOnly />} />}
         <Route path="/checkout" element={<RequireAuth><PurchaseCheckout /></RequireAuth>} />
         {import.meta.env.DEV && <Route path="/checkout-preview" element={<PurchaseCheckout previewOnly />} />}
         <Route path="/checkout/payment" element={<RequireAuth><SecurePayment /></RequireAuth>} />
@@ -159,11 +205,13 @@ export default function AppRouter() {
         <Route path="/children" element={<RequireAuth><Children /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><ProfileAccount /></RequireAuth>} />
         <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
-        <Route path="/privacy-policy" element={<RequireAuth><LegalDocument type="privacy" /></RequireAuth>} />
-        <Route path="/terms-of-use" element={<RequireAuth><LegalDocument type="terms" /></RequireAuth>} />
+        <Route path="/privacy-policy" element={<LegalDocument type="privacy" />} />
+        <Route path="/terms-of-use" element={<LegalDocument type="terms" />} />
 
         <Route path="*" element={<Navigate replace to="/" />} />
       </Routes>
     </BrowserRouter>
   );
 }
+
+
