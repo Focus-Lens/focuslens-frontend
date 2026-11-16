@@ -2,7 +2,6 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-route
 import { useLayoutEffect, useRef } from "react";
 import { useAuth } from "../context/useAuth";
 import { isSetupDeferred } from "../services/setupDeferral";
-import { Analytics } from "@vercel/analytics/next"
 
 import InvitationLanding from "../pages/invitation/InvitationLanding";
 import ContinueInvitation from "../pages/invitation/ContinueInvitation";
